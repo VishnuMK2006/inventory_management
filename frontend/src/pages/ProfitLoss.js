@@ -1,234 +1,65 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Alert, Form, Button, Row, Col, Card, Spinner, Modal } from 'react-bootstrap';
+import {
+  Box,
+  Typography,
+  Button,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
+  Snackbar,
+  Grid,
+  Card,
+  CardContent,
+  CircularProgress,
+  Stack,
+  Chip,
+  IconButton,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Divider
+} from '@mui/material';
+import {
+  Upload as UploadIcon,
+  Download as DownloadIcon,
+  TrendingUp as TrendingUpIcon,
+  FileDownload as FileDownloadIcon,
+  PictureAsPdf as PdfIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Close as CloseIcon,
+  Refresh as RefreshIcon,
+  Clear as ClearIcon
+} from '@mui/icons-material';
 import { profitLossAPI, uploadedProfitSheetsAPI, salesAPI } from '../services/api';
-import styled, { keyframes } from 'styled-components';
-import { FaUpload, FaDownload, FaChartLine, FaCheck, FaTimes, FaFileExcel, FaFilePdf } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
-  LineChart,
-  Line,
+  ResponsiveContainer
 } from 'recharts';
-
-// Animations
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
-
-const slideIn = keyframes`
-  from { transform: translateX(-30px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-`;
-
-const pulse = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-`;
-
-// Styled Components
-const Container = styled.div`
-  padding: 2rem;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 100vh;
-`;
-
-const AnimatedContainer = styled.div`
-  animation: ${fadeIn} 0.6s ease-out;
-`;
-
-const HeaderSection = styled.div`
-  background: white;
-  height: 100px;
-  padding: 2rem;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  animation: ${slideIn} 0.5s ease-out;
-`;
-
-const FilterCard = styled(Card)`
-  border: none;
-  border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  
-  .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 15px 15px 0 0;
-    border: none;
-    font-weight: 600;
-  }
-`;
-
-const GraphCard = styled(Card)`
-  border: none;
-  border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  
-  .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 15px 15px 0 0;
-    border: none;
-    font-weight: 600;
-  }
-`;
-
-const StyledTable = styled(Table)`
-  background: white;
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  
-  thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    
-    th {
-      border: none;
-      padding: 1.2rem;
-      font-weight: 500;
-    }
-  }
-  
-  tbody tr {
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background: rgba(102, 126, 234, 0.1);
-      transform: translateY(-2px);
-    }
-    
-    td {
-      padding: 1.2rem;
-      border-color: #e9ecef;
-    }
-  }
-`;
-
-const PrimaryButton = styled(Button)`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 25px;
-  padding: 0.8rem 2rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  border-radius: 20px;
-  padding: 0.5rem 1.2rem;
-  transition: all 0.3s ease;
-  border: 2px solid #667eea;
-  color: #667eea;
-  background: transparent;
-  
-  &:hover {
-    background: #667eea;
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  }
-`;
-
-const FormGroup = styled(Form.Group)`
-  margin-bottom: 1rem;
-  
-  .form-label {
-    font-weight: 600;
-    color: #4a5568;
-    margin-bottom: 0.5rem;
-  }
-  
-  .form-control {
-    border-radius: 10px;
-    border: 2px solid #e2e8f0;
-    padding: 0.8rem;
-    transition: all 0.3s ease;
-    
-    &:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    }
-  }
-`;
-
-const StatCard = styled(Card)`
-  border: none;
-  border-radius: 15px;
-  text-align: center;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-  }
-  
-  .card-title {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    color: #4a5568;
-  }
-  
-  .card-text {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #667eea;
-  }
-`;
-
-const StatsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-`;
-
-const LoadingSpinner = styled(Spinner)`
-  color: #667eea;
-  width: 3rem;
-  height: 3rem;
-`;
-
-const IconWrapper = styled.span`
-  margin-right: 0.5rem;
-`;
-
-const ProfitBadge = styled.span`
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: ${props => props.profit >= 0 ? '#fff' : '#fff'};
-  background: ${props => props.profit >= 0 ? '#48bb78' : '#e53e3e'};
-`;
 
 const ProfitLoss = () => {
   const formatCurrency = (value, showZero = true) => {
     const num = value == null || value === '' ? null : Number(value);
-    if (num == null || Number.isNaN(num)) return showZero ? '$0.00' : '-';
-    return `$${num.toFixed(2)}`;
+    if (num == null || Number.isNaN(num)) return showZero ? '₹0.00' : '-';
+    return `₹${num.toFixed(2)}`;
   };
 
   const formatNumberForExcel = (value) => {
@@ -817,594 +648,766 @@ const ProfitLoss = () => {
   };
 
   return (
-    <Container>
-      <AnimatedContainer>
-        <HeaderSection>
-          <Row>
-            <Col>
-              <h4 className="mb-0 d-flex align-items-center">
-                <IconWrapper style={{ fontSize: "1.3rem", marginRight: "0.6rem" }}>💹</IconWrapper>
-                Profit & Loss Analysis
-              </h4>
-            </Col>
-          </Row>
-        </HeaderSection>
+    <Box sx={{ p: 3, bgcolor: '#fafafa', minHeight: '100vh' }}>
+      <Snackbar 
+        open={!!error} 
+        autoHideDuration={6000} 
+        onClose={() => setError('')}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert severity="error" onClose={() => setError('')}>{error}</Alert>
+      </Snackbar>
 
-        {error && (
-          <Alert variant="danger" dismissible onClose={() => setError('')}>
-            {error}
-          </Alert>
-        )}
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4" sx={{ fontWeight: 600, color: '#000' }}>
+          Profit & Loss Analysis
+        </Typography>
+      </Stack>
 
-        {/* Statistics */}
-        {summary && (
-          <StatsGrid>
-            <StatCard>
-              <Card.Title>💰 Total Profit/Loss</Card.Title>
-                <Card.Text style={{ color: Number(summary?.totalProfit ?? 0) >= 0 ? '#48bb78' : '#e53e3e' }}>
-                {formatCurrency(summary?.totalProfit)}
-              </Card.Text>
-            </StatCard>
-            <StatCard>
-              <Card.Title>✅ Delivered Profit</Card.Title>
-                <Card.Text style={{ color: '#48bb78' }}>
-                {formatCurrency(summary?.deliveredProfit)}
-              </Card.Text>
-            </StatCard>
-            <StatCard>
-              <Card.Title>🔄 RPU Loss</Card.Title>
-                <Card.Text style={{ color: '#e53e3e' }}>
-                {formatCurrency(summary?.rpuProfit)}
-              </Card.Text>
-            </StatCard>
-            <StatCard>
-              <Card.Title>📊 Total Records</Card.Title>
-              <Card.Text>{summary.totalRecords}</Card.Text>
-            </StatCard>
-          </StatsGrid>
-        )}
+      {/* Statistics */}
+      {summary && (
+        <Grid container spacing={3} mb={3}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ border: '1px solid #e0e0e0', textAlign: 'center', p: 2 }}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  💰 Total Profit/Loss
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: Number(summary?.totalProfit ?? 0) >= 0 ? '#2e7d32' : '#d32f2f' }}>
+                  {formatCurrency(summary?.totalProfit)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ border: '1px solid #e0e0e0', textAlign: 'center', p: 2 }}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  ✅ Delivered Profit
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: '#2e7d32' }}>
+                  {formatCurrency(summary?.deliveredProfit)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ border: '1px solid #e0e0e0', textAlign: 'center', p: 2 }}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  🔄 RPU Loss
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: '#d32f2f' }}>
+                  {formatCurrency(summary?.rpuProfit)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ border: '1px solid #e0e0e0', textAlign: 'center', p: 2 }}>
+              <CardContent>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  📊 Total Records
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: '#000' }}>
+                  {summary.totalRecords}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
 
-        {/* Filter Section */}
-        <FilterCard>
-          <Card.Header>
-            <IconWrapper>🔍</IconWrapper>
-            Date Range Filter
-          </Card.Header>
-          <Card.Body>
-            <Form>
-              <Row>
-                <Col md={3}>
-                  <FormGroup>
-                    <Form.Label>Start Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      name="startDate"
-                      value={filter.startDate}
-                      onChange={handleFilterChange}
-                    />
-                  </FormGroup>
-                </Col>
-                <Col md={3}>
-                  <FormGroup>
-                    <Form.Label>End Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      name="endDate"
-                      value={filter.endDate}
-                      onChange={handleFilterChange}
-                    />
-                  </FormGroup>
-                </Col>
-                <Col md={3} className="d-flex align-items-end">
-                  <PrimaryButton onClick={fetchProfitLoss} className="w-100">
-                    <FaChartLine /> Fetch Data
-                  </PrimaryButton>
-                </Col>
-                <Col md={3} className="d-flex align-items-end">
-                  <SecondaryButton onClick={clearFilters} className="w-100">
-                    🗑️ Clear
-                  </SecondaryButton>
-                </Col>
-              </Row>
-            </Form>
-          </Card.Body>
-        </FilterCard>
-
-        {/* Excel Upload Section */}
-        <FilterCard>
-          <Card.Header>
-            <IconWrapper>📁</IconWrapper>
-            Upload Excel File
-          </Card.Header>
-          <Card.Body>
-            <Row>
-              <Col md={6}>
-                <FormGroup>
-                  <Form.Label>Choose Excel File</Form.Label>
-                  <Form.Control
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={handleFileUpload}
-                    disabled={loading}
-                  />
-                  <Form.Text className="text-muted">
-                    Columns: Month, S.No., Order Date, Order id, SKU, Quantity, Status, Payment, Payment Date, Payment Status, Purchase Price, Profit, Re-use/Claim, Reused Date, Status of Product, Remarks
-                  </Form.Text>
-                </FormGroup>
-              </Col>
-              <Col md={6} className="d-flex align-items-end">
-                <SecondaryButton onClick={downloadExcelTemplate} className="w-100">
-                  <FaDownload /> Download Template
-                </SecondaryButton>
-              </Col>
-            </Row>
-            <Row className="mt-3">
-              <Col md={8}>
-                <FormGroup>
-                  <Form.Label>Load Saved Uploads</Form.Label>
-                  <Form.Control as="select" value={selectedSheetId || ''} onChange={handleSelectSheet}>
-                    <option value="">-- Select saved upload --</option>
-                    <option value="ALL">All uploads</option>
-                    {(availableSheets || []).map(s => (
-                      <option key={s._id} value={s._id}>{s.fileName} ({s.uploadDate ? new Date(s.uploadDate).toLocaleString() : 'Unknown date'})</option>
-                    ))}
-                  </Form.Control>
-                </FormGroup>
-              </Col>
-              <Col md={4} className="d-flex align-items-end">
-                <SecondaryButton onClick={() => fetchUploadedData(filter.startDate, filter.endDate)} className="w-100">
-                  🔁 Refresh Uploads
-                </SecondaryButton>
-              </Col>
-            </Row>
-          </Card.Body>
-        </FilterCard>
-
-        {/* Monthly Profit Chart */}
-        {monthlyData.length > 0 && (
-          <GraphCard>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <span>
-                <IconWrapper>📈</IconWrapper>
-                Monthly Profit Trend
-              </span>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button 
-                  size="sm" 
-                  variant="outline-primary"
-                  onClick={() => exportToExcel(monthlyData, 'monthly_profit_report.xlsx')}
-                  title="Export to Excel"
-                >
-                  <FaFileExcel /> Excel
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline-danger"
-                  onClick={() => exportToPDF(monthlyData, 'monthly_profit_report.pdf')}
-                  title="Export to PDF"
-                >
-                  <FaFilePdf /> PDF
-                </Button>
-              </div>
-            </Card.Header>
-            <Card.Body>
-              {loading ? (
-                <div className="text-center py-5">
-                  <LoadingSpinner animation="border" />
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={monthlyData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value) => (value == null || Number.isNaN(Number(value)) ? '-' : `$${Number(value).toFixed(2)}`)}
-                      contentStyle={{
-                        backgroundColor: '#f5f7fa',
-                        border: '2px solid #667eea',
-                        borderRadius: '10px'
-                      }}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="totalProfit" stroke="#667eea" name="Total Profit" strokeWidth={2} />
-                    <Line type="monotone" dataKey="deliveredProfit" stroke="#48bb78" name="Delivered Profit" strokeWidth={2} />
-                    <Line type="monotone" dataKey="rpuProfit" stroke="#e53e3e" name="RPU Loss" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </Card.Body>
-          </GraphCard>
-        )}
-
-        {/* Profit/Loss Data Table */}
-        {profitData.length > 0 && (
-          <GraphCard>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <span>
-                <IconWrapper>📊</IconWrapper>
-                Profit/Loss Breakdown
-              </span>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button 
-                  size="sm" 
-                  variant="outline-primary"
-                  onClick={() => exportToExcel(profitData, 'profit_loss_database_report.xlsx')}
-                  title="Export to Excel"
-                >
-                  <FaFileExcel /> Excel
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline-danger"
-                  onClick={() => exportToPDF(profitData, 'profit_loss_database_report.pdf')}
-                  title="Export to PDF"
-                >
-                  <FaFilePdf /> PDF
-                </Button>
-              </div>
-            </Card.Header>
-            <Card.Body>
-              <div style={{ overflowX: 'auto' }}>
-                <StyledTable responsive>
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Product/Combo</th>
-                      <th>Cost Price</th>
-                      <th>Sold Price</th>
-                      <th>Quantity</th>
-                      <th>Profit/Loss</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {profitData.slice(0, 20).map((item, index) => (
-                      <tr key={index}>
-                        <td>{item.date ? new Date(item.date).toLocaleDateString() : '-'}</td>
-                        <td>{item.product}</td>
-                        <td>{formatCurrency(item.costPrice)}</td>
-                        <td>{formatCurrency(item.soldPrice)}</td>
-                        <td>{item.quantity}</td>
-                        <td>
-                          <ProfitBadge profit={Number(item.profitTotal ?? 0)}>
-                            {formatCurrency(item.profitTotal)}
-                          </ProfitBadge>
-                        </td>
-                        <td>
-                          {item.status === 'rpu' ? (
-                            <span style={{ color: '#e53e3e' }}>🔄 RPU</span>
-                          ) : (
-                            <span style={{ color: '#48bb78' }}>✅ Delivered</span>
-                          )}
-                        </td>
-                        <td>
-                          <Button size="sm" variant="outline-secondary" onClick={() => handleEditProfitRowClick(item)} style={{ marginRight: '0.4rem' }}>
-                            ✏️ Edit
-                          </Button>
-                          <Button size="sm" variant="outline-danger" onClick={() => deleteProfitRow(item)}>
-                            🗑️ Delete
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </StyledTable>
-              </div>
-              <div style={{ marginTop: '1rem', textAlign: 'center', color: '#666' }}>
-                Showing {profitData.slice(0, 20).length} of {profitData.length} records
-              </div>
-            </Card.Body>
-          </GraphCard>
-        )}
-
-        {/* Uploaded Data Table */}
-        {uploadResults.length > 0 && (
-          <GraphCard>
-            <Card.Header>
-              <IconWrapper>📊</IconWrapper>
-              Uploaded Profit/Loss Data ({uploadResults.length} records)
-            </Card.Header>
-            <Card.Body>
-              <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                <StyledTable responsive striped size="sm">
-                  <thead>
-                    <tr>
-                      <th>Month</th>
-                      <th>S.No.</th>
-                      <th>Order Date</th>
-                      <th>Order id</th>
-                      <th>SKU</th>
-                      <th>Quantity</th>
-                      <th>Status</th>
-                      <th>Payment</th>
-                      <th>Payment Date</th>
-                      <th>Payment Status</th>
-                      <th>Purchase Price</th>
-                      <th>Profit</th>
-                      <th>Re-use / Claim</th>
-                      <th>Reused Date</th>
-                      <th>Status of Product</th>
-                      <th>Remarks</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {uploadResults.map((result, index) => (
-                      <tr key={index}>
-                        <td>{result.Month || result.month || '-'}</td>
-                        <td>{result['S.No.'] || result.sno || '-'}</td>
-                        <td>{result['Order Date'] || result.orderDate || '-'}</td>
-                        <td>{result['Order id'] || result.orderId || '-'}</td>
-                        <td>{result.SKU || result.sku || '-'}</td>
-                        <td>{result.Quantity || result.quantity || '-'}</td>
-                        <td>{result.Status || result.status || '-'}</td>
-                        <td>{result.Payment || result.payment || '-'}</td>
-                        <td>{result['Payment Date'] || result.paymentDate || '-'}</td>
-                        <td>{result['Payment Status'] || result.paymentStatus || '-'}</td>
-                        <td>{result['Purchase Price'] || result.purchasePrice || '-'}</td>
-                        <td>{result.Profit || result.profit || '-'}</td>
-                        <td>{result['Re-use / Claim'] || result.reuseOrClaim || '-'}</td>
-                        <td>{result['Reused Date'] || result.reusedDate || '-'}</td>
-                        <td>{result['Status of Product'] || result.statusOfProduct || '-'}</td>
-                        <td>{result.Remarks || result.remarks || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </StyledTable>
-              </div>
-            </Card.Body>
-          </GraphCard>
-        )}
-
-        {/* Upload Results Modal */}
-        <Modal show={showModal} onHide={() => setShowModal(false)} size="xl">
-          <Modal.Header closeButton>
-            <Modal.Title>📊 Upload Results & Export</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {summary && (
-              <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '10px' }}>
-                <Row>
-                  <Col md={3}>
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Total Profit/Loss</p>
-                      <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: Number(summary?.totalProfit ?? 0) >= 0 ? '#48bb78' : '#e53e3e' }}>
-                      {formatCurrency(summary?.totalProfit)}
-                    </p>
-                  </Col>
-                  <Col md={3}>
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Delivered Profit</p>
-                      <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: '#48bb78' }}>
-                      {formatCurrency(summary?.deliveredProfit)}
-                    </p>
-                  </Col>
-                  <Col md={3}>
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>RPU Loss</p>
-                      <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: '#e53e3e' }}>
-                      {formatCurrency(summary?.rpuProfit)}
-                    </p>
-                  </Col>
-                  <Col md={3}>
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Total Records</p>
-                    <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: '#667eea' }}>
-                      {summary.totalRecords || 0}
-                    </p>
-                  </Col>
-                </Row>
-              </div>
-            )}
-            
-            <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-              <StyledTable responsive striped size="sm">
-                <thead>
-                  <tr>
-                    <th>Month</th>
-                    <th>S.No.</th>
-                    <th>Order Date</th>
-                    <th>Order id</th>
-                    <th>SKU</th>
-                    <th>Quantity</th>
-                    <th>Status</th>
-                    <th>Payment</th>
-                    <th>Payment Date</th>
-                    <th>Payment Status</th>
-                    <th>Purchase Price</th>
-                    <th>Profit</th>
-                    <th>Re-use / Claim</th>
-                    <th>Reused Date</th>
-                    <th>Status of Product</th>
-                    <th>Remarks</th>
-                    <th>Actions</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                    {uploadResults.map((result, index) => (
-                    <tr key={index}>
-                      <td>{result.Month || result.month || '-'}</td>
-                      <td>{result['S.No.'] || result.sno || result.serialNumber || '-'}</td>
-                      <td>{result['Order Date'] || result.orderDate || '-'}</td>
-                      <td>{result['Order id'] || result.orderId || result.orderid || '-'}</td>
-                      <td>{result.SKU || result.sku || '-'}</td>
-                      <td>{result.Quantity || result.quantity || '-'}</td>
-                      <td>{result.Status || result.status || '-'}</td>
-                      <td>{result.Payment || result.payment || '-'}</td>
-                      <td>{result['Payment Date'] || result.paymentDate || '-'}</td>
-                      <td>{result['Payment Status'] || result.paymentStatus || '-'}</td>
-                      <td>{result['Purchase Price'] || result.purchasePrice || '-'}</td>
-                      <td>{result.Profit || result.profit || '-'}</td>
-                      <td>{result['Re-use / Claim'] || result.reuseOrClaim || '-'}</td>
-                      <td>{result['Reused Date'] || result.reusedDate || '-'}</td>
-                      <td>{result['Status of Product'] || result.statusOfProduct || '-'}</td>
-                        <td>{result.Remarks || result.remarks || '-'}</td>
-                        <td>
-                          <Button size="sm" variant="outline-secondary" onClick={() => handleEditClick(result)} style={{ marginRight: '0.4rem' }}>
-                            ✏️ Edit
-                          </Button>
-                          <Button size="sm" variant="outline-danger" onClick={() => deleteRow(result._id || result.id)}>
-                            🗑️ Delete
-                          </Button>
-                        </td>
-                        <td>
-                          <Button size="sm" variant="outline-secondary" onClick={() => handleEditClick(result)} style={{ marginRight: '0.4rem' }}>
-                            ✏️ Edit
-                          </Button>
-                          <Button size="sm" variant="outline-danger" onClick={() => deleteRow(result._id || result.id)}>
-                            🗑️ Delete
-                          </Button>
-                        </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </StyledTable>
-            </div>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button 
-              variant="outline-primary" 
-              onClick={() => exportToExcel(uploadResults, 'profit_loss_upload_report.xlsx')}
+      {/* Filter Section */}
+      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0' }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+          🔍 Date Range Filter
+        </Typography>
+        <Grid container spacing={2} alignItems="flex-end">
+          <Grid item xs={12} md={3}>
+            <TextField
+              fullWidth
+              label="Start Date"
+              type="date"
+              name="startDate"
+              value={filter.startDate}
+              onChange={handleFilterChange}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <TextField
+              fullWidth
+              label="End Date"
+              type="date"
+              name="endDate"
+              value={filter.endDate}
+              onChange={handleFilterChange}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Button
+              fullWidth
+              variant="contained"
+              startIcon={<TrendingUpIcon />}
+              onClick={fetchProfitLoss}
+              sx={{
+                bgcolor: '#000',
+                color: '#fff',
+                textTransform: 'none',
+                '&:hover': { bgcolor: '#333' }
+              }}
             >
-              <FaFileExcel /> Export to Excel
+              Fetch Data
             </Button>
-            <Button 
-              variant="outline-danger" 
-              onClick={() => exportToPDF(uploadResults, 'profit_loss_upload_report.pdf')}
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<ClearIcon />}
+              onClick={clearFilters}
+              sx={{
+                borderColor: '#000',
+                color: '#000',
+                textTransform: 'none',
+                '&:hover': { borderColor: '#333', bgcolor: 'rgba(0, 0, 0, 0.04)' }
+              }}
             >
-              <FaFilePdf /> Export to PDF
+              Clear
             </Button>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Close
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* Excel Upload Section */}
+      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0' }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+          📁 Upload Excel File
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <Button
+              variant="contained"
+              component="label"
+              startIcon={<UploadIcon />}
+              disabled={loading}
+              sx={{
+                bgcolor: '#000',
+                color: '#fff',
+                textTransform: 'none',
+                '&:hover': { bgcolor: '#333' }
+              }}
+            >
+              Choose Excel File
+              <input
+                type="file"
+                hidden
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileUpload}
+              />
             </Button>
-          </Modal.Footer>
-        </Modal>
+            <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#666' }}>
+              Columns: Month, S.No., Order Date, Order id, SKU, Quantity, Status, Payment, Payment Date, Payment Status, Purchase Price, Profit, Re-use/Claim, Reused Date, Status of Product, Remarks
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={downloadExcelTemplate}
+              sx={{
+                borderColor: '#000',
+                color: '#000',
+                textTransform: 'none',
+                '&:hover': { borderColor: '#333', bgcolor: 'rgba(0, 0, 0, 0.04)' }
+              }}
+            >
+              Download Template
+            </Button>
+          </Grid>
+        </Grid>
+        <Grid container spacing={2} sx={{ mt: 2 }}>
+          <Grid item xs={12} md={8}>
+            <FormControl fullWidth>
+              <InputLabel>Load Saved Uploads</InputLabel>
+              <Select
+                value={selectedSheetId || ''}
+                onChange={handleSelectSheet}
+                label="Load Saved Uploads"
+              >
+                <MenuItem value="">-- Select saved upload --</MenuItem>
+                <MenuItem value="ALL">All uploads</MenuItem>
+                {(availableSheets || []).map(s => (
+                  <MenuItem key={s._id} value={s._id}>
+                    {s.fileName} ({s.uploadDate ? new Date(s.uploadDate).toLocaleString() : 'Unknown date'})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<RefreshIcon />}
+              onClick={() => fetchUploadedData(filter.startDate, filter.endDate)}
+              sx={{
+                borderColor: '#000',
+                color: '#000',
+                textTransform: 'none',
+                '&:hover': { borderColor: '#333', bgcolor: 'rgba(0, 0, 0, 0.04)' }
+              }}
+            >
+              Refresh Uploads
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
 
-        {/* Edit Row Modal */}
-        <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>✏️ Edit Row</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {editingRow && (
-              <Form>
-                <Row>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Order id</Form.Label>
-                      <Form.Control value={editingRow.orderId || editingRow['Order id'] || ''} onChange={(e) => handleEditChange('orderId', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Order Date</Form.Label>
-                      <Form.Control type="date" value={editingRow.orderDate || ''} onChange={(e) => handleEditChange('orderDate', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>SKU</Form.Label>
-                      <Form.Control value={editingRow.SKU || editingRow.sku || editingRow.sku || ''} onChange={(e) => handleEditChange('sku', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Quantity</Form.Label>
-                      <Form.Control value={editingRow.Quantity || editingRow.quantity || ''} onChange={(e) => handleEditChange('quantity', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Status</Form.Label>
-                      <Form.Control value={editingRow.Status || editingRow.status || ''} onChange={(e) => handleEditChange('status', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Payment</Form.Label>
-                      <Form.Control value={editingRow.Payment || editingRow.payment || ''} onChange={(e) => handleEditChange('payment', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Purchase Price</Form.Label>
-                      <Form.Control value={editingRow['Purchase Price'] || editingRow.purchasePrice || editingRow.purchasePrice || ''} onChange={(e) => handleEditChange('purchasePrice', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Profit</Form.Label>
-                      <Form.Control value={editingRow.Profit || editingRow.profit || ''} onChange={(e) => handleEditChange('profit', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col>
-                    <FormGroup>
-                      <Form.Label>Remarks</Form.Label>
-                      <Form.Control as="textarea" rows={3} value={editingRow.Remarks || editingRow.remarks || ''} onChange={(e) => handleEditChange('remarks', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                </Row>
-              </Form>
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            <PrimaryButton onClick={saveEditedRow} disabled={loading}>Save</PrimaryButton>
-            <SecondaryButton onClick={() => setShowEditModal(false)}>Cancel</SecondaryButton>
-          </Modal.Footer>
-        </Modal>
+      {/* Monthly Profit Chart */}
+      {monthlyData.length > 0 && (
+        <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0' }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              📈 Monthly Profit Trend
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<FileDownloadIcon />}
+                onClick={() => exportToExcel(monthlyData, 'monthly_profit_report.xlsx')}
+                sx={{ textTransform: 'none', borderColor: '#2e7d32', color: '#2e7d32' }}
+              >
+                Excel
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<PdfIcon />}
+                onClick={() => exportToPDF(monthlyData, 'monthly_profit_report.pdf')}
+                sx={{ textTransform: 'none', borderColor: '#d32f2f', color: '#d32f2f' }}
+              >
+                PDF
+              </Button>
+            </Stack>
+          </Stack>
+          {loading ? (
+            <Box sx={{ textAlign: 'center', py: 5 }}>
+              <CircularProgress sx={{ color: '#000' }} />
+            </Box>
+          ) : (
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={monthlyData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip
+                  formatter={(value) => (value == null || Number.isNaN(Number(value)) ? '-' : `₹${Number(value).toFixed(2)}`)}
+                  contentStyle={{
+                    backgroundColor: '#fafafa',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Legend />
+                <Line type="monotone" dataKey="totalProfit" stroke="#000" name="Total Profit" strokeWidth={2} />
+                <Line type="monotone" dataKey="deliveredProfit" stroke="#2e7d32" name="Delivered Profit" strokeWidth={2} />
+                <Line type="monotone" dataKey="rpuProfit" stroke="#d32f2f" name="RPU Loss" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </Paper>
+      )}
 
-        {/* Edit Profit Row Modal */}
-        <Modal show={showEditProfitModal} onHide={() => setShowEditProfitModal(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>✏️ Edit Profit Row</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {editingProfitRow && (
-              <Form>
-                <Row>
-                  <Col md={4}>
-                    <FormGroup>
-                      <Form.Label>SKU / Barcode</Form.Label>
-                      <Form.Control disabled value={editingProfitRow.item?.barcode || editingProfitRow.item?.productName || ''} />
-                    </FormGroup>
-                  </Col>
-                  <Col md={4}>
-                    <FormGroup>
-                      <Form.Label>Quantity</Form.Label>
-                      <Form.Control type="number" value={editingProfitRow.item?.quantity || 0} onChange={(e) => handleEditProfitRowChange('quantity', Number(e.target.value))} />
-                    </FormGroup>
-                  </Col>
-                  <Col md={4}>
-                    <FormGroup>
-                      <Form.Label>Unit Price</Form.Label>
-                      <Form.Control type="number" value={editingProfitRow.item?.unitPrice || 0} onChange={(e) => handleEditProfitRowChange('unitPrice', Number(e.target.value))} />
-                    </FormGroup>
-                  </Col>
-                </Row>
-              </Form>
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            <PrimaryButton onClick={saveEditedProfitRow} disabled={loading}>Save</PrimaryButton>
-            <SecondaryButton onClick={() => setShowEditProfitModal(false)}>Cancel</SecondaryButton>
-          </Modal.Footer>
-        </Modal>
+      {/* Profit/Loss Data Table */}
+      {profitData.length > 0 && (
+        <Paper sx={{ mb: 3, border: '1px solid #e0e0e0' }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 2, bgcolor: '#fafafa', borderBottom: '1px solid #e0e0e0' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              📊 Profit/Loss Breakdown
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<FileDownloadIcon />}
+                onClick={() => exportToExcel(profitData, 'profit_loss_database_report.xlsx')}
+                sx={{ textTransform: 'none', borderColor: '#2e7d32', color: '#2e7d32' }}
+              >
+                Excel
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<PdfIcon />}
+                onClick={() => exportToPDF(profitData, 'profit_loss_database_report.pdf')}
+                sx={{ textTransform: 'none', borderColor: '#d32f2f', color: '#d32f2f' }}
+              >
+                PDF
+              </Button>
+            </Stack>
+          </Stack>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: '#fafafa' }}>
+                  <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Product/Combo</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Cost Price</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Sold Price</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Quantity</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Profit/Loss</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {profitData.slice(0, 20).map((item, index) => (
+                  <TableRow key={index} sx={{ '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}>
+                    <TableCell>{item.date ? new Date(item.date).toLocaleDateString() : '-'}</TableCell>
+                    <TableCell>{item.product}</TableCell>
+                    <TableCell>{formatCurrency(item.costPrice)}</TableCell>
+                    <TableCell>{formatCurrency(item.soldPrice)}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={formatCurrency(item.profitTotal)}
+                        sx={{
+                          bgcolor: Number(item.profitTotal ?? 0) >= 0 ? '#e8f5e9' : '#ffebee',
+                          color: Number(item.profitTotal ?? 0) >= 0 ? '#2e7d32' : '#d32f2f',
+                          fontWeight: 600
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {item.status === 'rpu' ? (
+                        <Chip label="RPU" icon={<span>🔄</span>} sx={{ bgcolor: '#ffebee', color: '#d32f2f' }} />
+                      ) : (
+                        <Chip label="Delivered" icon={<span>✅</span>} sx={{ bgcolor: '#e8f5e9', color: '#2e7d32' }} />
+                      )}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Stack direction="row" spacing={1} justifyContent="center">
+                        <IconButton size="small" onClick={() => handleEditProfitRowClick(item)} sx={{ color: '#000' }}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => deleteProfitRow(item)} sx={{ color: '#d32f2f' }}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <Typography sx={{ p: 2, textAlign: 'center', color: '#666' }}>
+            Showing {profitData.slice(0, 20).length} of {profitData.length} records
+          </Typography>
+        </Paper>
+      )}
 
-        {/* Loading State */}
-        {loading && profitData.length === 0 && uploadResults.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <LoadingSpinner animation="border" />
-            <p>Processing...</p>
-          </div>
-        )}
-      </AnimatedContainer>
-    </Container>
+      {/* Uploaded Data Table */}
+      {uploadResults.length > 0 && (
+        <Paper sx={{ mb: 3, border: '1px solid #e0e0e0' }}>
+          <Box sx={{ p: 2, bgcolor: '#fafafa', borderBottom: '1px solid #e0e0e0' }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              📊 Uploaded Profit/Loss Data ({uploadResults.length} records)
+            </Typography>
+          </Box>
+          <TableContainer sx={{ 
+            maxHeight: 500,
+            '&::-webkit-scrollbar': {
+              width: '8px',
+              height: '8px'
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+              borderRadius: '4px'
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#888',
+              borderRadius: '4px',
+              '&:hover': {
+                background: '#555'
+              }
+            }
+          }}>
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Month</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>S.No.</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Order Date</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Order id</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>SKU</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Quantity</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Status</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Payment</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Payment Date</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Payment Status</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Purchase Price</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Profit</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Re-use / Claim</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Reused Date</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Status of Product</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Remarks</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {uploadResults.map((result, index) => (
+                  <TableRow key={index} sx={{ '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}>
+                    <TableCell>{result.Month || result.month || '-'}</TableCell>
+                    <TableCell>{result['S.No.'] || result.sno || '-'}</TableCell>
+                    <TableCell>{result['Order Date'] || result.orderDate || '-'}</TableCell>
+                    <TableCell>{result['Order id'] || result.orderId || '-'}</TableCell>
+                    <TableCell>{result.SKU || result.sku || '-'}</TableCell>
+                    <TableCell>{result.Quantity || result.quantity || '-'}</TableCell>
+                    <TableCell>{result.Status || result.status || '-'}</TableCell>
+                    <TableCell>{result.Payment || result.payment || '-'}</TableCell>
+                    <TableCell>{result['Payment Date'] || result.paymentDate || '-'}</TableCell>
+                    <TableCell>{result['Payment Status'] || result.paymentStatus || '-'}</TableCell>
+                    <TableCell>{result['Purchase Price'] || result.purchasePrice || '-'}</TableCell>
+                    <TableCell>{result.Profit || result.profit || '-'}</TableCell>
+                    <TableCell>{result['Re-use / Claim'] || result.reuseOrClaim || '-'}</TableCell>
+                    <TableCell>{result['Reused Date'] || result.reusedDate || '-'}</TableCell>
+                    <TableCell>{result['Status of Product'] || result.statusOfProduct || '-'}</TableCell>
+                    <TableCell>{result.Remarks || result.remarks || '-'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
+
+      {/* Upload Results Modal */}
+      <Dialog open={showModal} onClose={() => setShowModal(false)} maxWidth="xl" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#fafafa', borderBottom: '1px solid #e0e0e0' }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>📊 Upload Results & Export</Typography>
+            <IconButton onClick={() => setShowModal(false)} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          {summary && (
+            <Paper sx={{ p: 2, mb: 3, bgcolor: '#fafafa', border: '1px solid #e0e0e0' }}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={3}>
+                  <Typography variant="caption" sx={{ color: '#666' }}>Total Profit/Loss</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: Number(summary?.totalProfit ?? 0) >= 0 ? '#2e7d32' : '#d32f2f' }}>
+                    {formatCurrency(summary?.totalProfit)}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <Typography variant="caption" sx={{ color: '#666' }}>Delivered Profit</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#2e7d32' }}>
+                    {formatCurrency(summary?.deliveredProfit)}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <Typography variant="caption" sx={{ color: '#666' }}>RPU Loss</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#d32f2f' }}>
+                    {formatCurrency(summary?.rpuProfit)}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <Typography variant="caption" sx={{ color: '#666' }}>Total Records</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#000' }}>
+                    {summary.totalRecords || 0}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Paper>
+          )}
+          
+          <TableContainer sx={{ 
+            maxHeight: 500, 
+            border: '1px solid #e0e0e0',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+              height: '8px'
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+              borderRadius: '4px'
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#888',
+              borderRadius: '4px',
+              '&:hover': {
+                background: '#555'
+              }
+            }
+          }}>
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Month</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>S.No.</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Order Date</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Order id</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>SKU</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Quantity</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Status</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Payment</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Payment Date</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Payment Status</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Purchase Price</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Profit</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Re-use / Claim</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Reused Date</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Status of Product</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Remarks</TableCell>
+                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }} align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {uploadResults.map((result, index) => (
+                  <TableRow key={index} sx={{ '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}>
+                    <TableCell>{result.Month || result.month || '-'}</TableCell>
+                    <TableCell>{result['S.No.'] || result.sno || result.serialNumber || '-'}</TableCell>
+                    <TableCell>{result['Order Date'] || result.orderDate || '-'}</TableCell>
+                    <TableCell>{result['Order id'] || result.orderId || result.orderid || '-'}</TableCell>
+                    <TableCell>{result.SKU || result.sku || '-'}</TableCell>
+                    <TableCell>{result.Quantity || result.quantity || '-'}</TableCell>
+                    <TableCell>{result.Status || result.status || '-'}</TableCell>
+                    <TableCell>{result.Payment || result.payment || '-'}</TableCell>
+                    <TableCell>{result['Payment Date'] || result.paymentDate || '-'}</TableCell>
+                    <TableCell>{result['Payment Status'] || result.paymentStatus || '-'}</TableCell>
+                    <TableCell>{result['Purchase Price'] || result.purchasePrice || '-'}</TableCell>
+                    <TableCell>{result.Profit || result.profit || '-'}</TableCell>
+                    <TableCell>{result['Re-use / Claim'] || result.reuseOrClaim || '-'}</TableCell>
+                    <TableCell>{result['Reused Date'] || result.reusedDate || '-'}</TableCell>
+                    <TableCell>{result['Status of Product'] || result.statusOfProduct || '-'}</TableCell>
+                    <TableCell>{result.Remarks || result.remarks || '-'}</TableCell>
+                    <TableCell align="center">
+                      <Stack direction="row" spacing={1} justifyContent="center">
+                        <IconButton size="small" onClick={() => handleEditClick(result)} sx={{ color: '#000' }}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => deleteRow(result._id || result.id)} sx={{ color: '#d32f2f' }}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, bgcolor: '#fafafa', borderTop: '1px solid #e0e0e0' }}>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={() => exportToExcel(uploadResults, 'profit_loss_upload_report.xlsx')}
+            sx={{ textTransform: 'none', borderColor: '#2e7d32', color: '#2e7d32' }}
+          >
+            Export to Excel
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<PdfIcon />}
+            onClick={() => exportToPDF(uploadResults, 'profit_loss_upload_report.pdf')}
+            sx={{ textTransform: 'none', borderColor: '#d32f2f', color: '#d32f2f' }}
+          >
+            Export to PDF
+          </Button>
+          <Button onClick={() => setShowModal(false)} sx={{ textTransform: 'none', color: '#666' }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Row Modal */}
+      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#fafafa', borderBottom: '1px solid #e0e0e0' }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>✏️ Edit Row</Typography>
+            <IconButton onClick={() => setShowEditModal(false)} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          {editingRow && (
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Order id"
+                  value={editingRow.orderId || editingRow['Order id'] || ''}
+                  onChange={(e) => handleEditChange('orderId', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Order Date"
+                  type="date"
+                  value={editingRow.orderDate || ''}
+                  onChange={(e) => handleEditChange('orderDate', e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="SKU"
+                  value={editingRow.SKU || editingRow.sku || ''}
+                  onChange={(e) => handleEditChange('sku', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Quantity"
+                  value={editingRow.Quantity || editingRow.quantity || ''}
+                  onChange={(e) => handleEditChange('quantity', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Status"
+                  value={editingRow.Status || editingRow.status || ''}
+                  onChange={(e) => handleEditChange('status', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Payment"
+                  value={editingRow.Payment || editingRow.payment || ''}
+                  onChange={(e) => handleEditChange('payment', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Purchase Price"
+                  value={editingRow['Purchase Price'] || editingRow.purchasePrice || ''}
+                  onChange={(e) => handleEditChange('purchasePrice', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Profit"
+                  value={editingRow.Profit || editingRow.profit || ''}
+                  onChange={(e) => handleEditChange('profit', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Remarks"
+                  multiline
+                  rows={3}
+                  value={editingRow.Remarks || editingRow.remarks || ''}
+                  onChange={(e) => handleEditChange('remarks', e.target.value)}
+                />
+              </Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, bgcolor: '#fafafa', borderTop: '1px solid #e0e0e0' }}>
+          <Button onClick={() => setShowEditModal(false)} sx={{ textTransform: 'none', color: '#666' }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={saveEditedRow}
+            disabled={loading}
+            variant="contained"
+            sx={{
+              bgcolor: '#000',
+              color: '#fff',
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#333' }
+            }}
+          >
+            {loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Profit Row Modal */}
+      <Dialog open={showEditProfitModal} onClose={() => setShowEditProfitModal(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#fafafa', borderBottom: '1px solid #e0e0e0' }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>✏️ Edit Profit Row</Typography>
+            <IconButton onClick={() => setShowEditProfitModal(false)} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          {editingProfitRow && (
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="SKU / Barcode"
+                  disabled
+                  value={editingProfitRow.item?.barcode || editingProfitRow.item?.productName || ''}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Quantity"
+                  type="number"
+                  value={editingProfitRow.item?.quantity || 0}
+                  onChange={(e) => handleEditProfitRowChange('quantity', Number(e.target.value))}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Unit Price"
+                  type="number"
+                  value={editingProfitRow.item?.unitPrice || 0}
+                  onChange={(e) => handleEditProfitRowChange('unitPrice', Number(e.target.value))}
+                />
+              </Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, bgcolor: '#fafafa', borderTop: '1px solid #e0e0e0' }}>
+          <Button onClick={() => setShowEditProfitModal(false)} sx={{ textTransform: 'none', color: '#666' }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={saveEditedProfitRow}
+            disabled={loading}
+            variant="contained"
+            sx={{
+              bgcolor: '#000',
+              color: '#fff',
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#333' }
+            }}
+          >
+            {loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Loading State */}
+      {loading && profitData.length === 0 && uploadResults.length === 0 && (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <CircularProgress sx={{ color: '#000' }} />
+          <Typography sx={{ mt: 2, color: '#666' }}>Processing...</Typography>
+        </Box>
+      )}
+    </Box>
   );
 };
 

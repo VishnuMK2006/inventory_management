@@ -50,7 +50,6 @@ export default function Purchases() {
 
   return (
     <div>
-      <h1>Purchase Orders</h1>
       <PurchaseOrder vendors={vendors} items={items} />
     </div>
   );

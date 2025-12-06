@@ -2,27 +2,15 @@ import React, { useState, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { productsAPI, purchasesAPI, salesAPI } from '../services/api';
 
-// Animations
+// Animations - Made slightly sharper and less "bouncy" to match the professional look
 const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 `;
 
 const slideIn = keyframes`
-  from { transform: translateX(-100%); opacity: 0; }
+  from { transform: translateX(-20px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
-`;
-
-const pulse = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-`;
-
-const bounce = keyframes`
-  0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-  40% {transform: translateY(-8px);}
-  60% {transform: translateY(-4px);}
 `;
 
 const progressBar = keyframes`
@@ -30,110 +18,116 @@ const progressBar = keyframes`
   to { width: 100%; }
 `;
 
-// Styled Components
+// --- Updated Color Palette Reference (Mental Model) ---
+// Background: #FFFFFF
+// Surface/Hover: #F9FAFB
+// Border: #EAECF0
+// Text Main: #101828
+// Text Secondary: #667085
+// Primary/Brand: #101828 (Black/Charcoal) or specific brand color
+
 const DashboardContainer = styled.div`
-  padding: 2rem;
-  animation: ${fadeIn} 0.5s ease-out;
+  padding: 2.5rem;
+  background-color: #FFFFFF;
+  min-height: 100vh;
+  color: #101828;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  animation: ${fadeIn} 0.4s ease-out;
   
   @media (max-width: 768px) {
-    padding: 1rem;
+    padding: 1.5rem;
   }
 `;
 
 const DashboardHeader = styled.div`
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
   
   h2 {
-    color: #2c3e50;
-    font-weight: 700;
-    position: relative;
-    padding-bottom: 0.5rem;
-    
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 60px;
-      height: 4px;
-      background: linear-gradient(to right, #3498db, #2ecc71);
-      border-radius: 2px;
-    }
+    color: #101828;
+    font-size: 1.875rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.02em;
+    /* Removed the gradient underline for a cleaner look */
   }
   
   p {
-    color: #7f8c8d;
+    color: #667085;
+    font-size: 1rem;
     margin-top: 0.5rem;
+    font-weight: 400;
   }
 `;
 
 const StatsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 2rem;
-  
-  @media (max-width: 576px) {
-    grid-template-columns: 1fr;
-  }
+  margin-bottom: 2.5rem;
 `;
 
 const StatCard = styled.div`
   background: white;
+  border: 1px solid #EAECF0; /* Key change: Border over Shadow */
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  /* Very subtle shadow for depth, not decoration */
+  box-shadow: 0px 1px 2px rgba(16, 24, 40, 0.05);
   display: flex;
-  align-items: center;
+  flex-direction: column; /* Aligned vertically like the "Total Customers" card in image */
+  align-items: flex-start;
   gap: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   animation: ${fadeIn} 0.5s ease-out;
   
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    border-color: #D0D5DD;
+    box-shadow: 0px 4px 6px -2px rgba(16, 24, 40, 0.03), 0px 12px 16px -4px rgba(16, 24, 40, 0.08);
   }
   
   ${props => props.highlight && css`
-    border-left: 4px solid #e74c3c;
+    border-left: 4px solid #101828; /* Changed from bright red to theme dark */
   `}
 `;
 
 const StatIcon = styled.div`
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  color: white;
+  font-size: 1.25rem;
+  border: 1px solid #EAECF0;
   
+  /* Changed from Gradients to Subtle Pastel Backgrounds with Strong Text Color */
   ${props => {
     switch(props.variant) {
-      case 'products': return css`background: linear-gradient(135deg, #3498db, #2980b9);`;
-      case 'purchases': return css`background: linear-gradient(135deg, #9b59b6, #8e44ad);`;
-      case 'sales': return css`background: linear-gradient(135deg, #2ecc71, #27ae60);`;
-      case 'lowstock': return css`background: linear-gradient(135deg, #e74c3c, #c0392b);`;
-      default: return css`background: linear-gradient(135deg, #3498db, #2980b9);`;
+      case 'products': return css`background: #F0F9FF; color: #026AA2;`; // Light Blue
+      case 'purchases': return css`background: #F9F5FF; color: #6941C6;`; // Light Purple
+      case 'sales': return css`background: #ECFDF3; color: #027A48;`; // Light Green
+      case 'lowstock': return css`background: #FEF3F2; color: #B42318;`; // Light Red
+      default: return css`background: #F2F4F7; color: #344054;`; // Gray
     }
   }}
 `;
 
 const StatContent = styled.div`
-  flex: 1;
+  width: 100%;
 `;
 
 const StatValue = styled.h3`
-  margin: 0;
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #2c3e50;
+  margin: 0.5rem 0 0;
+  font-size: 2.25rem; /* Larger, bolder numbers like in the image */
+  font-weight: 600;
+  color: #101828;
+  letter-spacing: -0.02em;
 `;
 
 const StatLabel = styled.p`
-  margin: 0.3rem 0 0;
-  color: #7f8c8d;
+  margin: 0;
+  color: #667085;
+  font-size: 0.875rem;
   font-weight: 500;
 `;
 
@@ -150,105 +144,116 @@ const DashboardGrid = styled.div`
 
 const DashboardCard = styled.div`
   background: white;
+  border: 1px solid #EAECF0;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0px 1px 2px rgba(16, 24, 40, 0.05);
   animation: ${slideIn} 0.5s ease-out;
 `;
 
 const CardHeader = styled.div`
-  padding: 1.2rem 1.5rem;
-  border-bottom: 1px solid #f1f2f6;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #EAECF0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   
   h3 {
     margin: 0;
-    color: #2c3e50;
+    color: #101828;
+    font-size: 1.125rem;
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 `;
 
 const ViewAllLink = styled.a`
-  color: #3498db;
+  color: #667085;
   text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 600;
   transition: all 0.2s ease;
   
   &:hover {
-    color: #2980b9;
-    text-decoration: underline;
+    color: #101828;
   }
 `;
 
 const CardBody = styled.div`
-  padding: 1.5rem;
+  padding: 0; /* Removed padding to allow table to go edge-to-edge */
 `;
 
 const StyledTable = styled.table`
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   
   thead {
-    background: #f8f9fa;
+    background: #F9FAFB;
   }
   
   th {
-    padding: 0.8rem;
+    padding: 0.75rem 1.5rem;
     text-align: left;
-    font-weight: 600;
-    color: #7f8c8d;
-    font-size: 0.9rem;
-    border-bottom: 2px solid #f1f2f6;
+    font-weight: 500;
+    color: #667085;
+    font-size: 0.75rem;
+    text-transform: uppercase; /* Matches the clean header style */
+    border-bottom: 1px solid #EAECF0;
   }
   
   tbody tr {
-    border-bottom: 1px solid #f1f2f6;
     transition: all 0.2s ease;
     
     &:hover {
-      background: #f8f9fa;
+      background: #F9FAFB;
     }
     
-    &:last-child {
+    &:last-child td {
       border-bottom: none;
     }
   }
   
   td {
-    padding: 1rem 0.8rem;
-    color: #2c3e50;
+    padding: 1rem 1.5rem;
+    color: #101828;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #EAECF0;
   }
 `;
 
 const StatusBadge = styled.span`
-  padding: 0.3rem 0.8rem;
-  border-radius: 50px;
-  font-size: 0.8rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.75rem;
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
   
+  /* Modern "Pill" style: Light background, Dark text, mix-blend border */
   ${props => {
     switch(props.variant) {
       case 'low': return css`
-        background: rgba(231, 76, 60, 0.15);
-        color: #e74c3c;
+        background: #FEF3F2;
+        color: #B42318;
+        border: 1px solid #FECDCA;
       `;
       case 'medium': return css`
-        background: rgba(241, 196, 15, 0.15);
-        color: #f39c12;
+        background: #FFFAEB;
+        color: #B54708;
+        border: 1px solid #FEDF89;
       `;
       case 'high': return css`
-        background: rgba(46, 204, 113, 0.15);
-        color: #27ae60;
+        background: #ECFDF3;
+        color: #027A48;
+        border: 1px solid #A6F4C5;
       `;
       default: return css`
-        background: #f1f2f6;
-        color: #7f8c8d;
+        background: #F2F4F7;
+        color: #344054;
+        border: 1px solid #E4E7EC;
       `;
     }
   }}
@@ -256,18 +261,19 @@ const StatusBadge = styled.span`
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 2rem;
-  color: #7f8c8d;
+  padding: 4rem 2rem;
+  color: #667085;
   
   i {
-    font-size: 2.5rem;
+    font-size: 2rem;
     margin-bottom: 1rem;
     display: block;
-    color: #bdc3c7;
+    color: #98A2B3;
   }
   
   p {
     margin: 0.5rem 0 0;
+    font-size: 0.875rem;
   }
 `;
 
@@ -279,12 +285,12 @@ const LoadingSpinner = styled.div`
   
   &::after {
     content: '';
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f1f2f6;
-    border-top: 4px solid #3498db;
+    width: 24px;
+    height: 24px;
+    border: 3px solid #F2F4F7;
+    border-top: 3px solid #101828;
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: spin 0.8s linear infinite;
   }
   
   @keyframes spin {
@@ -294,18 +300,18 @@ const LoadingSpinner = styled.div`
 `;
 
 const ProgressBar = styled.div`
-  height: 6px;
-  background: #f1f2f6;
-  border-radius: 3px;
+  height: 8px;
+  background: #F2F4F7;
+  border-radius: 4px;
   overflow: hidden;
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
 `;
 
 const ProgressFill = styled.div`
   height: 100%;
-  background: linear-gradient(to right, #3498db, #2ecc71);
-  border-radius: 3px;
-  animation: ${progressBar} 1.5s ease-out;
+  background: #101828; /* Solid dark color instead of gradient */
+  border-radius: 4px;
+  animation: ${progressBar} 1s ease-out;
   width: ${props => props.percentage}%;
 `;
 

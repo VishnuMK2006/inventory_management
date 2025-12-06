@@ -1,191 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
-  Row,
-  Col,
+  Box,
   Button,
   Table,
-  Modal,
-  Form,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
   Alert,
-  Card,
-  Badge,
-  Spinner,
-  Toast,
-  ToastContainer,
+  Paper,
+  Chip,
+  CircularProgress,
+  Snackbar,
   Tabs,
-  Tab
-} from 'react-bootstrap';
+  Tab,
+  Grid,
+  Typography,
+  Checkbox,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  IconButton,
+  Card,
+  CardContent
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Visibility as VisibilityIcon,
+  FileUpload as FileUploadIcon,
+  Download as DownloadIcon,
+  Close as CloseIcon
+} from '@mui/icons-material';
 import { combosAPI, productsAPI, productMastersAPI, barcodesAPI, categoriesAPI } from '../services/api';
-import styled, { keyframes } from 'styled-components';
 
-// Animations
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
 
-const slideIn = keyframes`
-  from { transform: translateX(-30px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-`;
-
-// Styled Components
-const StyledContainer = styled(Container)`
-  padding: 2rem;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 100vh;
-`;
-
-const AnimatedContainer = styled.div`
-  animation: ${fadeIn} 0.6s ease-out;
-`;
-
-const HeaderSection = styled.div`
-  background: white;
-  padding: 2rem;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  animation: ${slideIn} 0.5s ease-out;
-`;
-
-const StyledTable = styled(Table)`
-  background: white;
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  
-  thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    
-    th {
-      color: white;
-      border: none;
-      padding: 1.2rem;
-      font-weight: 600;
-    }
-  }
-  
-  tbody tr {
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background-color: #f8f9fa;
-      transform: translateX(5px);
-    }
-    
-    td {
-      padding: 1rem;
-      border-color: #e9ecef;
-      vertical-align: middle;
-    }
-  }
-`;
-
-const PrimaryButton = styled(Button)`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 25px;
-  padding: 0.8rem 2rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  border-radius: 20px;
-  padding: 0.5rem 1.2rem;
-  transition: all 0.3s ease;
-  border: 2px solid #667eea;
-  color: #667eea;
-  background: transparent;
-  
-  &:hover {
-    background: #667eea;
-    color: white;
-    transform: translateY(-1px);
-  }
-`;
-
-const DangerButton = styled(Button)`
-  border-radius: 20px;
-  padding: 0.5rem 1rem;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
-  }
-`;
-
-const StyledModal = styled(Modal)`
-  .modal-content {
-    border-radius: 20px;
-    border: none;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-  }
-  
-  .modal-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 20px 20px 0 0;
-    border: none;
-    
-    .btn-close {
-      filter: invert(1);
-    }
-  }
-`;
-
-const FormGroup = styled(Form.Group)`
-  margin-bottom: 1rem;
-  
-  .form-label {
-    font-weight: 600;
-    color: #4a5568;
-    margin-bottom: 0.5rem;
-  }
-  
-  .form-control, .form-select {
-    border-radius: 10px;
-    border: 2px solid #e2e8f0;
-    padding: 0.75rem;
-    transition: all 0.3s ease;
-    
-    &:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    }
-  }
-`;
-
-const ProductCard = styled(Card)`
-  border: 2px solid #e2e8f0;
-  border-radius: 15px;
-  transition: all 0.3s ease;
-  margin-bottom: 1rem;
-  
-  &:hover {
-    border-color: #667eea;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  }
-`;
-
-const LoadingSpinner = styled(Spinner)`
-  color: #667eea;
-`;
-
-const GlobalStyle = styled.div`
-  .hover-edit:hover {
-    background-color: #f8f9fa;
-    border: 1px dashed #667eea;
-  }
-`;
 
 const Combos = () => {
   const [combos, setCombos] = useState([]);
@@ -822,560 +679,664 @@ const Combos = () => {
   };
 
   return (
-    <GlobalStyle>
-    <StyledContainer>
-      <AnimatedContainer>
-        <HeaderSection>
-          <Row className="align-items-center">
-            <Col>
-              <h2 className="mb-0 d-flex align-items-center">
-                <span style={{ fontSize: '2rem', marginRight: '1rem' }}>📦</span>
-                Combo Management
-              </h2>
-              <p className="text-muted mb-0 mt-2">Manage product combinations and bundles</p>
-            </Col>
-            <Col xs="auto" className="d-flex gap-2">
+    <Box sx={{ p: 3, bgcolor: '#fff', minHeight: '100vh' }}>
+      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
+        <Grid container alignItems="center" spacing={2}>
+          <Grid item xs>
+            <Typography variant="h4" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', mb: 1 }}>
+              <span style={{ fontSize: '2rem', marginRight: '1rem' }}>📦</span>
+              Combo Management
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Manage product combinations and bundles
+            </Typography>
+          </Grid>
+          <Grid item xs="auto">
+            <Box sx={{ display: 'flex', gap: 1.5 }}>
               {selectedCombos.length > 0 && (
-                <SecondaryButton 
+                <Button
+                  variant="outlined"
                   onClick={handleDownloadBarcodes}
                   disabled={isDownloadingBarcodes}
+                  startIcon={isDownloadingBarcodes ? <CircularProgress size={16} /> : <DownloadIcon />}
+                  sx={{ 
+                    color: '#000', 
+                    borderColor: '#000',
+                    '&:hover': { borderColor: '#333', bgcolor: 'rgba(0,0,0,0.04)' }
+                  }}
                 >
-                  {isDownloadingBarcodes ? (
-                    <>
-                      <LoadingSpinner size="sm" className="me-2" />
-                      Downloading...
-                    </>
-                  ) : (
-                    <>
-                      📥 Download Barcodes ({selectedCombos.length})
-                    </>
-                  )}
-                </SecondaryButton>
+                  {isDownloadingBarcodes ? 'Downloading...' : `Download Barcodes (${selectedCombos.length})`}
+                </Button>
               )}
-              <SecondaryButton onClick={handleShowUploadModal}>
-                📤 Upload Excel
-              </SecondaryButton>
-              <PrimaryButton onClick={handleShowModal}>
-                ✨ Add New Combo
-              </PrimaryButton>
-            </Col>
-          </Row>
-        </HeaderSection>
+              <Button
+                variant="outlined"
+                onClick={handleShowUploadModal}
+                startIcon={<FileUploadIcon />}
+                sx={{ 
+                  color: '#000', 
+                  borderColor: '#000',
+                  '&:hover': { borderColor: '#333', bgcolor: 'rgba(0,0,0,0.04)' }
+                }}
+              >
+                Upload Excel
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleShowModal}
+                startIcon={<AddIcon />}
+                sx={{ 
+                  bgcolor: '#000',
+                  '&:hover': { bgcolor: '#333' }
+                }}
+              >
+                Add New Combo
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
 
-        {/* Toast Notifications */}
-        <ToastContainer position="top-end" className="p-3">
-          {toasts.map(toast => (
-            <Toast
-              key={toast.id}
-              show={toast.show}
-              onClose={() => removeToast(toast.id)}
-              bg={toast.variant}
-              text={toast.variant === 'danger' ? 'white' : 'dark'}
-            >
-              <Toast.Header>
-                <strong className="me-auto">
-                  {toast.variant === 'success' ? '✅ Success' : '❌ Error'}
-                </strong>
-              </Toast.Header>
-              <Toast.Body>{toast.message}</Toast.Body>
-            </Toast>
-          ))}
-        </ToastContainer>
+      {/* Toast Notifications */}
+      {toasts.map(toast => (
+        <Snackbar
+          key={toast.id}
+          open={toast.show}
+          autoHideDuration={6000}
+          onClose={() => removeToast(toast.id)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert 
+            onClose={() => removeToast(toast.id)} 
+            severity={toast.variant === 'success' ? 'success' : 'error'}
+            sx={{ width: '100%' }}
+          >
+            {toast.message}
+          </Alert>
+        </Snackbar>
+      ))}
 
-        {loading && combos.length === 0 ? (
-          <div className="d-flex justify-content-center align-items-center" style={{minHeight: '200px'}}>
-            <LoadingSpinner animation="border" size="lg" />
-          </div>
-        ) : (
-          <StyledTable responsive hover>
-                <thead>
-                  <tr>
-                    <th>
-                      <Form.Check
-                        type="checkbox"
-                        checked={selectedCombos.length === combos.length && combos.length > 0}
-                        onChange={(e) => handleSelectAllCombos(e.target.checked)}
-                      />
-                    </th>
-                    <th>Image</th>
-                    <th>Name</th>
-                    <th>Barcode</th>
-                    <th>Category</th>
-                    <th>Products</th>
-                    <th>Available</th>
-                    <th>Price</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {combos.map((combo) => (
-                    <tr key={combo._id}>
-                      <td>
-                        <Form.Check
-                          type="checkbox"
-                          checked={selectedCombos.includes(combo._id)}
-                          onChange={() => handleSelectCombo(combo._id)}
-                        />
-                      </td>
-                      <td>
-                        {combo.imageUrl ? (
-                          <img
-                            src={combo.imageUrl}
-                            alt={combo.name}
-                            style={{
-                              width: '50px',
-                              height: '50px',
-                              objectFit: 'cover',
-                              borderRadius: '8px'
-                            }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: '50px',
-                              height: '50px',
-                              backgroundColor: '#f8f9fa',
-                              borderRadius: '8px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          >
-                            📦
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        <div>
-                          <strong>{combo.name}</strong>
-                          {combo.description && (
-                            <div>
-                              <small className="text-muted">{combo.description}</small>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <Badge bg="info" className="px-3 py-2">
-                          {combo.barcode}
-                        </Badge>
-                      </td>
-                      <td>
-                        {combo.category ? (
-                          <Badge bg="secondary" className="px-2 py-1">
-                            {typeof combo.category === 'object' ? combo.category.name : combo.category}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted">-</span>
-                        )}
-                      </td>
-                      <td>
-                        <div className="d-flex flex-column gap-1">
-                          <Badge bg="info">
-                            {combo.products?.length || 0} items
-                          </Badge>
-                          {combo.productDetails && combo.productDetails.some(p => p.stockStatus === 'insufficient' || p.stockStatus === 'out-of-stock') && (
-                            <Badge bg="warning" style={{fontSize: '0.7rem'}}>
-                              ⚠️ Stock Issues
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="d-flex flex-column gap-1">
-                          <Badge bg={combo.availableCount > 0 ? 'success' : 'danger'}>
-                            {combo.availableCount || 0} available
-                          </Badge>
-                          {combo.productDetails && (
-                            <small className="text-muted" style={{fontSize: '0.75rem'}}>
-                              {combo.productDetails.filter(p => p.stockStatus === 'available').length}/{combo.productDetails.length} products OK
-                            </small>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <strong className="text-success">₹{combo.price?.toFixed(2) || '0.00'}</strong>
-                      </td>
-                      <td>
-                        <div className="d-flex gap-1 flex-wrap">
-                          <SecondaryButton
-                            size="sm"
-                            onClick={() => handleAddItem(combo)}
-                          >
-                            ➕ Add Item
-                          </SecondaryButton>
-                          <SecondaryButton
-                            size="sm"
-                            onClick={() => handleView(combo)}
-                          >
-                            👁️ View
-                          </SecondaryButton>
-                          <SecondaryButton
-                            size="sm"
-                            onClick={() => handleEdit(combo)}
-                          >
-                            ✏️ Edit
-                          </SecondaryButton>
-                          <DangerButton
-                            size="sm"
-                            variant="outline-danger"
-                            onClick={() => handleDelete(combo._id)}
-                          >
-                            🗑️ Delete
-                          </DangerButton>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-            </tbody>
-          </StyledTable>
-        )}
-
-        {/* Add/Edit Combo Modal */}
-        <StyledModal show={showModal} onHide={handleCloseModal} size="lg" centered>
-          <Modal.Header closeButton>
-            <Modal.Title>
-              {editMode ? '✏️ Edit Combo' : '✨ Add New Combo'}
-            </Modal.Title>
-          </Modal.Header>
-          <Form onSubmit={handleSubmit}>
-            <Modal.Body>
-              <Row>
-                <Col md={6}>
-                  <FormGroup>
-                    <Form.Label>Combo Name *</Form.Label>
-                    <Form.Control
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="Enter combo name"
-                      required
+      {loading && combos.length === 0 ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+          <CircularProgress sx={{ color: '#000' }} />
+        </Box>
+      ) : (
+        <TableContainer 
+          component={Paper} 
+          sx={{ 
+            border: '1px solid #e0e0e0', 
+            boxShadow: 'none',
+            maxHeight: 600,
+            '&::-webkit-scrollbar': { width: '8px', height: '8px' },
+            '&::-webkit-scrollbar-track': { background: '#f1f1f1' },
+            '&::-webkit-scrollbar-thumb': { background: '#888', borderRadius: '4px' },
+            '&::-webkit-scrollbar-thumb:hover': { background: '#555' }
+          }}
+        >
+          <Table stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>
+                  <Checkbox
+                    checked={selectedCombos.length === combos.length && combos.length > 0}
+                    onChange={(e) => handleSelectAllCombos(e.target.checked)}
+                  />
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Image</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Name</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Barcode</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Category</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Products</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Available</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Price</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {combos.map((combo) => (
+                <TableRow key={combo._id} hover>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedCombos.includes(combo._id)}
+                      onChange={() => handleSelectCombo(combo._id)}
                     />
-                  </FormGroup>
-                </Col>
-                <Col md={6}>
-                  <FormGroup>
-                    <Form.Label>Barcode *</Form.Label>
-                    <Form.Control
-                      type="text"
-                      value={formData.barcode}
-                      onChange={(e) => handleInputChange('barcode', e.target.value)}
-                      placeholder="Enter barcode (e.g., EW00L002)"
-                      required
-                    />
-                  </FormGroup>
-                </Col>
-              </Row>
-
-              <FormGroup>
-                <Form.Label>Category</Form.Label>
-                <Form.Select
-                  value={formData.category}
-                  onChange={(e) => handleInputChange('category', e.target.value)}
-                >
-                  <option value="">Select a category...</option>
-                  {categories.map(category => (
-                    <option key={category._id} value={category._id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </Form.Select>
-              </FormGroup>
-
-              <FormGroup>
-                <Form.Label>Description</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Enter combo description"
-                />
-              </FormGroup>
-
-              <Row>
-                <Col md={6}>
-                  <FormGroup>
-                    <Form.Label>Auto-Calculated Price *</Form.Label>
-                    <Form.Control
-                      type="text"
-                      value={`₹${calculateComboValue().toFixed(2)}`}
-                      disabled
-                      style={{
-                        backgroundColor: '#e9ecef',
-                        fontWeight: 'bold',
-                        fontSize: '1.1rem',
-                        color: '#28a745'
-                      }}
-                    />
-                    <Form.Text className="text-muted">
-                      Price is automatically calculated based on selected products
-                    </Form.Text>
-                  </FormGroup>
-                </Col>
-                <Col md={6}>
-                  <FormGroup>
-                    <Form.Label>Combo Image</Form.Label>
-                    <Form.Control
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                    />
-                  </FormGroup>
-                </Col>
-              </Row>
-
-              <hr />
-
-              <h5 className="mb-3">📋 Products in Combo</h5>
-
-              {/* Add Product Section */}
-              <ProductCard>
-                <Card.Body>
-                  <h6 className="mb-3">➕ Add Product to Combo</h6>
-                  <Row>
-                    <Col md={6}>
-                      <FormGroup>
-                        <Form.Label>Select Product</Form.Label>
-                        <Form.Select
-                          value={selectedProduct}
-                          onChange={(e) => setSelectedProduct(e.target.value)}
-                        >
-                          <option value="">Choose a product...</option>
-                          {products.map(product => {
-                            const stockStatus = product.quantity === 0 ? ' - OUT OF STOCK' : 
-                                              product.quantity < 10 ? ' - LOW STOCK' : '';
-                            return (
-                              <option 
-                                key={product._id} 
-                                value={product._id}
-                                disabled={product.quantity === 0}
-                              >
-                                {product.name} - ₹{product.price} (Available: {product.quantity}){stockStatus}
-                              </option>
-                            );
-                          })}
-                        </Form.Select>
-                        {selectedProduct && (
-                          <Form.Text className="text-muted">
-                            {(() => {
-                              const selectedProd = products.find(p => p._id === selectedProduct);
-                              if (!selectedProd) return '';
-                              return selectedProd.quantity === 0 ? '❌ This product is out of stock' :
-                                     selectedProd.quantity < 10 ? `⚠️ Low stock warning: Only ${selectedProd.quantity} units available` :
-                                     `✅ ${selectedProd.quantity} units available in stock`;
-                            })()} 
-                          </Form.Text>
-                        )}
-                      </FormGroup>
-                    </Col>
-                    <Col md={4}>
-                      <FormGroup>
-                        <Form.Label>Quantity</Form.Label>
-                        <Form.Control
-                          type="number"
-                          min="1"
-                          max={selectedProduct ? products.find(p => p._id === selectedProduct)?.quantity || 1 : undefined}
-                          value={productQuantity}
-                          onChange={(e) => setProductQuantity(parseInt(e.target.value) || 1)}
-                        />
-                        {selectedProduct && productQuantity > 0 && (
-                          <Form.Text className="text-muted">
-                            {(() => {
-                              const selectedProd = products.find(p => p._id === selectedProduct);
-                              if (!selectedProd) return '';
-                              const remaining = selectedProd.quantity - productQuantity;
-                              return remaining >= 0 ? 
-                                `After adding: ${remaining} units will remain in stock` :
-                                `⚠️ Warning: Not enough stock! Need ${Math.abs(remaining)} more units`;
-                            })()} 
-                          </Form.Text>
-                        )}
-                      </FormGroup>
-                    </Col>
-                    <Col md={2} className="d-flex align-items-end">
-                      <PrimaryButton
-                        type="button"
-                        onClick={handleAddProduct}
-                        style={{ borderRadius: '10px' }}
-                      >
-                        ➕ Add
-                      </PrimaryButton>
-                    </Col>
-                  </Row>
-                </Card.Body>
-              </ProductCard>
-
-              {/* Selected Products List */}
-              {formData.products.length > 0 && (
-                <div className="mt-3">
-                  <h6 className="mb-3">📦 Selected Products ({formData.products.length})</h6>
-                  
-                  <Table bordered responsive className="mb-3">
-                    <thead className="bg-light">
-                      <tr>
-                        <th>Product</th>
-                        <th>Unit Price</th>
-                        <th>Quantity</th>
-                        <th>Total</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {formData.products.map((item, index) => (
-                        <tr key={index}>
-                          <td>
-                            <div>
-                              <strong>{item.product.name}</strong>
-                              <div>
-                                <small className="text-muted">
-                                  Barcode: {item.product.barcode}
-                                </small>
-                              </div>
-                              <div>
-                                <small className={`text-${item.product.quantity >= item.quantity ? 'success' : 'danger'}`}>
-                                  Stock: {item.product.quantity} 
-                                  {item.product.quantity < item.quantity && ' ⚠️ Insufficient!'}
-                                </small>
-                              </div>
-                            </div>
-                          </td>
-                          <td>₹{item.product.price?.toFixed(2)}</td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <Button
-                                variant="outline-secondary"
-                                size="sm"
-                                onClick={() => handleUpdateProductQuantity(index, item.quantity - 1)}
-                                disabled={item.quantity <= 1}
-                              >
-                                -
-                              </Button>
-                              <span className="mx-2 fw-bold">{item.quantity}</span>
-                              <Button
-                                variant="outline-secondary"
-                                size="sm"
-                                onClick={() => handleUpdateProductQuantity(index, item.quantity + 1)}
-                              >
-                                +
-                              </Button>
-                            </div>
-                          </td>
-                          <td>₹{(item.product.price * item.quantity).toFixed(2)}</td>
-                          <td>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleRemoveProduct(index)}
-                            >
-                              🗑️ Remove
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="table-info">
-                        <td colSpan="3"><strong>Total Product Value:</strong></td>
-                        <td><strong>₹{calculateComboValue().toFixed(2)}</strong></td>
-                        <td></td>
-                      </tr>
-                    </tfoot>
-                  </Table>
-
-                  {calculateComboValue() > 0 && (
-                    <div className="alert alert-success">
-                      <strong>💰 Combo Total Value:</strong>
-                      <br />
-                      <span className="fs-5 fw-bold text-success">
-                        ₹{calculateComboValue().toFixed(2)}
-                      </span>
-                      <br />
-                      <small className="text-muted">
-                        This is the total price customers will pay for this combo package.
-                      </small>
-                    </div>
-                  )}
-                </div>
-              )}
-            </Modal.Body>
-            <Modal.Footer>
-              <SecondaryButton type="button" onClick={handleCloseModal}>
-                Cancel
-              </SecondaryButton>
-              <PrimaryButton type="submit" disabled={loading}>
-                {loading ? <LoadingSpinner size="sm" className="me-2" /> : null}
-                {editMode ? 'Update Combo' : 'Create Combo'}
-              </PrimaryButton>
-            </Modal.Footer>
-          </Form>
-        </StyledModal>
-
-        {/* View Combo Modal */}
-        <StyledModal show={showViewModal} onHide={() => setShowViewModal(false)} size="lg" centered>
-          <Modal.Header closeButton>
-            <Modal.Title>📦 Combo Details</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {selectedCombo && (
-              <div>
-                <Row className="mb-4">
-                  <Col md={4} className="text-center">
-                    {selectedCombo.imageUrl ? (
+                  </TableCell>
+                  <TableCell>
+                    {combo.imageUrl ? (
                       <img
-                        src={selectedCombo.imageUrl}
-                        alt={selectedCombo.name}
-                        className="img-fluid rounded"
-                        style={{ maxHeight: '200px' }}
+                        src={combo.imageUrl}
+                        alt={combo.name}
+                        style={{
+                          width: '50px',
+                          height: '50px',
+                          objectFit: 'cover',
+                          borderRadius: '8px'
+                        }}
                       />
                     ) : (
-                      <div
-                        className="bg-light rounded d-flex align-items-center justify-content-center"
-                        style={{ height: '200px' }}
+                      <Box
+                        sx={{
+                          width: '50px',
+                          height: '50px',
+                          bgcolor: '#f8f9fa',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
                       >
-                        <span style={{ fontSize: '4rem' }}>📦</span>
-                      </div>
+                        📦
+                      </Box>
                     )}
-                  </Col>
-                  <Col md={8}>
-                    <h3>{selectedCombo.name}</h3>
-                    <p className="text-muted">{selectedCombo.description}</p>
-                    <div className="mb-2">
-                      <Badge bg="info" className="me-2 px-3 py-2">
-                        Barcode: {selectedCombo.barcode}
-                      </Badge>
-                      <Badge bg="success" className="px-3 py-2">
-                        Price: ₹{selectedCombo.price?.toFixed(2)}
-                      </Badge>
-                    </div>
-                  </Col>
-                </Row>
+                  </TableCell>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {combo.name}
+                      </Typography>
+                      {combo.description && (
+                        <Typography variant="caption" color="text.secondary">
+                          {combo.description}
+                        </Typography>
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip label={combo.barcode} color="info" size="small" />
+                  </TableCell>
+                  <TableCell>
+                    {combo.category ? (
+                      <Chip 
+                        label={typeof combo.category === 'object' ? combo.category.name : combo.category}
+                        size="small"
+                        sx={{ bgcolor: '#6c757d', color: '#fff' }}
+                      />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">-</Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Chip 
+                        label={`${combo.products?.length || 0} items`}
+                        color="info"
+                        size="small"
+                      />
+                      {combo.productDetails && combo.productDetails.some(p => p.stockStatus === 'insufficient' || p.stockStatus === 'out-of-stock') && (
+                        <Chip 
+                          label="⚠️ Stock Issues"
+                          color="warning"
+                          size="small"
+                          sx={{ fontSize: '0.7rem' }}
+                        />
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Chip 
+                        label={`${combo.availableCount || 0} available`}
+                        color={combo.availableCount > 0 ? 'success' : 'error'}
+                        size="small"
+                      />
+                      {combo.productDetails && (
+                        <Typography variant="caption" color="text.secondary">
+                          {combo.productDetails.filter(p => p.stockStatus === 'available').length}/{combo.productDetails.length} products OK
+                        </Typography>
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#2e7d32' }}>
+                      ₹{combo.price?.toFixed(2) || '0.00'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                      <Button
+                        size="small"
+                        onClick={() => handleAddItem(combo)}
+                        startIcon={<AddIcon />}
+                        variant="outlined"
+                        sx={{ color: '#000', borderColor: '#000', minWidth: 'auto' }}
+                      >
+                        Add Item
+                      </Button>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleView(combo)}
+                        sx={{ color: '#000' }}
+                      >
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEdit(combo)}
+                        sx={{ color: '#000' }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(combo._id)}
+                        sx={{ color: '#d32f2f' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
-                <h5 className="mb-3">📋 Products in this Combo</h5>
-                {selectedCombo.products && selectedCombo.products.length > 0 ? (
-                  <>
-                    <div className="mb-3">
-                      <Badge bg={selectedCombo.availableCount > 0 ? 'success' : 'danger'} className="px-3 py-2">
-                        {selectedCombo.availableCount > 0 
-                          ? `✅ ${selectedCombo.availableCount} combos can be made` 
-                          : '❌ Cannot make combo - insufficient stock'
-                        }
-                      </Badge>
-                    </div>
-                    <Table striped bordered>
-                      <thead>
-                        <tr>
-                          <th>Product Name</th>
-                          <th>Barcode</th>
-                          <th>Unit Price</th>
-                          <th>Required Qty</th>
-                          <th>Available Stock</th>
-                          <th>Can Make</th>
-                          <th>Status</th>
-                          <th>Total Value</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+      {/* Add/Edit Combo Modal */}
+      <Dialog 
+        open={showModal} 
+        onClose={handleCloseModal}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: '#000', color: '#fff' }}>
+          {editMode ? '✏️ Edit Combo' : '✨ Add New Combo'}
+          <IconButton
+            onClick={handleCloseModal}
+            sx={{ position: 'absolute', right: 8, top: 8, color: '#fff' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Combo Name *"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Enter combo name"
+                required
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Barcode *"
+                value={formData.barcode}
+                onChange={(e) => handleInputChange('barcode', e.target.value)}
+                placeholder="Enter barcode (e.g., EW00L002)"
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={formData.category}
+                  onChange={(e) => handleInputChange('category', e.target.value)}
+                  label="Category"
+                >
+                  <MenuItem value="">Select a category...</MenuItem>
+                  {categories.map(category => (
+                    <MenuItem key={category._id} value={category._id}>
+                      {category.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                multiline
+                rows={3}
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Enter combo description"
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Auto-Calculated Price *"
+                type="text"
+                value={`₹${calculateComboValue().toFixed(2)}`}
+                disabled
+                InputProps={{
+                  sx: { 
+                    bgcolor: '#e9ecef',
+                    fontWeight: 600,
+                    fontSize: '1.1rem',
+                    color: '#2e7d32'
+                  }
+                }}
+                helperText="Price is automatically calculated based on selected products"
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Combo Image"
+                type="file"
+                onChange={handleImageChange}
+                InputLabelProps={{ shrink: true }}
+                inputProps={{ accept: "image/*" }}
+              />
+            </Grid>
+          </Grid>
+
+          <Box sx={{ borderTop: '1px solid #e0e0e0', my: 3 }} />
+
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            📋 Products in Combo
+          </Typography>
+
+          {/* Add Product Section */}
+          <Paper sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
+            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+              ➕ Add Product to Combo
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Select Product</InputLabel>
+                  <Select
+                    value={selectedProduct}
+                    onChange={(e) => setSelectedProduct(e.target.value)}
+                    label="Select Product"
+                  >
+                    <MenuItem value="">Choose a product...</MenuItem>
+                    {products.map(product => {
+                      const stockStatus = product.quantity === 0 ? ' - OUT OF STOCK' : 
+                                        product.quantity < 10 ? ' - LOW STOCK' : '';
+                      return (
+                        <MenuItem 
+                          key={product._id} 
+                          value={product._id}
+                          disabled={product.quantity === 0}
+                        >
+                          {product.name} - ₹{product.price} (Available: {product.quantity}){stockStatus}
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                  {selectedProduct && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                      {(() => {
+                        const selectedProd = products.find(p => p._id === selectedProduct);
+                        if (!selectedProd) return '';
+                        return selectedProd.quantity === 0 ? '❌ This product is out of stock' :
+                               selectedProd.quantity < 10 ? `⚠️ Low stock warning: Only ${selectedProd.quantity} units available` :
+                               `✅ ${selectedProd.quantity} units available in stock`;
+                      })()} 
+                    </Typography>
+                  )}
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Quantity"
+                  type="number"
+                  inputProps={{
+                    min: 1,
+                    max: selectedProduct ? products.find(p => p._id === selectedProduct)?.quantity || 1 : undefined
+                  }}
+                  value={productQuantity}
+                  onChange={(e) => setProductQuantity(parseInt(e.target.value) || 1)}
+                  helperText={selectedProduct && productQuantity > 0 ? (() => {
+                    const selectedProd = products.find(p => p._id === selectedProduct);
+                    if (!selectedProd) return '';
+                    const remaining = selectedProd.quantity - productQuantity;
+                    return remaining >= 0 ? 
+                      `After adding: ${remaining} units will remain in stock` :
+                      `⚠️ Warning: Not enough stock! Need ${Math.abs(remaining)} more units`;
+                  })() : ''}
+                />
+              </Grid>
+              <Grid item xs={12} md={2} sx={{ display: 'flex', alignItems: 'center' }}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={handleAddProduct}
+                  startIcon={<AddIcon />}
+                  sx={{ 
+                    bgcolor: '#000',
+                    '&:hover': { bgcolor: '#333' }
+                  }}
+                >
+                  Add
+                </Button>
+              </Grid>
+            </Grid>
+          </Paper>
+
+          {/* Selected Products List */}
+          {formData.products.length > 0 && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                📦 Selected Products ({formData.products.length})
+              </Typography>
+              
+              <TableContainer component={Paper} sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: '#fafafa' }}>
+                      <TableCell sx={{ fontWeight: 600 }}>Product</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Unit Price</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Quantity</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Total</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Action</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {formData.products.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {item.product.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Barcode: {item.product.barcode}
+                            </Typography>
+                            <br />
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                color: item.product.quantity >= item.quantity ? '#2e7d32' : '#d32f2f'
+                              }}
+                            >
+                              Stock: {item.product.quantity}
+                              {item.product.quantity < item.quantity && ' ⚠️ Insufficient!'}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>₹{item.product.price?.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={() => handleUpdateProductQuantity(index, item.quantity - 1)}
+                              disabled={item.quantity <= 1}
+                              sx={{ minWidth: '30px', p: 0.5 }}
+                            >
+                              -
+                            </Button>
+                            <Typography sx={{ fontWeight: 600, minWidth: '30px', textAlign: 'center' }}>
+                              {item.quantity}
+                            </Typography>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={() => handleUpdateProductQuantity(index, item.quantity + 1)}
+                              sx={{ minWidth: '30px', p: 0.5 }}
+                            >
+                              +
+                            </Button>
+                          </Box>
+                        </TableCell>
+                        <TableCell>₹{(item.product.price * item.quantity).toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="error"
+                            onClick={() => handleRemoveProduct(index)}
+                            startIcon={<DeleteIcon />}
+                          >
+                            Remove
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow sx={{ bgcolor: '#e3f2fd' }}>
+                      <TableCell colSpan={3} sx={{ fontWeight: 600 }}>
+                        Total Product Value:
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        ₹{calculateComboValue().toFixed(2)}
+                      </TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {calculateComboValue() > 0 && (
+                <Alert severity="success" sx={{ mt: 2 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    💰 Combo Total Value:
+                  </Typography>
+                  <Typography variant="h6" sx={{ color: '#2e7d32', fontWeight: 700 }}>
+                    ₹{calculateComboValue().toFixed(2)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    This is the total price customers will pay for this combo package.
+                  </Typography>
+                </Alert>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
+          <Button onClick={handleCloseModal} sx={{ color: '#000' }}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            disabled={loading}
+            variant="contained"
+            startIcon={loading ? <CircularProgress size={16} /> : null}
+            sx={{ 
+              bgcolor: '#000',
+              '&:hover': { bgcolor: '#333' }
+            }}
+          >
+            {editMode ? 'Update Combo' : 'Create Combo'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* View Combo Modal */}
+      <Dialog 
+        open={showViewModal} 
+        onClose={() => setShowViewModal(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: '#000', color: '#fff' }}>
+          📦 Combo Details
+          <IconButton
+            onClick={() => setShowViewModal(false)}
+            sx={{ position: 'absolute', right: 8, top: 8, color: '#fff' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {selectedCombo && (
+            <Box>
+              <Grid container spacing={3} sx={{ mb: 3 }}>
+                <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
+                  {selectedCombo.imageUrl ? (
+                    <img
+                      src={selectedCombo.imageUrl}
+                      alt={selectedCombo.name}
+                      style={{ 
+                        width: '100%',
+                        maxHeight: '200px',
+                        objectFit: 'contain',
+                        borderRadius: '8px'
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        bgcolor: '#f5f5f5',
+                        borderRadius: '8px',
+                        height: '200px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '4rem' }}>📦</Typography>
+                    </Box>
+                  )}
+                </Grid>
+                <Grid item xs={12} md={8}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+                    {selectedCombo.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {selectedCombo.description}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Chip 
+                      label={`Barcode: ${selectedCombo.barcode}`}
+                      color="info"
+                    />
+                    <Chip 
+                      label={`Price: ₹${selectedCombo.price?.toFixed(2)}`}
+                      sx={{ bgcolor: '#2e7d32', color: '#fff' }}
+                    />
+                  </Box>
+                </Grid>
+              </Grid>
+
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                📋 Products in this Combo
+              </Typography>
+              {selectedCombo.products && selectedCombo.products.length > 0 ? (
+                <>
+                  <Box sx={{ mb: 2 }}>
+                    <Chip 
+                      label={selectedCombo.availableCount > 0 
+                        ? `✅ ${selectedCombo.availableCount} combos can be made` 
+                        : '❌ Cannot make combo - insufficient stock'
+                      }
+                      color={selectedCombo.availableCount > 0 ? 'success' : 'error'}
+                    />
+                  </Box>
+                  <TableContainer component={Paper} sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
+                    <Table>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: '#fafafa' }}>
+                          <TableCell sx={{ fontWeight: 600 }}>Product Name</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Barcode</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Unit Price</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Required Qty</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Available Stock</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Can Make</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Total Value</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
                         {(selectedCombo.productDetails || selectedCombo.products).map((item, index) => {
                           const productDetail = selectedCombo.productDetails ? item : {
                             ...item,
@@ -1385,287 +1346,348 @@ const Combos = () => {
                                        item.product.quantity < item.quantity ? 'insufficient' : 'available'
                           };
                           
-                          const getStatusBadge = (status) => {
+                          const getStatusChip = (status) => {
                             switch(status) {
-                              case 'available': return <Badge bg="success">✅ Available</Badge>;
-                              case 'insufficient': return <Badge bg="warning">⚠️ Low Stock</Badge>;
-                              case 'out-of-stock': return <Badge bg="danger">❌ Out of Stock</Badge>;
-                              case 'unavailable': return <Badge bg="secondary">❓ Unavailable</Badge>;
-                              default: return <Badge bg="secondary">Unknown</Badge>;
+                              case 'available': return <Chip label="✅ Available" color="success" size="small" />;
+                              case 'insufficient': return <Chip label="⚠️ Low Stock" color="warning" size="small" />;
+                              case 'out-of-stock': return <Chip label="❌ Out of Stock" color="error" size="small" />;
+                              case 'unavailable': return <Chip label="❓ Unavailable" size="small" sx={{ bgcolor: '#6c757d', color: '#fff' }} />;
+                              default: return <Chip label="Unknown" size="small" sx={{ bgcolor: '#6c757d', color: '#fff' }} />;
                             }
                           };
+
+                          const rowBgColor = productDetail.stockStatus === 'out-of-stock' ? '#ffebee' : 
+                                           productDetail.stockStatus === 'insufficient' ? '#fff3e0' : 'inherit';
                           
                           return (
-                            <tr key={index} className={productDetail.stockStatus === 'out-of-stock' ? 'table-danger' : 
-                                                      productDetail.stockStatus === 'insufficient' ? 'table-warning' : ''}>
-                              <td>{productDetail.product?.name || 'N/A'}</td>
-                              <td>
-                                <Badge bg="info">{productDetail.product?.barcode || 'N/A'}</Badge>
-                              </td>
-                              <td>₹{productDetail.product?.price?.toFixed(2) || '0.00'}</td>
-                              <td>
-                                <Badge bg="primary">{productDetail.quantity}</Badge>
-                              </td>
-                              <td>
-                                <Badge bg={productDetail.availableStock > 0 ? 'success' : 'danger'}>
-                                  {productDetail.availableStock}
-                                </Badge>
-                              </td>
-                              <td>
-                                <Badge bg={productDetail.canMake > 0 ? 'success' : 'danger'}>
-                                  {productDetail.canMake} combos
-                                </Badge>
-                              </td>
-                              <td>{getStatusBadge(productDetail.stockStatus)}</td>
-                              <td>₹{((productDetail.product?.price || 0) * productDetail.quantity).toFixed(2)}</td>
-                            </tr>
+                            <TableRow key={index} sx={{ bgcolor: rowBgColor }}>
+                              <TableCell>{productDetail.product?.name || 'N/A'}</TableCell>
+                              <TableCell>
+                                <Chip label={productDetail.product?.barcode || 'N/A'} color="info" size="small" />
+                              </TableCell>
+                              <TableCell>₹{productDetail.product?.price?.toFixed(2) || '0.00'}</TableCell>
+                              <TableCell>
+                                <Chip label={productDetail.quantity} color="primary" size="small" />
+                              </TableCell>
+                              <TableCell>
+                                <Chip 
+                                  label={productDetail.availableStock}
+                                  color={productDetail.availableStock > 0 ? 'success' : 'error'}
+                                  size="small"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Chip 
+                                  label={`${productDetail.canMake} combos`}
+                                  color={productDetail.canMake > 0 ? 'success' : 'error'}
+                                  size="small"
+                                />
+                              </TableCell>
+                              <TableCell>{getStatusChip(productDetail.stockStatus)}</TableCell>
+                              <TableCell>₹{((productDetail.product?.price || 0) * productDetail.quantity).toFixed(2)}</TableCell>
+                            </TableRow>
                           );
                         })}
-                      </tbody>
-                      <tfoot>
-                        <tr className="table-info">
-                          <td colSpan="7"><strong>Total Combo Value:</strong></td>
-                          <td><strong>₹{selectedCombo.price?.toFixed(2) || '0.00'}</strong></td>
-                        </tr>
-                      </tfoot>
+                        <TableRow sx={{ bgcolor: '#e3f2fd' }}>
+                          <TableCell colSpan={7} sx={{ fontWeight: 600 }}>
+                            Total Combo Value:
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>
+                            ₹{selectedCombo.price?.toFixed(2) || '0.00'}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
                     </Table>
-                  </>
-                ) : (
-                  <Alert variant="info">No products found in this combo.</Alert>
-                )}
-              </div>
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            <SecondaryButton onClick={() => setShowViewModal(false)}>
-              Close
-            </SecondaryButton>
-          </Modal.Footer>
-        </StyledModal>
-
-        {/* Excel Upload Modal */}
-        <StyledModal show={showUploadModal} onHide={handleCloseUploadModal} size="lg" centered>
-          <Modal.Header closeButton>
-            <Modal.Title>📤 Upload Product Master Excel File</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Alert variant="info">
-              <strong>📋 Excel File Processing:</strong>
-              <ul className="mb-0 mt-2">
-                <li><strong>Product Category</strong> → Stored in <Badge bg="secondary">Category DB</Badge></li>
-                <li><strong>Selling Product Code, Product Name, Price</strong> → Stored in <Badge bg="primary">Combo DB</Badge></li>
-                <li>✅ Category & Combo are <strong>automatically mapped</strong></li>
-                <li>⏳ Products remain <strong>unmapped</strong> (manual mapping required)</li>
-              </ul>
-              <hr />
-              <strong>Required Columns:</strong> <code>S.No.</code>, <code>Product Category</code>, 
-              <code>Selling Product Code</code>, <code>Product Name</code>, <code>Price/product</code>
-            </Alert>
-
-            <FormGroup>
-              <Form.Label>Select Excel File (.xlsx or .xls)</Form.Label>
-              <Form.Control
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFileChange}
-                disabled={uploadLoading}
-              />
-              {uploadFile && (
-                <Form.Text className="text-success">
-                  ✅ Selected: {uploadFile.name}
-                </Form.Text>
-              )}
-            </FormGroup>
-
-            {uploadResult && (
-              <div className="mt-3">
-                <Alert variant={uploadResult.errorCount > 0 ? 'warning' : 'success'}>
-                  <h6>📊 Upload Results</h6>
-                  <Row>
-                    <Col md={6}>
-                      <ul className="mb-0">
-                        <li><strong>Total Rows:</strong> {uploadResult.totalRows}</li>
-                        <li><strong>Success:</strong> {uploadResult.successCount}</li>
-                        <li><strong>Errors:</strong> {uploadResult.errorCount}</li>
-                      </ul>
-                    </Col>
-                    <Col md={6}>
-                      <ul className="mb-0">
-                        <li><strong>Categories Created:</strong> {uploadResult.categoriesCreated}</li>
-                        <li><strong>Combos Created:</strong> {uploadResult.combosCreated}</li>
-                        <li><strong>Combos Updated:</strong> {uploadResult.combosUpdated}</li>
-                      </ul>
-                    </Col>
-                  </Row>
-                </Alert>
-
-                {uploadResult.errors && uploadResult.errors.length > 0 && (
-                  <Card className="mt-3">
-                    <Card.Header className="bg-danger text-white">
-                      ❌ Errors ({uploadResult.errors.length})
-                    </Card.Header>
-                    <Card.Body style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                      {uploadResult.errors.map((err, idx) => (
-                        <div key={idx} className="mb-2">
-                          <strong>Row {err.row}:</strong> {err.error}
-                        </div>
-                      ))}
-                    </Card.Body>
-                  </Card>
-                )}
-
-                {uploadResult.processedData && uploadResult.processedData.length > 0 && (
-                  <Card className="mt-3">
-                    <Card.Header className="bg-success text-white d-flex justify-content-between align-items-center">
-                      <span>✅ Successfully Processed ({uploadResult.processedData.length})</span>
-                      <div className="d-flex gap-2 align-items-center">
-                        <PrimaryButton 
-                          size="sm"
-                          onClick={handleGenerateAllBarcodes}
-                          disabled={uploadLoading}
-                        >
-                          {uploadLoading ? (
-                            <>
-                              <LoadingSpinner size="sm" className="me-1" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              📊 Generate All Barcodes
-                            </>
-                          )}
-                        </PrimaryButton>
-                        <small>Click on any cell to edit</small>
-                      </div>
-                    </Card.Header>
-                    <Card.Body style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                      <Table size="sm" striped hover>
-                        <thead>
-                          <tr>
-                            <th>S.No.</th>
-                            <th>Product Category</th>
-                            <th>Selling Product Code</th>
-                            <th>Product Name</th>
-                            <th>Price/product</th>
-                            <th>Price/product with GST</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {uploadResult.processedData.map((item, idx) => (
-                            <EditableRow key={idx} item={item} index={idx} />
-                          ))}
-                        </tbody>
-                      </Table>
-                    </Card.Body>
-                  </Card>
-                )}
-              </div>
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            <SecondaryButton onClick={handleCloseUploadModal} disabled={uploadLoading}>
-              Close
-            </SecondaryButton>
-            <PrimaryButton onClick={handleUploadExcel} disabled={!uploadFile || uploadLoading}>
-              {uploadLoading ? (
-                <>
-                  <LoadingSpinner size="sm" className="me-2" />
-                  Uploading...
+                  </TableContainer>
                 </>
               ) : (
-                '📤 Upload & Process'
+                <Alert severity="info">No products found in this combo.</Alert>
               )}
-            </PrimaryButton>
-          </Modal.Footer>
-        </StyledModal>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
+          <Button 
+            onClick={() => setShowViewModal(false)}
+            sx={{ color: '#000' }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
+      {/* Excel Upload Modal */}
+      <Dialog 
+        open={showUploadModal} 
+        onClose={handleCloseUploadModal}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: '#000', color: '#fff' }}>
+          📤 Upload Product Master Excel File
+          <IconButton
+            onClick={handleCloseUploadModal}
+            sx={{ position: 'absolute', right: 8, top: 8, color: '#fff' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+              📋 Excel File Processing:
+            </Typography>
+            <ul style={{ marginBottom: 0, paddingLeft: '20px' }}>
+              <li><strong>Product Category</strong> → Stored in <Chip label="Category DB" size="small" sx={{ bgcolor: '#6c757d', color: '#fff' }} /></li>
+              <li><strong>Selling Product Code, Product Name, Price</strong> → Stored in <Chip label="Combo DB" color="primary" size="small" /></li>
+              <li>✅ Category & Combo are <strong>automatically mapped</strong></li>
+              <li>⏳ Products remain <strong>unmapped</strong> (manual mapping required)</li>
+            </ul>
+            <Box sx={{ borderTop: '1px solid #e0e0e0', my: 1, pt: 1 }}>
+              <Typography variant="body2">
+                <strong>Required Columns:</strong> <code>S.No.</code>, <code>Product Category</code>, 
+                <code>Selling Product Code</code>, <code>Product Name</code>, <code>Price/product</code>
+              </Typography>
+            </Box>
+          </Alert>
 
-        {/* Add Item Modal */}
-        <StyledModal show={showAddItemModal} onHide={handleCloseAddItemModal} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>➕ Add Product to Combo</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {selectedComboForItem && (
-              <>
-                <div className="mb-3">
-                  <h6>Adding to: <strong>{selectedComboForItem.name}</strong></h6>
-                  <Badge bg="info">{selectedComboForItem.barcode}</Badge>
-                </div>
-                
-                <FormGroup>
-                  <Form.Label>Select Product</Form.Label>
-                  <Form.Select
-                    value={itemProduct}
-                    onChange={(e) => setItemProduct(e.target.value)}
-                  >
-                    <option value="">Choose a product...</option>
-                    {products.map(product => {
-                      const stockStatus = product.quantity === 0 ? ' - OUT OF STOCK' : 
-                                        product.quantity < 10 ? ' - LOW STOCK' : '';
-                      return (
-                        <option 
-                          key={product._id} 
-                          value={product._id}
-                          disabled={product.quantity === 0}
-                        >
-                          {product.name} - ₹{product.price} (Available: {product.quantity}){stockStatus}
-                        </option>
-                      );
-                    })}
-                  </Form.Select>
-                  {itemProduct && (
-                    <Form.Text className="text-muted">
-                      {(() => {
-                        const selectedProd = products.find(p => p._id === itemProduct);
-                        if (!selectedProd) return '';
-                        return selectedProd.quantity === 0 ? '❌ This product is out of stock' :
-                               selectedProd.quantity < 10 ? `⚠️ Low stock warning: Only ${selectedProd.quantity} units available` :
-                               `✅ ${selectedProd.quantity} units available in stock`;
-                      })()} 
-                    </Form.Text>
-                  )}
-                </FormGroup>
-                
-                <FormGroup>
-                  <Form.Label>Quantity</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min="1"
-                    max={itemProduct ? products.find(p => p._id === itemProduct)?.quantity || 1 : undefined}
-                    value={itemQuantity}
-                    onChange={(e) => setItemQuantity(parseInt(e.target.value) || 1)}
-                  />
-                  {itemProduct && itemQuantity > 0 && (
-                    <Form.Text className="text-muted">
-                      {(() => {
-                        const selectedProd = products.find(p => p._id === itemProduct);
-                        if (!selectedProd) return '';
-                        const remaining = selectedProd.quantity - itemQuantity;
-                        return remaining >= 0 ? 
-                          `After adding: ${remaining} units will remain in stock` :
-                          `⚠️ Warning: Not enough stock! Need ${Math.abs(remaining)} more units`;
-                      })()} 
-                    </Form.Text>
-                  )}
-                </FormGroup>
-              </>
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            <SecondaryButton onClick={handleCloseAddItemModal}>
-              Cancel
-            </SecondaryButton>
-            <PrimaryButton onClick={handleSaveItem} disabled={loading}>
-              {loading ? <LoadingSpinner size="sm" className="me-2" /> : null}
-              Add Product
-            </PrimaryButton>
-          </Modal.Footer>
-        </StyledModal>
+          <TextField
+            fullWidth
+            type="file"
+            label="Select Excel File (.xlsx or .xls)"
+            InputLabelProps={{ shrink: true }}
+            inputProps={{ accept: ".xlsx,.xls" }}
+            onChange={handleFileChange}
+            disabled={uploadLoading}
+            helperText={uploadFile ? `✅ Selected: ${uploadFile.name}` : ''}
+          />
 
-      </AnimatedContainer>
-    </StyledContainer>
-    </GlobalStyle>
+          {uploadResult && (
+            <Box sx={{ mt: 3 }}>
+              <Alert severity={uploadResult.errorCount > 0 ? 'warning' : 'success'}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  📊 Upload Results
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                      <li><strong>Total Rows:</strong> {uploadResult.totalRows}</li>
+                      <li><strong>Success:</strong> {uploadResult.successCount}</li>
+                      <li><strong>Errors:</strong> {uploadResult.errorCount}</li>
+                    </ul>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                      <li><strong>Categories Created:</strong> {uploadResult.categoriesCreated}</li>
+                      <li><strong>Combos Created:</strong> {uploadResult.combosCreated}</li>
+                      <li><strong>Combos Updated:</strong> {uploadResult.combosUpdated}</li>
+                    </ul>
+                  </Grid>
+                </Grid>
+              </Alert>
+
+              {uploadResult.errors && uploadResult.errors.length > 0 && (
+                <Paper sx={{ mt: 2, border: '1px solid #d32f2f' }}>
+                  <Box sx={{ bgcolor: '#d32f2f', color: '#fff', p: 1.5 }}>
+                    <Typography variant="subtitle2">
+                      ❌ Errors ({uploadResult.errors.length})
+                    </Typography>
+                  </Box>
+                  <Box sx={{ p: 2, maxHeight: '200px', overflowY: 'auto' }}>
+                    {uploadResult.errors.map((err, idx) => (
+                      <Typography key={idx} variant="body2" sx={{ mb: 1 }}>
+                        <strong>Row {err.row}:</strong> {err.error}
+                      </Typography>
+                    ))}
+                  </Box>
+                </Paper>
+              )}
+
+              {uploadResult.processedData && uploadResult.processedData.length > 0 && (
+                <Paper sx={{ mt: 2, border: '1px solid #2e7d32' }}>
+                  <Box sx={{ 
+                    bgcolor: '#2e7d32', 
+                    color: '#fff', 
+                    p: 1.5,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <Typography variant="subtitle2">
+                      ✅ Successfully Processed ({uploadResult.processedData.length})
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={handleGenerateAllBarcodes}
+                        disabled={uploadLoading}
+                        startIcon={uploadLoading ? <CircularProgress size={16} /> : null}
+                        sx={{ 
+                          bgcolor: '#fff',
+                          color: '#2e7d32',
+                          '&:hover': { bgcolor: '#f5f5f5' }
+                        }}
+                      >
+                        {uploadLoading ? 'Generating...' : '📊 Generate All Barcodes'}
+                      </Button>
+                      <Typography variant="caption">
+                        Click on any cell to edit
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <TableContainer sx={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: '#fafafa' }}>
+                          <TableCell sx={{ fontWeight: 600 }}>S.No.</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Product Category</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Selling Product Code</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Product Name</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Price/product</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Price/product with GST</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {uploadResult.processedData.map((item, idx) => (
+                          <EditableRow key={idx} item={item} index={idx} />
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Paper>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
+          <Button 
+            onClick={handleCloseUploadModal}
+            disabled={uploadLoading}
+            sx={{ color: '#000' }}
+          >
+            Close
+          </Button>
+          <Button 
+            onClick={handleUploadExcel}
+            disabled={!uploadFile || uploadLoading}
+            variant="contained"
+            startIcon={uploadLoading ? <CircularProgress size={16} /> : <FileUploadIcon />}
+            sx={{ 
+              bgcolor: '#000',
+              '&:hover': { bgcolor: '#333' }
+            }}
+          >
+            {uploadLoading ? 'Uploading...' : 'Upload & Process'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Item Modal */}
+      <Dialog 
+        open={showAddItemModal} 
+        onClose={handleCloseAddItemModal}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: '#000', color: '#fff' }}>
+          ➕ Add Product to Combo
+          <IconButton
+            onClick={handleCloseAddItemModal}
+            sx={{ position: 'absolute', right: 8, top: 8, color: '#fff' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {selectedComboForItem && (
+            <Box>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Adding to: <strong>{selectedComboForItem.name}</strong>
+                </Typography>
+                <Chip label={selectedComboForItem.barcode} color="info" size="small" />
+              </Box>
+              
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Select Product</InputLabel>
+                <Select
+                  value={itemProduct}
+                  onChange={(e) => setItemProduct(e.target.value)}
+                  label="Select Product"
+                >
+                  <MenuItem value="">Choose a product...</MenuItem>
+                  {products.map(product => {
+                    const stockStatus = product.quantity === 0 ? ' - OUT OF STOCK' : 
+                                      product.quantity < 10 ? ' - LOW STOCK' : '';
+                    return (
+                      <MenuItem 
+                        key={product._id} 
+                        value={product._id}
+                        disabled={product.quantity === 0}
+                      >
+                        {product.name} - ₹{product.price} (Available: {product.quantity}){stockStatus}
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
+                {itemProduct && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {(() => {
+                      const selectedProd = products.find(p => p._id === itemProduct);
+                      if (!selectedProd) return '';
+                      return selectedProd.quantity === 0 ? '❌ This product is out of stock' :
+                             selectedProd.quantity < 10 ? `⚠️ Low stock warning: Only ${selectedProd.quantity} units available` :
+                             `✅ ${selectedProd.quantity} units available in stock`;
+                    })()} 
+                  </Typography>
+                )}
+              </FormControl>
+              
+              <TextField
+                fullWidth
+                label="Quantity"
+                type="number"
+                inputProps={{
+                  min: 1,
+                  max: itemProduct ? products.find(p => p._id === itemProduct)?.quantity || 1 : undefined
+                }}
+                value={itemQuantity}
+                onChange={(e) => setItemQuantity(parseInt(e.target.value) || 1)}
+                helperText={itemProduct && itemQuantity > 0 ? (() => {
+                  const selectedProd = products.find(p => p._id === itemProduct);
+                  if (!selectedProd) return '';
+                  const remaining = selectedProd.quantity - itemQuantity;
+                  return remaining >= 0 ? 
+                    `After adding: ${remaining} units will remain in stock` :
+                    `⚠️ Warning: Not enough stock! Need ${Math.abs(remaining)} more units`;
+                })() : ''}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
+          <Button 
+            onClick={handleCloseAddItemModal}
+            sx={{ color: '#000' }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveItem}
+            disabled={loading}
+            variant="contained"
+            startIcon={loading ? <CircularProgress size={16} /> : <AddIcon />}
+            sx={{ 
+              bgcolor: '#000',
+              '&:hover': { bgcolor: '#333' }
+            }}
+          >
+            Add Product
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 
