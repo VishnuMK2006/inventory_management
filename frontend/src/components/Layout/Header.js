@@ -22,7 +22,7 @@ const Header = () => {
             letterSpacing: '0.5px',
           }}
         >
-          Vellparai EnterPrices
+         VELPAARI ENTERPRISES
         </Typography>
       </Toolbar>
     </AppBar>

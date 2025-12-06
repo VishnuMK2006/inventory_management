@@ -1,794 +1,83 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styled, { keyframes, css } from 'styled-components';
+import {
+  Box,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Alert,
+  Paper,
+  Chip,
+  CircularProgress,
+  IconButton,
+  Checkbox,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Typography,
+  LinearProgress,
+  Card,
+  CardMedia,
+  InputAdornment,
+  Snackbar
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Close as CloseIcon,
+  Search as SearchIcon,
+  Clear as ClearIcon,
+  Download as DownloadIcon,
+  CameraAlt as CameraIcon,
+  Inventory as InventoryIcon
+} from '@mui/icons-material';
 import { productsAPI, vendorsAPI, returnsAPI, categoriesAPI, barcodesAPI } from '../services/api';
 import Quagga from 'quagga';
 
-// Animations
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
+// Theme Colors - Premium Gold & Black
+const THEME = {
+  gold: '#D4AF37',
+  richGold: '#C9A227',
+  softGold: '#E2C878',
+  lightGold: '#F4E3B2',
+  black: '#000000',
+  charcoal: '#1A1A1A',
+  softCharcoal: '#2C2C2C',
+  white: '#FFFFFF',
+  offWhite: '#F8F5F0'
+};
 
-const slideIn = keyframes`
-  from { transform: translateX(-100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-`;
-
-const pulse = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-`;
-
-const bounce = keyframes`
-  0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-  40% {transform: translateY(-8px);}
-  60% {transform: translateY(-4px);}
-`;
-
-const progressBar = keyframes`
-  from { width: 0%; }
-  to { width: 100%; }
-`;
-
-const zoomIn = keyframes`
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-`;
-
-const spin = keyframes`
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-`;
-
-// Styled Components
-const PageContainer = styled.div`
-  padding: 2rem;
-  animation: ${fadeIn} 0.5s ease-out;
-  
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-  
-  @media (max-width: 576px) {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-`;
-
-const PageTitle = styled.h2`
-  color: #2c3e50;
-  margin: 0;
-  font-weight: 700;
-  position: relative;
-  padding-bottom: 0.5rem;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 60px;
-    height: 4px;
-    background: linear-gradient(to right, #3498db);
-    border-radius: 2px;
-  }
-`;
-
-const ActionButton = styled.button`
-  background: linear-gradient(to right, #3498db);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.8rem 1.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-    animation: ${pulse} 1s;
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const AlertMessage = styled.div`
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  animation: ${slideIn} 0.3s ease-out;
-  
-  ${props => props.variant === 'success' && css`
-    background: rgba(46, 204, 113, 0.15);
-    color: #27ae60;
-    border-left: 4px solid #27ae60;
-  `}
-  
-  ${props => props.variant === 'danger' && css`
-    background: rgba(231, 76, 60, 0.15);
-    color: #e74c3c;
-    border-left: 4px solid #e74c3c;
-  `}
-`;
-
-const CloseAlert = styled.button`
-  background: none;
-  border: none;
-  color: inherit;
-  cursor: pointer;
-  margin-left: auto;
-  padding: 0.2rem;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    background: rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const TableContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
-  animation: ${fadeIn} 0.6s ease-out;
-`;
-
-const StyledTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  
-  thead {
-    background: linear-gradient(to right, #3498db);
-    color: white;
-  }
-  
-  th {
-    padding: 1.2rem 1rem;
-    text-align: left;
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
-  
-  tbody tr {
-    border-bottom: 1px solid #f1f2f6;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background: #f8f9fa;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    }
-    
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-  
-  td {
-    padding: 1rem;
-    color: #2c3e50;
-  }
-  
-  /* Make S.No column narrower */
-  th:first-child, td:first-child {
-    width: 60px;
-    text-align: center;
-  }
-  
-  @media (max-width: 1200px) {
-    th:nth-child(5),
-    td:nth-child(5) {
-      display: none;
-    }
-  }
-  
-  @media (max-width: 992px) {
-    th:nth-child(4),
-    td:nth-child(4) {
-      display: none;
-    }
-  }
-  
-  @media (max-width: 768px) {
-    th:nth-child(7),
-    td:nth-child(7) {
-      display: none;
-    }
-  }
-`;
-
-const StatusBadge = styled.span`
-  padding: 0.3rem 0.8rem;
-  border-radius: 50px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  
-  ${props => {
-    switch(props.variant) {
-      case 'critical': return css`
-        background: rgba(231, 76, 60, 0.15);
-        color: #e74c3c;
-        animation: ${pulse} 2s infinite;
-      `;
-      case 'low': return css`
-        background: rgba(241, 196, 15, 0.15);
-        color: #f39c12;
-      `;
-      case 'good': return css`
-        background: rgba(46, 204, 113, 0.15);
-        color: #27ae60;
-      `;
-      default: return css`
-        background: #f1f2f6;
-        color: #7f8c8d;
-      `;
-    }
-  }}
-`;
-
-const StockIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const ProgressBar = styled.div`
-  flex: 1;
-  height: 6px;
-  background: #f1f2f6;
-  border-radius: 3px;
-  overflow: hidden;
-`;
-
-const ProgressFill = styled.div`
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-  
-  ${props => {
-    const percentage = (props.current / props.max) * 100;
-    
-    if (percentage <= 20) return css`
-      background: #e74c3c;
-      width: ${percentage}%;
-    `;
-    if (percentage <= 50) return css`
-      background: #f39c12;
-      width: ${percentage}%;
-    `;
-    return css`
-      background: #2ecc71;
-      width: ${percentage}%;
-    `;
-  }}
-`;
-
-const ActionCell = styled.td`
-  display: flex;
-  gap: 0.5rem;
-  
-  @media (max-width: 576px) {
-    flex-direction: column;
-  }
-`;
-
-const IconButton = styled.button`
-  background: ${props => props.variant === 'edit' 
-    ? 'rgba(52, 152, 219, 0.1)' 
-    : 'rgba(231, 76, 60, 0.1)'};
-  color: ${props => props.variant === 'edit' 
-    ? '#3498db' 
-    : '#e74c3c'};
-  border: none;
-  border-radius: 6px;
-  padding: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: ${props => props.variant === 'edit' 
-      ? 'rgba(52, 152, 219, 0.2)' 
-      : 'rgba(231, 76, 60, 0.2)'};
-    transform: translateY(-2px);
-    animation: ${bounce} 0.8s ease;
-  }
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 3rem;
-  color: #7f8c8d;
-  
-  i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    display: block;
-    color: #bdc3c7;
-  }
-`;
-
-const LoadingSpinner = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-  
-  &::after {
-    content: '';
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f1f2f6;
-    border-top: 4px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  
-  @keyframes spin {
-   0% { transform: rotate(0deg); }
-   100% { transform: rotate(360deg); }
-  }
-`;
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  animation: ${fadeIn} 0.3s ease-out;
-  padding: 1rem;
-`;
-
-const ModalContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  animation: ${slideIn} 0.3s ease-out;
-`;
-
-const ModalHeader = styled.div`
-  padding: 1.5rem;
-  border-bottom: 1px solid #f1f2f6;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const ModalTitle = styled.h3`
-  margin: 0;
-  color: #2c3e50;
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #7f8c8d;
-  padding: 0.2rem;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    color: #e74c3c;
-    background: rgba(231, 76, 60, 0.1);
-  }
-`;
-
-const ModalBody = styled.div`
-  padding: 1.5rem;
-`;
-
-const FormGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 1.5rem;
-`;
-
-const Label = styled.label`
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-  color: #2c3e50;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 0.8rem 1rem;
-  border: 2px solid #f1f2f6;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-  }
-`;
-
-const TextArea = styled.textarea`
-  width: 100%;
-  padding: 0.8rem 1rem;
-  border: 2px solid #f1f2f6;
-  border-radius: 8px;
-  font-size: 1rem;
-  resize: vertical;
-  min-height: 80px;
-  transition: all 0.3s ease;
-  
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-  }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 0.8rem 1rem;
-  border: 2px solid #f1f2f6;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-  }
-`;
-
-const ModalFooter = styled.div`
-  padding: 1.5rem;
-  border-top: 1px solid #f1f2f6;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-`;
-
-const SecondaryButton = styled.button`
-  background: #f1f2f6;
-  color: #7f8c8d;
-  border: none;
-  border-radius: 8px;
-  padding: 0.8rem 1.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: #e4e6eb;
-    transform: translateY(-2px);
-  }
-`;
-
-const PrimaryButton = styled.button`
-  background: linear-gradient(to right, #3498db);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.8rem 1.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-    animation: ${pulse} 1s;
-  }
-`;
-
-const ImagePreview = styled.div`
-  margin-top: 0.5rem;
-  img {
-    max-width: 100%;
-    max-height: 200px;
-    border-radius: 8px;
-    border: 2px solid #f1f2f6;
-  }
-`;
-
-const RemoveImageButton = styled.button`
-  margin-top: 0.5rem;
-  background: #e74c3c;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.3rem 0.8rem;
-  cursor: pointer;
-  font-size: 0.8rem;
-  
-  &:hover {
-    background: #c0392b;
-  }
-`;
-
-const DownloadButton = styled.a`
-  background: rgba(46, 204, 113, 0.1);
-  color: #27ae60;
-  border: none;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: rgba(46, 204, 113, 0.2);
-    transform: translateY(-2px);
-  }
-`;
-
-// Image Preview Modal Styles
-const ImagePreviewModal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  animation: ${fadeIn} 0.3s ease-out;
-`;
-
-const ImagePreviewContainer = styled.div`
-  max-width: 90vw;
-  max-height: 90vh;
-  animation: ${zoomIn} 0.3s ease-out;
-`;
-
-const PreviewImage = styled.img`
-  max-width: 100%;
-  max-height: 90vh;
-  object-fit: contain;
-`;
-
-const ClosePreviewButton = styled.button`
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 1.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.1);
-  }
-`;
-
-// Custom checkbox styling
-const Checkbox = styled.input.attrs({ type: 'checkbox' })`
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: #3498db;
-  position: relative;
-  border-radius: 4px;
-  
-  &:checked {
-    background-color: #3498db;
-  }
-  
-  &:hover {
-    transform: scale(1.1);
-  }
-`;
-
-// Batch actions styling
-const BatchActionsContainer = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  background: rgba(52, 152, 219, 0.1);
-  padding: 1rem;
-  border-radius: 8px;
-  align-items: center;
-  animation: ${slideIn} 0.3s ease-out;
-`;
-
-const BatchActionButton = styled(ActionButton)`
-  ${props => props.variant === 'download' && css`
-    background: linear-gradient(to right, #27ae60, #2ecc71);
-    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
-    
-    &:hover {
-      box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
-    }
-  `}
-  
-  ${props => props.variant === 'delete' && css`
-    background: linear-gradient(to right, #e74c3c, #c0392b);
-    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
-    
-    &:hover {
-      box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
-    }
-  `}
-`;
-
-const SelectionCounter = styled.span`
-  color: #2c3e50;
-  font-weight: 500;
-  animation: ${pulse} 1s;
-`;
-
-// Barcode search input styling
-const BarcodeSearchContainer = styled.div`
-  position: relative;
-  min-width: 250px;
-`;
-
-const BarcodeSearchInput = styled(Input)`
-  padding-left: 2.5rem;
-  background-color: #f8f9fa;
-  border: 2px solid #f1f2f6;
-  transition: all 0.3s ease;
-  
-  &:focus {
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-  }
-`;
-
-const SearchIcon = styled.i`
-  position: absolute;
-  left: 0.8rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #3498db;
-`;
-
-const ClearIcon = styled.i`
-  position: absolute;
-  right: 0.8rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #7f8c8d;
-  cursor: pointer;
-  
-  &:hover {
-    color: #e74c3c;
-  }
-`;
-
-// Scanner styled components
-const scannerFlash = keyframes`
-  0% { opacity: 0.3; }
-  50% { opacity: 1; }
-  100% { opacity: 0.3; }
-`;
-
-const ScannerContainer = styled.div`
-  width: 100%;
-  height: 250px;
-  background: #000;
-  border-radius: 15px;
-  overflow: hidden;
-  position: relative;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border: 2px solid #00ff00;
-    border-radius: 10px;
-    animation: ${scannerFlash} 2s ease-in-out infinite;
-    pointer-events: none;
-  }
-`;
-
-const ScannerButton = styled.button`
-  border-radius: 20px;
-  padding: 0.8rem 1.5rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  border: none;
-  
-  ${props => props.$active ? css`
-    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
-    color: white;
-    box-shadow: 0 4px 15px rgba(229, 62, 62, 0.3);
-    
-    &:hover {
-      background: linear-gradient(135deg, #c53030 0%, #9b2c2c 100%);
-      transform: translateY(-2px);
-    }
-  ` : css`
-    background: linear-gradient(to right, #3498db);
-    color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    
-    &:hover {
-      background: linear-gradient(to right, #3498db);
-      transform: translateY(-2px);
-    }
-  `}
-`;
-
-const ScannerStatus = styled.div`
-  padding: 1rem;
-  border-radius: 10px;
-  background: ${props => props.$active ? '#48bb78' : '#e53e3e'};
-  color: white;
-  text-align: center;
-  margin-bottom: 1rem;
-  font-weight: 600;
-`;
-
-// Global style for spin animation
-const GlobalStyle = styled.div`
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  
-  .spin {
-    animation: spin 1s linear infinite;
-  }
-`;
+import {
+  ModalOverlay,
+  ModalContainer,
+  ModalHeader,
+  ModalTitle,
+  CloseButton as StyledCloseButton,
+  ModalBody,
+  FormGrid,
+  FormGroup,
+  Label,
+  Input,
+  TextArea,
+  Select as StyledSelect,
+  ModalFooter,
+  SecondaryButton,
+  PrimaryButton,
+  ScannerContainer,
+  ScannerButton,
+  ScannerStatus,
+  ActionButton as StyledActionButton
+} from './Products/Productscss';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -1951,370 +1240,421 @@ const Products = () => {
 
   if (loading) {
     return (
-      <PageContainer>
-        <LoadingSpinner />
-      </PageContainer>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <CircularProgress sx={{ color: '#000' }} />
+      </Box>
     );
   }
 
   return (
-    <PageContainer>
-      <GlobalStyle />
-      <PageHeader>
-        <PageTitle>Products Management</PageTitle>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+    <Box sx={{ p: 3, backgroundColor: 'rgba(248, 245, 240, 0.85)', minHeight: '100vh' }}>
+      {/* Header */}
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, color: THEME.charcoal, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <InventoryIcon sx={{ fontSize: '2rem', color: THEME.gold }} />
+          Products Management
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Barcode scanner/filter input */}
-          <BarcodeSearchContainer>
-            <BarcodeSearchInput
-              type="text"
-              placeholder="Scan or enter barcode"
-              value={barcodeFilter}
-              onChange={handleBarcodeInput}
-            />
-            <SearchIcon className="bi bi-upc-scan" />
-            {barcodeFilter && (
-              <ClearIcon 
-                className="bi bi-x-circle"
-                onClick={() => setBarcodeFilter('')}
-              />
-            )}
-          </BarcodeSearchContainer>
-          <ActionButton onClick={() => handleShowModal()}>
-            <i className="bi bi-plus-circle"></i>
-            Add New Product
-          </ActionButton>
-          <ActionButton onClick={() => setShowRTOModal(true)}>
-            <i className="bi bi-arrow-return-left"></i>
+          <TextField
+            size="small"
+            placeholder="Scan or enter barcode"
+            value={barcodeFilter}
+            onChange={handleBarcodeInput}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+              endAdornment: barcodeFilter && (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setBarcodeFilter('')}>
+                    <ClearIcon />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            sx={{ minWidth: 250, bgcolor: '#fafafa' }}
+          />
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleShowModal()}
+            sx={{ bgcolor: '#000', '&:hover': { bgcolor: '#333' }, textTransform: 'none' }}
+          >
+            Add Product
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => setShowRTOModal(true)}
+            sx={{ borderColor: THEME.gold, color: THEME.gold, '&:hover': { borderColor: THEME.richGold, bgcolor: THEME.lightGold }, textTransform: 'none', fontWeight: 600 }}
+          >
             RTO
-          </ActionButton>
-          <ActionButton onClick={() => setShowRPUModal(true)}>
-            <i className="bi bi-arrow-clockwise"></i>
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => setShowRPUModal(true)}
+            sx={{ borderColor: THEME.gold, color: THEME.gold, '&:hover': { borderColor: THEME.richGold, bgcolor: THEME.lightGold }, textTransform: 'none', fontWeight: 600 }}
+          >
             RPU
-          </ActionButton>
-        </div>
-      </PageHeader>
+          </Button>
+        </Box>
+      </Box>
 
-      {error && (
-        <AlertMessage variant="danger">
-          <i className="bi bi-exclamation-circle"></i>
+      {/* Alerts */}
+      <Snackbar open={!!error} autoHideDuration={6000} onClose={clearAlerts} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert onClose={clearAlerts} severity="error" sx={{ width: '100%' }}>
           {error}
-          <CloseAlert onClick={clearAlerts}>
-            <i className="bi bi-x"></i>
-          </CloseAlert>
-        </AlertMessage>
-      )}
+        </Alert>
+      </Snackbar>
 
-      {success && (
-        <AlertMessage variant="success">
-          <i className="bi bi-check-circle"></i>
+      <Snackbar open={!!success} autoHideDuration={6000} onClose={clearAlerts} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert onClose={clearAlerts} severity="success" sx={{ width: '100%' }}>
           {success}
-          <CloseAlert onClick={clearAlerts}>
-            <i className="bi bi-x"></i>
-          </CloseAlert>
-        </AlertMessage>
-      )}
+        </Alert>
+      </Snackbar>
 
-      {/* Batch Action Buttons - Only shown when products are selected */}
+      {/* Batch Action Buttons */}
       {selectedProducts.length > 0 && (
-        <BatchActionsContainer>
-          <SelectionCounter>
+        <Box sx={{ mb: 2, p: 2, bgcolor: '#fafafa', borderRadius: 1, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Typography sx={{ color: '#000', fontWeight: 500 }}>
             {selectedProducts.length} product{selectedProducts.length > 1 ? 's' : ''} selected
-          </SelectionCounter>
-          <BatchActionButton 
-            variant="download"
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<DownloadIcon />}
             onClick={handleBatchBarcodeDownload}
+            sx={{ bgcolor: '#2e7d32', '&:hover': { bgcolor: '#1b5e20' }, textTransform: 'none' }}
           >
-            <i className="bi bi-upc"></i>
             Download Barcodes
-          </BatchActionButton>
-          <BatchActionButton 
-            variant="delete"
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<DeleteIcon />}
             onClick={handleBatchDelete}
+            sx={{ bgcolor: '#d32f2f', '&:hover': { bgcolor: '#9a0007' }, textTransform: 'none' }}
           >
-            <i className="bi bi-trash"></i>
             Delete Selected
-          </BatchActionButton>
-        </BatchActionsContainer>
+          </Button>
+        </Box>
       )}
 
-      <TableContainer>
+      <TableContainer component={Paper} sx={{ boxShadow: '0px 1px 2px rgba(212, 175, 55, 0.15)', border: `1px solid ${THEME.softGold}`, borderRadius: '12px', overflow: 'hidden' }}>
         {products.length > 0 ? (
-          <StyledTable>
-            <thead>
-              <tr>
-                <th style={{ width: '40px', textAlign: 'center' }}>
+          <Table>
+            <TableHead sx={{ bgcolor: THEME.gold }}>
+              <TableRow>
+                <TableCell padding="checkbox" sx={{ color: THEME.black }}>
                   <Checkbox 
                     checked={selectAll}
                     onChange={handleSelectAll}
+                    sx={{ color: THEME.black, '&.Mui-checked': { color: THEME.black } }}
                   />
-                </th>
-                <th>S.No</th>
-                <th>Product</th>
-                <th>Barcode</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Min Quantity</th>
-                <th>Stock Level</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+                </TableCell>
+                <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>S.No</TableCell>
+                <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Product</TableCell>
+                <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Barcode</TableCell>
+                <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Category</TableCell>
+                <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Price</TableCell>
+                <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Min Qty</TableCell>
+                <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Stock Level</TableCell>
+                <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Status</TableCell>
+                <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {filterProductsByBarcode().length > 0 ? (
                 filterProductsByBarcode().map((product, index) => (
-                  <tr key={product._id}>
-                    <td style={{ textAlign: 'center' }}>
+                  <TableRow key={product._id} hover sx={{ '&:hover': { bgcolor: THEME.lightGold } }}>
+                    <TableCell padding="checkbox">
                       <Checkbox 
                         checked={selectedProducts.includes(product._id)}
                         onChange={() => handleSelectProduct(product._id)}
                       />
-                    </td>
-                    <td>{index + 1}</td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    </TableCell>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <ProductImage product={product} />
                         {product.name}
-                      </div>
-                    </td>
-                    <td>{product.barcode || '-'}</td>
-                    <td>
+                      </Box>
+                    </TableCell>
+                    <TableCell>{product.barcode || '-'}</TableCell>
+                    <TableCell>
                       {product.category?.code ? `${product.category.code} - ${product.category.name}` : 'N/A'}
-                    </td>
-                    <td>{formatCurrency(product.price)}</td>
-                    <td>{product.minquantity}</td>
-                    <td>
-                      <StockIndicator>
-                        <span>{product.quantity}</span>
-                        <ProgressBar>
-                          <ProgressFill 
-                            current={product.quantity} 
-                            max={Math.max(product.quantity * 2, 100)} 
+                    </TableCell>
+                    <TableCell>₹{product.price?.toLocaleString('en-IN') || 0}</TableCell>
+                    <TableCell>{product.minquantity}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2">{product.quantity}</Typography>
+                        <Box sx={{ flex: 1, minWidth: 60 }}>
+                          <LinearProgress 
+                            variant="determinate" 
+                            value={Math.min((product.quantity / Math.max(product.quantity * 2, 100)) * 100, 100)}
+                            sx={{
+                              height: 6,
+                              borderRadius: 3,
+                              bgcolor: '#f1f2f6',
+                              '& .MuiLinearProgress-bar': {
+                                bgcolor: product.quantity <= 0 ? '#d32f2f' : 
+                                        product.quantity <= product.minquantity ? '#ed6c02' : '#2e7d32'
+                              }
+                            }}
                           />
-                        </ProgressBar>
-                      </StockIndicator>
-                    </td>
-                    <td>
-                      <StatusBadge variant={getStockStatus(product.quantity, product.minquantity)}>
-                        {getStockStatusText(product.quantity, product.minquantity)}
-                      </StatusBadge>
-                    </td>
-                    <ActionCell>
-                      <IconButton 
-                        variant="edit" 
-                        onClick={() => handleShowModal(product)}
-                        title="Edit Product"
-                      >
-                        <i className="bi bi-pencil"></i>
-                      </IconButton>
-                      <IconButton 
-                        variant="danger" 
-                        onClick={() => handleDelete(product._id)}
-                        title="Delete Product"
-                      >
-                        <i className="bi bi-trash"></i>
-                      </IconButton>
-                      {product.barcode ? (
-                        <DownloadButton
-                          href="#"
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            await downloadBarcode(product.barcode, product.name);
-                          }}
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={getStockStatusText(product.quantity, product.minquantity)}
+                        size="small"
+                        sx={{
+                          bgcolor: product.quantity <= 0 ? '#ffebee' : 
+                                  product.quantity <= product.minquantity ? '#fff3e0' : '#e8f5e9',
+                          color: product.quantity <= 0 ? '#d32f2f' : 
+                                product.quantity <= product.minquantity ? '#ed6c02' : '#2e7d32',
+                          fontWeight: 500
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton 
+                          size="small"
+                          onClick={() => handleShowModal(product)}
+                          title="Edit Product"
+                          sx={{ color: '#1976d2' }}
                         >
-                          <i className="bi bi-download"></i>
-                        </DownloadButton>
-                      ) : '-'}
-                    </ActionCell>
-                  </tr>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton 
+                          size="small"
+                          onClick={() => handleDelete(product._id)}
+                          title="Delete Product"
+                          sx={{ color: '#d32f2f' }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                        {product.barcode && (
+                          <IconButton
+                            size="small"
+                            onClick={async () => await downloadBarcode(product.barcode, product.name)}
+                            title="Download Barcode"
+                            sx={{ color: '#2e7d32' }}
+                          >
+                            <DownloadIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                    </TableCell>
+                  </TableRow>
                 ))
               ) : (
-                <tr>
-                  <td colSpan="10">
-                    <EmptyState>
-                      <i className="bi bi-search"></i>
-                      <h3>No products found with barcode "{barcodeFilter}"</h3>
-                      <p>Try a different barcode or clear the search filter.</p>
-                      <SecondaryButton 
+                <TableRow>
+                  <TableCell colSpan={10}>
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <SearchIcon sx={{ fontSize: 48, color: '#bdbdbd', mb: 2 }} />
+                      <Typography variant="h6" sx={{ color: '#666', mb: 1 }}>
+                        No products found with barcode "{barcodeFilter}"
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#999', mb: 2 }}>
+                        Try a different barcode or clear the search filter.
+                      </Typography>
+                      <Button 
+                        variant="outlined"
                         onClick={() => setBarcodeFilter('')}
-                        style={{ marginTop: '1rem' }}
+                        sx={{ borderColor: '#000', color: '#000', textTransform: 'none' }}
                       >
                         Clear Filter
-                      </SecondaryButton>
-                    </EmptyState>
-                  </td>
-                </tr>
+                      </Button>
+                    </Box>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </StyledTable>
+            </TableBody>
+          </Table>
         ) : (
-          <EmptyState>
-            <i className="bi bi-box"></i>
-            <h3>No Products Found</h3>
-            <p>Get started by adding your first product.</p>
-          </EmptyState>
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <InventoryIcon sx={{ fontSize: 64, color: '#bdbdbd', mb: 2 }} />
+            <Typography variant="h6" sx={{ color: '#666', mb: 1 }}>
+              No Products Found
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#999' }}>
+              Get started by adding your first product.
+            </Typography>
+          </Box>
         )}
       </TableContainer>
 
-      {showModal && (
-        <ModalOverlay onClick={handleCloseModal}>
-          <ModalContainer onClick={(e) => e.stopPropagation()}>
-            <ModalHeader>
-              <ModalTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</ModalTitle>
-              <CloseButton onClick={handleCloseModal}>
-                <i className="bi bi-x"></i>
-              </CloseButton>
-            </ModalHeader>
-            <form onSubmit={handleSubmit}>
-              <ModalBody>
-                <FormGrid>
-                  <FormGroup>
-                    <Label>Name </Label>
-                    <Input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="Enter product name"
-                    />
-                  </FormGroup>
+      {/* Product Add/Edit Modal */}
+      <Dialog open={showModal} onClose={handleCloseModal} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#fafafa', borderBottom: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: '#000' }}>
+            {editingProduct ? 'Edit Product' : 'Add New Product'}
+          </Typography>
+          <IconButton onClick={handleCloseModal} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent sx={{ pt: 3 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
+              <TextField
+                fullWidth
+                label="Product Name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+                placeholder="Enter product name"
+              />
 
-                  <FormGroup>
-                    <Label>Category *</Label>
-                    <select
-                      name="category"
-                      value={formData.category}
-                      onChange={handleInputChange}
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '2px solid #e0e0e0',
-                        borderRadius: '8px',
-                        fontSize: '1rem',
-                        backgroundColor: 'white',
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      <option value="">Select a category</option>
-                      {categories.map(category => (
-                        <option key={category._id} value={category._id}>
-                          {category.code} - {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </FormGroup>
-
-                  <FormGroup>
-                    <Label>Price </Label>
-                    <Input
-                      type="number"
-                      step="1"
-                      name="price"
-                      value={formData.price}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="0"
-                    />
-                  </FormGroup>
-
-                  <FormGroup>
-                    <Label>Min Quantity </Label>
-                    <Input
-                      type="number"
-                      step="1"
-                      name="minquantity"
-                      value={formData.minquantity}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="0"
-                    />
-                  </FormGroup>
-
-                  <FormGroup>
-                    <Label>Quantity </Label>
-                    <Input
-                      type="number"
-                      name="quantity"
-                      value={formData.quantity}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="0"
-                    />
-                  </FormGroup>
-
-                  <FormGroup>
-                    <Label>Vendor </Label>
-                    <Select
-                      name="vendor"
-                      value={formData.vendor}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <option value="">Select a vendor</option>
-                      {vendors.map(vendor => (
-                        <option key={vendor._id} value={vendor._id}>
-                          {vendor.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormGroup>
-
-                  <FormGroup>
-                    <Label>Product Image</Label>
-                    <Input
-                      type="file"
-                      name="photo"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                    />
-                    {formData.imagePreview && (
-                      <ImagePreview>
-                        <img src={formData.imagePreview} alt="Preview" />
-                        <RemoveImageButton type="button" onClick={removeImage}>
-                          Remove Image
-                        </RemoveImageButton>
-                      </ImagePreview>
-                    )}
-                  </FormGroup>
-                </FormGrid>
-
-                <FormGroup>
-                  <Label>Description</Label>
-                  <TextArea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    placeholder="Enter product description"
-                  />
-                </FormGroup>
-              </ModalBody>
-              <ModalFooter>
-                <SecondaryButton type="button" onClick={handleCloseModal}>
-                  Cancel
-                </SecondaryButton>
-                <PrimaryButton 
-                  type="submit"
+              <FormControl fullWidth required>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  label="Category"
                 >
-                  {editingProduct ? 'Update Product' : 'Create Product'}
-                </PrimaryButton>
-              </ModalFooter>
-            </form>
-          </ModalContainer>
-        </ModalOverlay>
-      )}
+                  <MenuItem value="">Select a category</MenuItem>
+                  {categories.map(category => (
+                    <MenuItem key={category._id} value={category._id}>
+                      {category.code} - {category.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <TextField
+                fullWidth
+                type="number"
+                label="Price (₹)"
+                name="price"
+                value={formData.price}
+                onChange={handleInputChange}
+                required
+                inputProps={{ step: '1' }}
+              />
+
+              <TextField
+                fullWidth
+                type="number"
+                label="Min Quantity"
+                name="minquantity"
+                value={formData.minquantity}
+                onChange={handleInputChange}
+                required
+                inputProps={{ step: '1' }}
+              />
+
+              <TextField
+                fullWidth
+                type="number"
+                label="Quantity"
+                name="quantity"
+                value={formData.quantity}
+                onChange={handleInputChange}
+                required
+              />
+
+              <FormControl fullWidth required>
+                <InputLabel>Vendor</InputLabel>
+                <Select
+                  name="vendor"
+                  value={formData.vendor}
+                  onChange={handleInputChange}
+                  label="Vendor"
+                >
+                  <MenuItem value="">Select a vendor</MenuItem>
+                  {vendors.map(vendor => (
+                    <MenuItem key={vendor._id} value={vendor._id}>
+                      {vendor.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <Box>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<CameraIcon />}
+                  fullWidth
+                  sx={{ borderColor: '#000', color: '#000', textTransform: 'none', py: 1.5 }}
+                >
+                  Upload Product Image
+                  <input
+                    type="file"
+                    name="photo"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    hidden
+                  />
+                </Button>
+                {formData.imagePreview && (
+                  <Box sx={{ mt: 1 }}>
+                    <img src={formData.imagePreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: 150, borderRadius: 8 }} />
+                    <Button 
+                      size="small" 
+                      color="error" 
+                      onClick={removeImage}
+                      sx={{ mt: 1, textTransform: 'none' }}
+                    >
+                      Remove Image
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Enter product description"
+            />
+          </DialogContent>
+          <DialogActions sx={{ p: 2, bgcolor: '#fafafa', borderTop: '1px solid #e0e0e0' }}>
+            <Button onClick={handleCloseModal} sx={{ color: '#666', textTransform: 'none' }}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit"
+              variant="contained"
+              sx={{ bgcolor: '#000', '&:hover': { bgcolor: '#333' }, textTransform: 'none' }}
+            >
+              {editingProduct ? 'Update Product' : 'Create Product'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
       {/* Image Preview Modal */}
-      {imagePreview && (
-        <ImagePreviewModal onClick={closeImagePreview}>
-          <ClosePreviewButton onClick={closeImagePreview}>
-            <i className="bi bi-x"></i>
-          </ClosePreviewButton>
-          <ImagePreviewContainer onClick={(e) => e.stopPropagation()}>
-            <PreviewImage src={imagePreview} alt="Product preview" />
-          </ImagePreviewContainer>
-        </ImagePreviewModal>
-      )}
+      <Dialog open={!!imagePreview} onClose={closeImagePreview} maxWidth="lg" PaperProps={{ sx: { bgcolor: 'transparent', boxShadow: 'none' } }}>
+        <IconButton
+          onClick={closeImagePreview}
+          sx={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            bgcolor: 'rgba(255,255,255,0.2)',
+            color: '#fff',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' }
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+        <Box sx={{ maxWidth: '90vw', maxHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src={imagePreview} alt="Product preview" style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain' }} />
+        </Box>
+      </Dialog>
 
       {/* RTO (Return to Origin) Modal */}
       {showRTOModal && (
@@ -2330,9 +1670,9 @@ const Products = () => {
                   Process customer returns and automatically restore inventory quantities
                 </div>
               </div>
-              <CloseButton onClick={handleCloseRTOModal}>
+              <StyledCloseButton onClick={handleCloseRTOModal}>
                 <i className="bi bi-x"></i>
-              </CloseButton>
+              </StyledCloseButton>
             </ModalHeader>
             <form onSubmit={handleRTOSubmit}>
               <ModalBody>
@@ -2454,13 +1794,13 @@ const Products = () => {
                         {rtoBarcodeMode ? '✓ Barcode Active' : '📊 Enable Barcode'}
                       </SecondaryButton>
                       {rtoBarcodeMode && rtoScannedCode && (
-                        <ActionButton 
+                        <StyledActionButton 
                           type="button"
                           onClick={addRTOBarcodeManually}
                           style={{ background: 'linear-gradient(to right, #28a745, #20c997)' }}
                         >
                           ➕ Add Item
-                        </ActionButton>
+                        </StyledActionButton>
                       )}
                     </div>
                     {rtoBarcodeMode && (
@@ -2477,10 +1817,10 @@ const Products = () => {
                     <h4 style={{ color: '#2c3e50', margin: 0, borderBottom: '2px solid #3498db', paddingBottom: '0.5rem' }}>
                       Return Items ({rtoFormData.items.length})
                     </h4>
-                    <ActionButton type="button" onClick={handleAddRTOItem}>
+                    <StyledActionButton type="button" onClick={handleAddRTOItem}>
                       <i className="bi bi-plus-circle"></i>
                       Add Item Manually
-                    </ActionButton>
+                    </StyledActionButton>
                   </div>
 
                   {rtoFormData.items.length > 0 ? (
@@ -2645,9 +1985,9 @@ const Products = () => {
                   Record customer return pickup (no inventory changes)
                 </div>
               </div>
-              <CloseButton onClick={handleCloseRPUModal}>
+              <StyledCloseButton onClick={handleCloseRPUModal}>
                 <i className="bi bi-x"></i>
-              </CloseButton>
+              </StyledCloseButton>
             </ModalHeader>
             <form onSubmit={handleRPUSubmit}>
               <ModalBody>
@@ -2720,7 +2060,7 @@ const Products = () => {
                       Items to Process
                     </h4>
                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                      <ActionButton 
+                      <StyledActionButton 
                         type="button" 
                         onClick={toggleRPUBarcodeMode}
                         style={{ 
@@ -2733,8 +2073,8 @@ const Products = () => {
                       >
                         <i className={`bi bi-${rpuBarcodeMode ? 'keyboard' : 'upc-scan'}`} style={{ marginRight: '0.3rem' }}></i>
                         {rpuBarcodeMode ? 'Manual Entry' : 'Scan Mode'}
-                      </ActionButton>
-                      <ActionButton 
+                      </StyledActionButton>
+                      <StyledActionButton 
                         type="button" 
                         onClick={rpuScannerActive ? stopRPUScanner : startRPUScanner}
                         style={{ 
@@ -2747,7 +2087,7 @@ const Products = () => {
                       >
                         <i className={`bi bi-${rpuScannerActive ? 'stop-circle' : 'camera'}`} style={{ marginRight: '0.3rem' }}></i>
                         {rpuScannerActive ? 'Stop Camera' : 'Start Camera'}
-                      </ActionButton>
+                      </StyledActionButton>
                     </div>
                   </div>
 
@@ -2804,7 +2144,7 @@ const Products = () => {
                         }}
                         style={{ flex: 1 }}
                       />
-                      <ActionButton 
+                      <StyledActionButton 
                         type="button" 
                         onClick={addRPUBarcodeManually}
                         style={{ 
@@ -2816,7 +2156,7 @@ const Products = () => {
                       >
                         <i className="bi bi-plus-circle" style={{ marginRight: '0.3rem' }}></i>
                         Add Item
-                      </ActionButton>
+                      </StyledActionButton>
                     </div>
                   )}
 
@@ -2844,7 +2184,7 @@ const Products = () => {
                 <div style={{ marginBottom: '2rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h5 style={{ color: '#2c3e50', margin: 0 }}>Items ({rpuFormData.items.length})</h5>
-                    <ActionButton 
+                    <StyledActionButton 
                       type="button" 
                       onClick={handleAddRPUItem}
                       style={{ 
@@ -2857,7 +2197,7 @@ const Products = () => {
                     >
                       <i className="bi bi-plus" style={{ marginRight: '0.3rem' }}></i>
                       Add Item
-                    </ActionButton>
+                    </StyledActionButton>
                   </div>
 
                   {rpuFormData.items.length === 0 ? (
@@ -3059,7 +2399,7 @@ const Products = () => {
           </ModalContainer>
         </ModalOverlay>
       )}
-    </PageContainer>
+    </Box>
   );
 };
 

@@ -2,6 +2,19 @@ import React, { useState, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { productsAPI, purchasesAPI, salesAPI } from '../services/api';
 
+// Theme Colors - Premium Gold & Black
+const THEME = {
+  gold: '#D4AF37',
+  richGold: '#C9A227',
+  softGold: '#E2C878',
+  lightGold: '#F4E3B2',
+  black: '#000000',
+  charcoal: '#1A1A1A',
+  softCharcoal: '#2C2C2C',
+  white: '#FFFFFF',
+  offWhite: '#F8F5F0'
+};
+
 // Animations - Made slightly sharper and less "bouncy" to match the professional look
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(10px); }
@@ -18,19 +31,18 @@ const progressBar = keyframes`
   to { width: 100%; }
 `;
 
-// --- Updated Color Palette Reference (Mental Model) ---
-// Background: #FFFFFF
-// Surface/Hover: #F9FAFB
-// Border: #EAECF0
-// Text Main: #101828
-// Text Secondary: #667085
-// Primary/Brand: #101828 (Black/Charcoal) or specific brand color
+// --- Premium Gold & Black Color Palette ---
+// Primary Gold: #D4AF37
+// Rich Gold: #C9A227
+// Light Gold: #F4E3B2
+// Charcoal: #1A1A1A
+// Off-White: #F8F5F0
 
 const DashboardContainer = styled.div`
   padding: 2.5rem;
-  background-color: #FFFFFF;
+  background-color: rgba(248, 245, 240, 0.85);
   min-height: 100vh;
-  color: #101828;
+  color: ${THEME.charcoal};
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   animation: ${fadeIn} 0.4s ease-out;
   

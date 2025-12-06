@@ -648,7 +648,7 @@ const ProfitLoss = () => {
   };
 
   return (
-    <Box sx={{ p: 3, bgcolor: '#fafafa', minHeight: '100vh' }}>
+    <Box sx={{ p: 3, backgroundColor: 'rgba(248, 245, 240, 0.85)', minHeight: '100vh' }}>
       <Snackbar 
         open={!!error} 
         autoHideDuration={6000} 

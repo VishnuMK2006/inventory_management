@@ -1,113 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Alert, Form, Button, Row, Col, Card, Spinner, Modal, Badge } from 'react-bootstrap';
 import { uploadedProfitSheetsAPI } from '../services/api';
-import styled from 'styled-components';
-import { FaEye, FaTrash, FaSearch, FaSync, FaDownload } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
+  Snackbar,
+  CircularProgress,
+  Grid,
+  Card,
+  CardContent,
+  Chip,
+  IconButton
+} from '@mui/material';
+import {
+  Visibility as VisibilityIcon,
+  Delete as DeleteIcon,
+  Refresh as RefreshIcon,
+  Download as DownloadIcon,
+  Assessment as AssessmentIcon,
+  Close as CloseIcon,
+  Search as SearchIcon
+} from '@mui/icons-material';
 
-const Container = styled.div`
-  padding: 2rem;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 100vh;
-`;
-
-const HeaderSection = styled.div`
-  background: white;
-  padding: 2rem;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-`;
-
-const FilterCard = styled(Card)`
-  border: none;
-  border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  
-  .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 15px 15px 0 0;
-    border: none;
-    font-weight: 600;
-  }
-`;
-
-const StyledTable = styled(Table)`
-  background: white;
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  
-  thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    
-    th {
-      border: none;
-      padding: 1.2rem;
-      font-weight: 600;
-    }
-  }
-  
-  tbody tr {
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background: #f8f9fa;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    td {
-      padding: 1rem;
-      vertical-align: middle;
-      border: none;
-    }
-  }
-`;
-
-const SummaryCard = styled(Card)`
-  border: none;
-  border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  background: linear-gradient(135deg, ${props => props.color1} 0%, ${props => props.color2} 100%);
-  color: white;
-  
-  .card-body {
-    padding: 1.5rem;
-  }
-  
-  .summary-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
-  
-  .summary-label {
-    font-size: 0.9rem;
-    opacity: 0.9;
-  }
-`;
-
-const ActionButtonGroup = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  
-  button {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-  }
-`;
+// Theme Colors - Premium Gold & Black
+const THEME = {
+  gold: '#D4AF37',
+  richGold: '#C9A227',
+  softGold: '#E2C878',
+  lightGold: '#F4E3B2',
+  black: '#000000',
+  charcoal: '#1A1A1A',
+  softCharcoal: '#2C2C2C',
+  white: '#FFFFFF',
+  offWhite: '#F8F5F0'
+};
 
 const UploadedDataManagement = () => {
   const [uploads, setUploads] = useState([]);
@@ -228,335 +168,585 @@ const UploadedDataManagement = () => {
 
   const formatCurrency = (value) => {
     const num = Number(value) || 0;
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'INR'
     }).format(num);
   };
 
   return (
-    <Container>
-      <HeaderSection>
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            <h2 style={{ color: '#333', marginBottom: '0.5rem' }}>📊 Uploaded Data Management</h2>
-            <p style={{ color: '#666', marginBottom: 0 }}>View and manage all previously uploaded profit sheets</p>
-          </div>
-          <Button 
-            variant="primary" 
-            onClick={() => {
-              fetchUploads();
-              fetchSummary();
-            }}
-            className="d-flex align-items-center gap-2"
-          >
-            <FaSync /> Refresh
-          </Button>
-        </div>
-      </HeaderSection>
+    <Box sx={{ padding: '2.5rem', backgroundColor: 'rgba(255, 255, 255, 0.85)', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
+      {/* Header */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '2.5rem'
+      }}>
+        <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <AssessmentIcon sx={{ fontSize: '2rem', color: THEME.gold }} />
+            <Typography variant="h4" sx={{ fontWeight: 600, color: THEME.charcoal, letterSpacing: '-0.02em', margin: 0 }}>
+              Uploaded Data Management
+            </Typography>
+          </Box>
+          <Typography sx={{ color: THEME.softCharcoal, fontSize: '1rem', marginTop: '0.5rem' }}>
+            View and manage all previously uploaded profit sheets
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<RefreshIcon />}
+          onClick={() => {
+            fetchUploads();
+            fetchSummary();
+          }}
+          sx={{
+            backgroundColor: THEME.gold,
+            color: THEME.black,
+            textTransform: 'none',
+            borderRadius: '8px',
+            padding: '10px 24px',
+            fontWeight: 600,
+            boxShadow: '0px 1px 2px rgba(212, 175, 55, 0.2)',
+            '&:hover': {
+              backgroundColor: THEME.richGold,
+              boxShadow: '0px 4px 6px -2px rgba(16, 24, 40, 0.03), 0px 12px 16px -4px rgba(16, 24, 40, 0.08)'
+            }
+          }}
+        >
+          Refresh
+        </Button>
+      </Box>
 
-      {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
-      {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
+      {/* Alerts */}
+      <Snackbar 
+        open={!!error} 
+        autoHideDuration={6000} 
+        onClose={() => setError('')}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setError('')} severity="error" sx={{ width: '100%', borderRadius: '8px' }}>
+          {error}
+        </Alert>
+      </Snackbar>
+      <Snackbar 
+        open={!!success} 
+        autoHideDuration={6000} 
+        onClose={() => setSuccess('')}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setSuccess('')} severity="success" sx={{ width: '100%', borderRadius: '8px' }}>
+          {success}
+        </Alert>
+      </Snackbar>
 
       {/* Summary Cards */}
       {summary && (
-        <Row className="mb-4">
-          <Col md={3}>
-            <SummaryCard color1="#667eea" color2="#764ba2">
-              <Card.Body>
-                <div className="summary-value">{summary?.totalUploads || 0}</div>
-                <div className="summary-label">Total Uploads</div>
-              </Card.Body>
-            </SummaryCard>
-          </Col>
-          <Col md={3}>
-            <SummaryCard color1="#4facfe" color2="#00f2fe">
-              <Card.Body>
-                    <div className="summary-value">{formatCurrency(summary?.profitSummary?.deliveredProfit)}</div>
-                <div className="summary-label">✅ Delivered Profit</div>
-              </Card.Body>
-            </SummaryCard>
-          </Col>
-          <Col md={2}>
-            <SummaryCard color1="#ffa500" color2="#ff6347">
-              <Card.Body>
-                <div className="summary-value">{formatCurrency(summary?.profitSummary?.rtoProfit || 0)}</div>
-                <div className="summary-label">📦 RTO Profit</div>
-              </Card.Body>
-            </SummaryCard>
-          </Col>
-          <Col md={2}>
-            <SummaryCard color1="#fa709a" color2="#fee140">
-              <Card.Body>
-                <div className="summary-value">{formatCurrency(summary?.profitSummary?.rpuProfit || 0)}</div>
-                <div className="summary-label">🔄 RPU Profit</div>
-              </Card.Body>
-            </SummaryCard>
-          </Col>
-          <Col md={2}>
-            <SummaryCard color1="#667eea" color2="#764ba2">
-              <Card.Body>
-                <div className="summary-value">{formatCurrency(summary?.profitSummary?.netProfit)}</div>
-                <div className="summary-label">💰 Net Profit</div>
-              </Card.Body>
-            </SummaryCard>
-          </Col>
-        </Row>
+        <Grid container spacing={2} sx={{ marginBottom: '2.5rem' }}>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <Card sx={{ 
+              border: `1px solid ${THEME.softGold}`,
+              borderRadius: '12px',
+              boxShadow: '0px 1px 2px rgba(212, 175, 55, 0.15)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                borderColor: THEME.gold,
+                boxShadow: '0px 4px 6px -2px rgba(212, 175, 55, 0.2), 0px 12px 16px -4px rgba(212, 175, 55, 0.3)'
+              }
+            }}>
+              <CardContent>
+                <Typography sx={{ fontSize: '2rem', fontWeight: 700, color: THEME.gold, marginBottom: '0.5rem' }}>
+                  {summary?.totalUploads || 0}
+                </Typography>
+                <Typography sx={{ fontSize: '0.875rem', color: THEME.charcoal, fontWeight: 500 }}>
+                  Total Uploads
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <Card sx={{ 
+              border: `1px solid ${THEME.softGold}`,
+              borderRadius: '12px',
+              boxShadow: '0px 1px 2px rgba(212, 175, 55, 0.15)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                borderColor: THEME.gold,
+                boxShadow: '0px 4px 6px -2px rgba(212, 175, 55, 0.2), 0px 12px 16px -4px rgba(212, 175, 55, 0.3)'
+              }
+            }}>
+              <CardContent>
+                <Typography sx={{ fontSize: '2rem', fontWeight: 700, color: '#2e7d32', marginBottom: '0.5rem' }}>
+                  {formatCurrency(summary?.profitSummary?.deliveredProfit)}
+                </Typography>
+                <Typography sx={{ fontSize: '0.875rem', color: THEME.charcoal, fontWeight: 500 }}>
+                  ✅ Delivered Profit
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <Card sx={{ 
+              border: `1px solid ${THEME.softGold}`,
+              borderRadius: '12px',
+              boxShadow: '0px 1px 2px rgba(212, 175, 55, 0.15)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                borderColor: THEME.gold,
+                boxShadow: '0px 4px 6px -2px rgba(212, 175, 55, 0.2), 0px 12px 16px -4px rgba(212, 175, 55, 0.3)'
+              }
+            }}>
+              <CardContent>
+                <Typography sx={{ fontSize: '2rem', fontWeight: 700, color: '#ed6c02', marginBottom: '0.5rem' }}>
+                  {formatCurrency(summary?.profitSummary?.rtoProfit || 0)}
+                </Typography>
+                <Typography sx={{ fontSize: '0.875rem', color: THEME.charcoal, fontWeight: 500 }}>
+                  📦 RTO Profit
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <Card sx={{ 
+              border: '1px solid #EAECF0',
+              borderRadius: '12px',
+              boxShadow: '0px 1px 2px rgba(16, 24, 40, 0.05)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                borderColor: '#D0D5DD',
+                boxShadow: '0px 4px 6px -2px rgba(16, 24, 40, 0.03), 0px 12px 16px -4px rgba(16, 24, 40, 0.08)'
+              }
+            }}>
+              <CardContent>
+                <Typography sx={{ fontSize: '2rem', fontWeight: 700, color: '#d32f2f', marginBottom: '0.5rem' }}>
+                  {formatCurrency(summary?.profitSummary?.rpuProfit || 0)}
+                </Typography>
+                <Typography sx={{ fontSize: '0.875rem', color: '#667085', fontWeight: 500 }}>
+                  🔄 RPU Profit
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <Card sx={{ 
+              border: '1px solid #EAECF0',
+              borderRadius: '12px',
+              boxShadow: '0px 1px 2px rgba(16, 24, 40, 0.05)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                borderColor: '#D0D5DD',
+                boxShadow: '0px 4px 6px -2px rgba(16, 24, 40, 0.03), 0px 12px 16px -4px rgba(16, 24, 40, 0.08)'
+              }
+            }}>
+              <CardContent>
+                <Typography sx={{ fontSize: '2rem', fontWeight: 700, color: '#1976d2', marginBottom: '0.5rem' }}>
+                  {formatCurrency(summary?.profitSummary?.netProfit)}
+                </Typography>
+                <Typography sx={{ fontSize: '0.875rem', color: '#667085', fontWeight: 500 }}>
+                  💰 Net Profit
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
       )}
 
       {/* Filter Card */}
-      <FilterCard>
-        <Card.Header>🔍 Search & Filter</Card.Header>
-        <Card.Body>
-          <Row className="g-3">
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label>Search File Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Search by filename..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="rounded-3"
+      <Card sx={{ 
+        border: '1px solid #EAECF0',
+        borderRadius: '12px',
+        boxShadow: '0px 1px 2px rgba(16, 24, 40, 0.05)',
+        marginBottom: '2.5rem'
+      }}>
+        <Box sx={{ 
+          padding: '16px 24px', 
+          backgroundColor: '#F9FAFB',
+          borderBottom: '1px solid #EAECF0',
+          borderRadius: '12px 12px 0 0'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <SearchIcon sx={{ color: '#667085' }} />
+            <Typography sx={{ fontWeight: 600, color: '#101828' }}>
+              Search & Filter
+            </Typography>
+          </Box>
+        </Box>
+        <CardContent sx={{ padding: '24px' }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Typography sx={{ marginBottom: '8px', fontWeight: 500, color: '#344054', fontSize: '0.875rem' }}>
+                Search File Name
+              </Typography>
+              <TextField
+                fullWidth
+                placeholder="Search by filename..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '8px'
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography sx={{ marginBottom: '8px', fontWeight: 500, color: '#344054', fontSize: '0.875rem' }}>
+                Date Range
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  type="date"
+                  fullWidth
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px'
+                    }
+                  }}
                 />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label>Date Range</Form.Label>
-                <div className="d-flex gap-2">
-                  <Form.Control
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="rounded-3"
-                  />
-                  <Form.Control
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="rounded-3"
-                  />
-                </div>
-              </Form.Group>
-            </Col>
-          </Row>
-        </Card.Body>
-      </FilterCard>
+                <TextField
+                  type="date"
+                  fullWidth
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px'
+                    }
+                  }}
+                />
+              </Box>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
 
       {/* Uploads Table */}
       {loading ? (
-        <div className="text-center py-5">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3">Loading uploads...</p>
-        </div>
+        <Box sx={{ textAlign: 'center', padding: '3rem' }}>
+          <CircularProgress sx={{ color: '#000' }} />
+          <Typography sx={{ marginTop: '1rem', color: '#667085' }}>Loading uploads...</Typography>
+        </Box>
       ) : filteredUploads.length === 0 ? (
-        <Alert variant="info">No upload records found</Alert>
+        <Alert severity="info" sx={{ borderRadius: '8px' }}>No upload records found</Alert>
       ) : (
-        <StyledTable responsive>
-          <thead>
-            <tr>
-              <th>File Name</th>
-              <th>Upload Date</th>
-              <th>Records</th>
-              <th>Delivered Profit</th>
-              <th>RPU Profit</th>
-              <th>Net Profit</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUploads.map(upload => (
-              <tr key={upload._id}>
-                <td>
-                  <strong>{upload.fileName}</strong>
-                </td>
-                <td>{upload.uploadDate ? new Date(upload.uploadDate).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }) : '-'}</td>
-                <td>{upload.successRecords || 0}/{upload.totalRecords || 0}</td>
-                <td>
-                    <span style={{ color: '#28a745', fontWeight: '600' }}>
+        <TableContainer component={Paper} sx={{ 
+          borderRadius: '12px',
+          border: `1px solid ${THEME.softGold}`,
+          boxShadow: '0px 1px 2px rgba(212, 175, 55, 0.15)',
+          overflow: 'hidden'
+        }}>
+          <Table>
+            <TableHead sx={{ backgroundColor: THEME.lightGold }}>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>File Name</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Upload Date</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Records</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Delivered Profit</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>RPU Profit</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Net Profit</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredUploads.map(upload => (
+                <TableRow 
+                  key={upload._id}
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: THEME.lightGold
+                    },
+                    transition: 'background-color 0.2s ease'
+                  }}
+                >
+                  <TableCell sx={{ padding: '16px', fontWeight: 600, color: THEME.charcoal }}>
+                    {upload.fileName}
+                  </TableCell>
+                  <TableCell sx={{ padding: '16px', color: '#667085' }}>
+                    {upload.uploadDate ? new Date(upload.uploadDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }) : '-'}
+                  </TableCell>
+                  <TableCell sx={{ padding: '16px', color: '#667085' }}>
+                    {upload.successRecords || 0}/{upload.totalRecords || 0}
+                  </TableCell>
+                  <TableCell sx={{ padding: '16px', fontWeight: 600, color: '#2e7d32' }}>
                     {formatCurrency(upload?.profitSummary?.deliveredProfit)}
-                  </span>
-                </td>
-                <td>
-                    <span style={{ color: '#dc3545', fontWeight: '600' }}>
+                  </TableCell>
+                  <TableCell sx={{ padding: '16px', fontWeight: 600, color: '#d32f2f' }}>
                     {formatCurrency(upload?.profitSummary?.rpuProfit || 0)}
-                  </span>
-                </td>
-                <td>
-                    <span style={{ 
-                    fontWeight: '600',
-                    color: (Number(upload?.profitSummary?.netProfit) || 0) >= 0 ? '#007bff' : '#dc3545'
+                  </TableCell>
+                  <TableCell sx={{ 
+                    padding: '16px', 
+                    fontWeight: 600, 
+                    color: (Number(upload?.profitSummary?.netProfit) || 0) >= 0 ? '#1976d2' : '#d32f2f'
                   }}>
                     {formatCurrency(upload?.profitSummary?.netProfit)}
-                  </span>
-                </td>
-                <td>
-                  <Badge bg="success">{upload.status || 'Unknown'}</Badge>
-                </td>
-                <td>
-                  <ActionButtonGroup>
-                    <Button
-                      size="sm"
-                      variant="info"
-                      onClick={() => handleViewDetails(upload)}
-                      title="View Details"
-                    >
-                      <FaEye />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="success"
-                      onClick={() => downloadAsExcel(upload)}
-                      title="Download as Excel"
-                    >
-                      <FaDownload />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() => handleDelete(upload._id)}
-                      title="Delete"
-                    >
-                      <FaTrash />
-                    </Button>
-                  </ActionButtonGroup>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </StyledTable>
+                  </TableCell>
+                  <TableCell sx={{ padding: '16px' }}>
+                    <Chip 
+                      label={upload.status || 'Unknown'} 
+                      size="small"
+                      sx={{ 
+                        backgroundColor: '#F9FAFB', 
+                        color: '#101828',
+                        border: '1px solid #EAECF0',
+                        fontWeight: 500
+                      }} 
+                    />
+                  </TableCell>
+                  <TableCell sx={{ padding: '16px' }}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleViewDetails(upload)}
+                        title="View Details"
+                        sx={{
+                          color: '#667085',
+                          border: '1px solid #EAECF0',
+                          '&:hover': {
+                            borderColor: '#D0D5DD',
+                            backgroundColor: '#F9FAFB'
+                          }
+                        }}
+                      >
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => downloadAsExcel(upload)}
+                        title="Download as Excel"
+                        sx={{
+                          color: '#667085',
+                          border: '1px solid #EAECF0',
+                          '&:hover': {
+                            borderColor: '#D0D5DD',
+                            backgroundColor: '#F9FAFB'
+                          }
+                        }}
+                      >
+                        <DownloadIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(upload._id)}
+                        title="Delete"
+                        sx={{
+                          color: '#d32f2f',
+                          border: '1px solid #d32f2f',
+                          '&:hover': {
+                            borderColor: '#c62828',
+                            backgroundColor: '#ffebee'
+                          }
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
       {/* Details Modal */}
-      <Modal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} size="lg" centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Upload Details - {selectedUpload?.fileName}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
+      <Dialog 
+        open={showDetailsModal} 
+        onClose={() => setShowDetailsModal(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px'
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, color: '#101828' }}>
+          Upload Details - {selectedUpload?.fileName}
+          <IconButton
+            onClick={() => setShowDetailsModal(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: '#667085'
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
           {selectedUpload && (
-            <>
-              <Row className="mb-3">
-                <Col md={6}>
-                  <strong>Upload Date:</strong>
-                  <p>{new Date(selectedUpload.uploadDate).toLocaleString()}</p>
-                </Col>
-                <Col md={6}>
-                  <strong>Total Records:</strong>
-                  <p>{selectedUpload?.successRecords || 0} successful / {selectedUpload?.totalRecords || 0} total</p>
-                </Col>
-              </Row>
+            <Box>
+              <Grid container spacing={2} sx={{ marginBottom: '24px' }}>
+                <Grid item xs={12} md={6}>
+                  <Typography sx={{ fontWeight: 600, color: '#101828', marginBottom: '4px' }}>Upload Date:</Typography>
+                  <Typography sx={{ color: '#667085' }}>{new Date(selectedUpload.uploadDate).toLocaleString()}</Typography>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography sx={{ fontWeight: 600, color: '#101828', marginBottom: '4px' }}>Total Records:</Typography>
+                  <Typography sx={{ color: '#667085' }}>
+                    {selectedUpload?.successRecords || 0} successful / {selectedUpload?.totalRecords || 0} total
+                  </Typography>
+                </Grid>
+              </Grid>
 
-              <Row className="mb-3">
-                <Col md={3}>
-                  <Card className="text-center">
-                    <Card.Body>
-                        <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#28a745' }}>
+              <Grid container spacing={2} sx={{ marginBottom: '24px' }}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card sx={{ textAlign: 'center', border: '1px solid #EAECF0', boxShadow: 'none', borderRadius: '8px' }}>
+                    <CardContent>
+                      <Typography sx={{ fontSize: '1.5rem', fontWeight: 700, color: '#2e7d32', marginBottom: '8px' }}>
                         {formatCurrency(selectedUpload?.profitSummary?.deliveredProfit)}
-                      </div>
-                      <small>✅ Delivered Profit</small>
-                    </Card.Body>
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#667085' }}>✅ Delivered Profit</Typography>
+                    </CardContent>
                   </Card>
-                </Col>
-                <Col md={3}>
-                  <Card className="text-center">
-                    <Card.Body>
-                        <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#ff8c00' }}>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card sx={{ textAlign: 'center', border: '1px solid #EAECF0', boxShadow: 'none', borderRadius: '8px' }}>
+                    <CardContent>
+                      <Typography sx={{ fontSize: '1.5rem', fontWeight: 700, color: '#ed6c02', marginBottom: '8px' }}>
                         {formatCurrency(selectedUpload?.profitSummary?.rtoProfit || 0)}
-                      </div>
-                      <small>📦 RTO Profit</small>
-                    </Card.Body>
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#667085' }}>📦 RTO Profit</Typography>
+                    </CardContent>
                   </Card>
-                </Col>
-                <Col md={3}>
-                  <Card className="text-center">
-                    <Card.Body>
-                        <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#dc3545' }}>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card sx={{ textAlign: 'center', border: '1px solid #EAECF0', boxShadow: 'none', borderRadius: '8px' }}>
+                    <CardContent>
+                      <Typography sx={{ fontSize: '1.5rem', fontWeight: 700, color: '#d32f2f', marginBottom: '8px' }}>
                         {formatCurrency(selectedUpload?.profitSummary?.rpuProfit || 0)}
-                      </div>
-                      <small>🔄 RPU Profit</small>
-                    </Card.Body>
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#667085' }}>🔄 RPU Profit</Typography>
+                    </CardContent>
                   </Card>
-                </Col>
-                <Col md={3}>
-                  <Card className="text-center">
-                    <Card.Body>
-                      <div style={{ 
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card sx={{ textAlign: 'center', border: '1px solid #EAECF0', boxShadow: 'none', borderRadius: '8px' }}>
+                    <CardContent>
+                      <Typography sx={{ 
                         fontSize: '1.5rem', 
-                        fontWeight: '700',
-                        color: (Number(selectedUpload?.profitSummary?.netProfit) || 0) >= 0 ? '#007bff' : '#dc3545'
+                        fontWeight: 700,
+                        color: (Number(selectedUpload?.profitSummary?.netProfit) || 0) >= 0 ? '#1976d2' : '#d32f2f',
+                        marginBottom: '8px'
                       }}>
                         {formatCurrency(selectedUpload?.profitSummary?.netProfit)}
-                      </div>
-                      <small>💰 Net Profit</small>
-                    </Card.Body>
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#667085' }}>💰 Net Profit</Typography>
+                    </CardContent>
                   </Card>
-                </Col>
-              </Row>
+                </Grid>
+              </Grid>
 
-              <h6 className="mt-4 mb-3">📋 Detailed Records</h6>
-              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                <Table striped bordered hover size="sm">
-                  <thead>
-                    <tr>
-                      <th>Combo ID</th>
-                      <th>Quantity</th>
-                      <th>Cost Price</th>
-                      <th>Sold Price</th>
-                      <th>Profit</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(selectedUpload.uploadedData || []).map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{item.comboId}</td>
-                        <td>{item.quantity}</td>
-                        <td>{formatCurrency(item.costPrice)}</td>
-                        <td>{formatCurrency(item.soldPrice)}</td>
-                        <td style={{ color: item.profitTotal >= 0 ? '#28a745' : '#dc3545', fontWeight: '600' }}>
-                          {formatCurrency(item.profitTotal)}
-                        </td>
-                        <td>
-                          <Badge bg={
-                            item.status === 'delivered' ? 'success' : 
-                            item.status === 'rtu' ? 'warning' : 
-                            item.status === 'rpu' ? 'danger' : 'secondary'
-                          }>
-                            {item.status === 'rtu' ? '📦 RTO' : item.status === 'rpu' ? '🔄 RPU' : '✅ Delivered'}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            </>
+              <Typography variant="h6" sx={{ marginTop: '32px', marginBottom: '16px', fontWeight: 600, color: '#101828' }}>
+                📋 Detailed Records
+              </Typography>
+              <Box sx={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <TableContainer component={Paper} sx={{ border: '1px solid #EAECF0', borderRadius: '8px' }}>
+                  <Table size="small">
+                    <TableHead sx={{ backgroundColor: '#F9FAFB' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Combo ID</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Quantity</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Cost Price</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Sold Price</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Profit</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Status</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {(selectedUpload.uploadedData || []).map((item, idx) => (
+                        <TableRow key={idx} sx={{ '&:hover': { backgroundColor: '#F9FAFB' } }}>
+                          <TableCell>{item.comboId}</TableCell>
+                          <TableCell>{item.quantity}</TableCell>
+                          <TableCell>{formatCurrency(item.costPrice)}</TableCell>
+                          <TableCell>{formatCurrency(item.soldPrice)}</TableCell>
+                          <TableCell sx={{ 
+                            color: item.profitTotal >= 0 ? '#2e7d32' : '#d32f2f', 
+                            fontWeight: 600 
+                          }}>
+                            {formatCurrency(item.profitTotal)}
+                          </TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={item.status === 'rtu' ? '📦 RTO' : item.status === 'rpu' ? '🔄 RPU' : '✅ Delivered'}
+                              size="small"
+                              sx={{ 
+                                backgroundColor: 
+                                  item.status === 'delivered' ? '#e8f5e9' : 
+                                  item.status === 'rtu' ? '#fff3e0' : 
+                                  item.status === 'rpu' ? '#ffebee' : '#f5f5f5',
+                                color:
+                                  item.status === 'delivered' ? '#2e7d32' : 
+                                  item.status === 'rtu' ? '#ed6c02' : 
+                                  item.status === 'rpu' ? '#d32f2f' : '#666',
+                                border: '1px solid',
+                                borderColor:
+                                  item.status === 'delivered' ? '#a5d6a7' : 
+                                  item.status === 'rtu' ? '#ffb74d' : 
+                                  item.status === 'rpu' ? '#e57373' : '#ddd'
+                              }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            </Box>
           )}
-        </Modal.Body>
-        <Modal.Footer>
+        </DialogContent>
+        <DialogActions sx={{ padding: '16px 24px' }}>
           {selectedUpload && (
             <Button 
-              variant="success" 
+              variant="contained"
+              startIcon={<DownloadIcon />}
               onClick={() => downloadAsExcel(selectedUpload)}
-              className="d-flex align-items-center gap-2"
+              sx={{
+                textTransform: 'none',
+                backgroundColor: '#000',
+                '&:hover': {
+                  backgroundColor: '#333'
+                }
+              }}
             >
-              <FaDownload /> Download as Excel
+              Download as Excel
             </Button>
           )}
-          <Button variant="secondary" onClick={() => setShowDetailsModal(false)}>
+          <Button 
+            variant="outlined"
+            onClick={() => setShowDetailsModal(false)}
+            sx={{
+              textTransform: 'none',
+              color: '#667085',
+              borderColor: '#EAECF0',
+              '&:hover': {
+                borderColor: '#D0D5DD',
+                backgroundColor: '#F9FAFB'
+              }
+            }}
+          >
             Close
           </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

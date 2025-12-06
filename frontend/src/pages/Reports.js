@@ -273,7 +273,7 @@ const Reports = () => {
   const selectedProductName = products.find(p => p._id === selectedProduct)?.name || 'Product';
 
   return (
-    <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh', p: 3 }}>
+    <Box sx={{ backgroundColor: 'rgba(248, 245, 240, 0.85)', minHeight: '100vh', p: 3 }}>
       <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
         <Alert onClose={() => setError('')} severity="error" sx={{ width: '100%' }}>
           {error}

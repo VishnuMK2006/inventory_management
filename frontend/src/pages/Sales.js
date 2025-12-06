@@ -328,848 +328,67 @@ const SaleForm = ({ initialData, buyers, products, onSubmit, onCancel, loading }
   );
 };
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Button,
-  Table,
-  Modal,
-  Form,
-  Alert,
-  Row,
-  Col,
-  ListGroup,
-  Spinner,
-  Badge,
-  Toast,
-  ToastContainer,
-  OverlayTrigger,
-  Tooltip,
-  Popover
-} from "react-bootstrap";
+import { OverlayTrigger, Popover } from "react-bootstrap";
 import { salesAPI, buyersAPI, productsAPI, barcodesAPI } from "../services/api";
 import Quagga from "quagga";
-import styled, { keyframes, css, createGlobalStyle } from 'styled-components';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Chip,
+  Alert,
+  Snackbar,
+  CircularProgress,
+  InputAdornment,
+  IconButton,
+  Grid,
+  Card,
+  CardContent,
+  Divider,
+  Tooltip
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Search as SearchIcon,
+  Visibility as VisibilityIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Receipt as ReceiptIcon,
+  Close as CloseIcon,
+  CameraAlt as CameraAltIcon,
+  QrCodeScanner as QrCodeScannerIcon,
+  ShoppingCart as ShoppingCartIcon,
+  Print as PrintIcon
+} from '@mui/icons-material';
 
-// Print styles
-const PrintStyles = createGlobalStyle`
-  @media print {
-    * {
-      -webkit-print-color-adjust: exact !important;
-      color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    
-    body * {
-      visibility: hidden;
-    }
-    
-    .modal, .modal * {
-      visibility: visible;
-    }
-    
-    .modal {
-      position: absolute !important;
-      left: 0 !important;
-      top: 0 !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      min-height: 100vh !important;
-      max-height: none !important;
-      height: auto !important;
-      overflow: visible !important;
-      background: white !important;
-      transform: none !important;
-      z-index: 1 !important;
-    }
-    
-    .modal-dialog {
-      max-width: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      height: auto !important;
-      transform: none !important;
-    }
-    
-    .modal-content {
-      border: none !important;
-      box-shadow: none !important;
-      border-radius: 0 !important;
-      height: auto !important;
-      background: white !important;
-      transform: none !important;
-    }
-    
-    .modal-header, .modal-footer {
-      display: none !important;
-    }
-    
-    .modal-body {
-      padding: 0 !important;
-      background: white !important;
-      margin: 0 !important;
-      display: block !important;
-      visibility: visible !important;
-    }
-    
-    @page {
-      size: A4;
-      margin: 0.5in;
-    }
-    
-    table {
-      page-break-inside: avoid;
-      -webkit-print-color-adjust: exact !important;
-      color-adjust: exact !important;
-    }
-    
-    tr {
-      page-break-inside: avoid;
-    }
-    
-    h1, h2, h3 {
-      page-break-after: avoid;
-      -webkit-print-color-adjust: exact !important;
-      color-adjust: exact !important;
-      display: block !important;
-      visibility: visible !important;
-    }
-    
-    /* Force colors to print */
-    thead, thead th {
-      background: #3498db !important;
-      color: white !important;
-      -webkit-print-color-adjust: exact !important;
-      color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    
-    .bg-light {
-      background: #f8f9fa !important;
-      -webkit-print-color-adjust: exact !important;
-      color-adjust: exact !important;
-    }
-    
-    /* Ensure proper spacing and layout */
-    .invoice-container {
-      max-width: 100% !important;
-      width: 100% !important;
-    }
-  }
-`;
-
-// Animations
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
-
-const slideIn = keyframes`
-  from { transform: translateX(-30px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-`;
-
-const pulse = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-`;
-
-const scannerFlash = keyframes`
-  0% { opacity: 0.3; }
-  50% { opacity: 1; }
-  100% { opacity: 0.3; }
-`;
-
-// Styled Components
-const Container = styled.div`
-  padding: 2rem;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 100vh;
-`;
-
-const AnimatedContainer = styled.div`
-  animation: ${fadeIn} 0.6s ease-out;
-`;
-
-const HeaderSection = styled.div`
-  background: white;
-  height: 100px;
-  padding: 2rem;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  animation: ${slideIn} 0.5s ease-out;
-`;
-
-const StyledTable = styled(Table)`
-  background: white;
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  
-  thead {
-    background: linear-gradient(to right, #3498db);
-    color: white;
-    th {
-      background: linear-gradient(to right, #3498db);
-      border: none;
-      padding: 1.2rem;
-      font-weight: 500;
-    }
-  }
-  
-  tbody tr {
-    transition: all 0.3s ease;
-    
-    &:hover {
-    background: linear-gradient(to right, #3498db);
-      color: white;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    
-    td {
-      padding: 1.2rem;
-      border-color: #e9ecef;
-    }
-  }
-`;
-
-const PrimaryButton = styled(Button)`
-  background: linear-gradient(to right, #3498db);
-  border: none;
-  border-radius: 25px;
-  padding: 0.8rem 2rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-    background: linear-gradient(to right, #3498db, #2ecc71);
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  border-radius: 20px;
-  padding: 0.5rem 1.2rem;
-  transition: all 0.3s ease;
-  border: 2px solid #667eea;
-  color: #667eea;
-  background: transparent;
-  
-  &:hover {
-    background: #667eea;
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  }
-`;
-
-const SuccessButton = styled(Button)`
-  border-radius: 20px;
-  padding: 0.5rem 1.2rem;
-  transition: all 0.3s ease;
-  border: 2px solid #48bb78;
-  color: #48bb78;
-  background: transparent;
-  
-  &:hover {
-    background: #48bb78;
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
-  }
-`;
-
-const DangerButton = styled(Button)`
-  border-radius: 20px;
-  padding: 0.5rem 1rem;
-  transition: all 0.3s ease;
-  font-weight: 500;
-  
-  &:hover {
-    animation: ${pulse} 0.6s ease;
-    background-color: #dc3545;
-    border-color: #dc3545;
-    color: white;
-  }
-`;
-
-const ScannerButton = styled(Button)`
-  border-radius: 20px;
-  padding: 0.8rem 1.5rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  border: none;
-  
-  ${props => props.$active ? css`
-    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
-    color: white;
-    box-shadow: 0 4px 15px rgba(229, 62, 62, 0.3);
-    
-    &:hover {
-      background: linear-gradient(135deg, #c53030 0%, #9b2c2c 100%);
-      transform: translateY(-2px);
-    }
-  ` : css`
-        background: linear-gradient(to right, #3498db);
-    color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    
-    &:hover {
-        background: linear-gradient(to right, #3498db);
-      transform: translateY(-2px);
-    }
-  `}
-`;
-
-const StyledModal = styled(Modal)`
-  .modal-content {
-    border-radius: 20px;
-    border: none;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-  }
-  
-  .modal-header {
-    background: linear-gradient(to right, #3498db);
-    color: white;
-    border-radius: 20px 20px 0 0;
-    border: none;
-    padding: 0.75rem 1rem;
-    
-    .btn-close {
-      filter: invert(1);
-    }
-  }
-  
-  .modal-body {
-    padding: 1rem;
-  }
-  
-  .modal-footer {
-    padding: 0.5rem 1rem;
-    border-top: 1px solid #e9ecef;
-  }
-`;
-
-const ScannerContainer = styled.div`
-  width: 100%;
-  height: 250px;
-  background: #000;
-  border-radius: 15px;
-  overflow: hidden;
-  position: relative;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border: 2px solid #00ff00;
-    border-radius: 10px;
-    animation: ${scannerFlash} 2s ease-in-out infinite;
-    pointer-events: none;
-  }
-`;
-
-const FormGroup = styled(Form.Group)`
-  margin-bottom: 1rem;
-  
-  .form-label {
-    font-weight: 600;
-    color: #4a5568;
-    margin-bottom: 0.25rem;
-    font-size: 0.9rem;
-  }
-  
-  .form-control, .form-select {
-    border-radius: 10px;
-    border: 2px solid #e2e8f0;
-    padding: 0.6rem;
-    transition: all 0.3s ease;
-    
-    &:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    }
-  }
-`;
-
-const ItemList = styled(ListGroup)`
-  .list-group-item {
-    border-radius: 10px;
-    margin-bottom: 0.5rem;
-    border: 1px solid #e2e8f0;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background: #f7fafc;
-      transform: translateX(5px);
-    }
-  }
-`;
-
-const TotalDisplay = styled.h5`
-        background: linear-gradient(to right, #3498db);
-  color: white;
-  padding: 1rem 1.5rem;
-  border-radius: 15px;
-  text-align: center;
-  margin-top: 1.5rem;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  font-weight: bold;
-  animation: ${pulse} 2s infinite;
-`;
-
-const LoadingSpinner = styled(Spinner)`
-  color: #667eea;
-  width: 3rem;
-  height: 3rem;
-`;
-
-const IconWrapper = styled.span`
-  margin-right: 0.5rem;
-`;
-
-const BarcodeBadge = styled(Badge)`
-        background: linear-gradient(to right, #3498db);
-  font-size: 0.8rem;
-  padding: 0.4rem 0.8rem;
-  border-radius: 10px;
-`;
-
-const ScannerStatus = styled.div`
-  padding: 1rem;
-  border-radius: 10px;
-  background: ${props => props.$active ? '#48bb78' : '#e53e3e'};
-  color: white;
-  text-align: center;
-  margin-bottom: 1rem;
-  font-weight: 600;
-`;
-
-const LowStockAlert = styled(Alert)`
-  border-left: 4px solid #f56565;
-  background-color: #fff5f5;
-  color: #c53030;
-  font-weight: 500;
-  animation: ${pulse} 2s;
-`;
-
-// Invoice Styled Components
-const InvoiceContainer = styled.div`
-  background: white;
-  padding: 1.5rem;
-  max-width: 800px;
-  margin: 0 auto;
-  font-family: 'Arial', sans-serif;
-  line-height: 1.4;
-  color: #333;
-  font-size: 0.9rem;
-  
-  @media print {
-    padding: 1rem !important;
-    box-shadow: none !important;
-    border: none !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    font-size: 12pt !important;
-    line-height: 1.3 !important;
-    background: white !important;
-    -webkit-print-color-adjust: exact !important;
-    color-adjust: exact !important;
-    margin: 0 !important;
-    
-    /* Ensure all nested elements inherit print styles */
-    *, *::before, *::after {
-      -webkit-print-color-adjust: exact !important;
-      color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-  }
-`;
-
-const InvoiceHeader = styled.div`
-  text-align: center;
-  margin-bottom: 1.5rem;
-  border-bottom: 3px solid #3498db;
-  padding-bottom: 1rem;
-  width: 100%;
-  
-  @media print {
-    border-bottom: 3px solid #3498db !important;
-    -webkit-print-color-adjust: exact !important;
-    color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    margin-bottom: 1rem !important;
-    padding-bottom: 0.8rem !important;
-    width: 100% !important;
-    
-    * {
-      -webkit-print-color-adjust: exact !important;
-      color-adjust: exact !important;
-      print-color-adjust: exact !important;
-      display: block !important;
-      visibility: visible !important;
-    }
-    
-    div {
-      display: flex !important;
-      visibility: visible !important;
-    }
-  }
-`;
-
-const InvoiceDetails = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-  
-  @media print {
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-`;
-
-const InvoiceSection = styled.div`
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
-  
-  @media print {
-    background: #f8f9fa !important;
-    padding: 0.8rem !important;
-    border: 1px solid #e9ecef !important;
-    border-radius: 6px !important;
-    -webkit-print-color-adjust: exact !important;
-    color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-  
-  h3 {
-    color: #3498db;
-    margin-bottom: 0.8rem;
-    font-size: 1rem;
-    border-bottom: 2px solid #3498db;
-    padding-bottom: 0.3rem;
-    
-    @media print {
-      color: #3498db !important;
-      font-size: 12pt !important;
-      margin-bottom: 0.6rem !important;
-      border-bottom: 2px solid #3498db !important;
-      padding-bottom: 0.3rem !important;
-      -webkit-print-color-adjust: exact !important;
-      color-adjust: exact !important;
-    }
-  }
-  
-  p {
-    margin: 0.3rem 0;
-    font-size: 0.9rem;
-    
-    @media print {
-      margin: 0.2rem 0 !important;
-      font-size: 10pt !important;
-      color: #333 !important;
-    }
-    
-    strong {
-      color: #333;
-      display: inline-block;
-      width: 70px;
-      
-      @media print {
-        color: #333 !important;
-        width: 60px !important;
-      }
-    }
-  }
-`;
-
-const InvoiceTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1.5rem 0;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  border-radius: 6px;
-  overflow: hidden;
-  font-size: 0.85rem;
-  
-  @media print {
-    margin: 1rem 0;
-    box-shadow: none;
-    font-size: 0.75rem;
-    -webkit-print-color-adjust: exact;
-    color-adjust: exact;
-    border: 2px solid #333 !important;
-  }
-  
-  thead {
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-    color: white;
-    
-    @media print {
-      background: #3498db !important;
-      color: white !important;
-      -webkit-print-color-adjust: exact;
-      color-adjust: exact;
-    }
-    
-    th {
-      padding: 0.8rem 0.6rem;
-      text-align: left;
-      font-weight: 600;
-      font-size: 0.8rem;
-      border: none;
-      
-      @media print {
-        padding: 0.6rem 0.4rem;
-        font-size: 0.75rem;
-        border: 1px solid #333 !important;
-        background: #3498db !important;
-        color: white !important;
-      }
-    }
-  }
-  
-  tbody {
-    tr {
-      border-bottom: 1px solid #e9ecef;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        background-color: #f8f9fa;
-      }
-      
-      &:last-child {
-        border-bottom: none;
-      }
-      
-      @media print {
-        &:hover {
-          background-color: transparent !important;
-        }
-      }
-    }
-    
-    td {
-      padding: 0.6rem 0.4rem;
-      border: 1px solid #dee2e6;
-      font-size: 0.8rem;
-      
-      @media print {
-        padding: 0.4rem 0.3rem;
-        font-size: 0.75rem;
-        border: 1px solid #333 !important;
-      }
-    }
-  }
-`;
-
-const InvoiceSummary = styled.div`
-  margin-top: 1.5rem;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 1.5rem;
-  
-  @media print {
-    margin-top: 1rem;
-    gap: 1rem;
-  }
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const SummaryTable = styled.table`
-  border-collapse: collapse;
-  min-width: 250px;
-  font-size: 0.9rem;
-  
-  @media print {
-    min-width: 200px;
-    font-size: 0.8rem;
-    -webkit-print-color-adjust: exact;
-    color-adjust: exact;
-  }
-  
-  tr {
-    border-bottom: 1px solid #e9ecef;
-    
-    &:last-child {
-      border-bottom: 3px solid #3498db;
-      background: #f8f9fa;
-      font-weight: bold;
-      font-size: 1rem;
-      
-      @media print {
-        font-size: 0.9rem;
-        border-bottom: 3px solid #3498db !important;
-        background: #f8f9fa !important;
-        -webkit-print-color-adjust: exact;
-        color-adjust: exact;
-      }
-    }
-    
-    @media print {
-      border-bottom: 1px solid #333 !important;
-    }
-  }
-  
-  td {
-    padding: 0.6rem 0.8rem;
-    text-align: right;
-    
-    @media print {
-      padding: 0.4rem 0.6rem;
-      border: 1px solid #333 !important;
-    }
-    
-    &:first-child {
-      text-align: left;
-      font-weight: 500;
-    }
-  }
-`;
-
-const InvoiceFooter = styled.div`
-  margin-top: 2rem;
-  text-align: center;
-  padding-top: 1.5rem;
-  border-top: 2px solid #e9ecef;
-  color: #666;
-  font-size: 0.85rem;
-  
-  @media print {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    font-size: 0.8rem;
-  }
-`;
-
-const PrintButton = styled(Button)`
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  border: none;
-  padding: 0.8rem 2rem;
-  font-weight: 600;
-  border-radius: 25px;
-  
-  &:hover {
-    background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-  }
-  
-  @media print {
-    display: none;
-  }
-`;
-
-// Fixed TableRow component without inline animation
-const TableRow = styled.tr`
-  transition: all 0.3s ease;
-  
-  @media print {
-    page-break-inside: avoid !important;
-    transition: none !important;
-    transform: none !important;
-    box-shadow: none !important;
-  }
-  
-  &:hover {
-    background: linear-gradient(to right, #3498db);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    
-    @media print {
-      background: none !important;
-      color: inherit !important;
-      transform: none !important;
-      box-shadow: none !important;
-    }
-  }
-  
-  &:nth-child(even) {
-    @media print {
-      background-color: #f8f9fa !important;
-      -webkit-print-color-adjust: exact !important;
-      color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-  }
-  
-  td {
-    padding: 1.2rem;
-    border-color: #e9ecef;
-    
-    @media print {
-      padding: 0.5rem !important;
-      border-color: #e9ecef !important;
-      color: #333 !important;
-    }
-  }
-`;
-
-// Toast Container for top-right notifications
-const StyledToastContainer = styled(ToastContainer)`
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
-  
-  .toast {
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(10px);
-    margin-bottom: 10px;
-    
-    &.bg-success {
-      background: linear-gradient(135deg, #28a745, #20c997) !important;
-      color: white;
-    }
-    
-    &.bg-danger {
-      background: linear-gradient(135deg, #dc3545, #e83e8c) !important;
-      color: white;
-    }
-    
-    &.bg-warning {
-      background: linear-gradient(135deg, #ffc107, #fd7e14) !important;
-      color: #212529;
-    }
-    
-    .toast-header {
-      background: transparent;
-      border: none;
-      color: inherit;
-      font-weight: 600;
-      
-      .btn-close {
-        filter: ${props => props.variant === 'success' || props.variant === 'danger' ? 'invert(1)' : 'none'};
-      }
-    }
-    
-    .toast-body {
-      font-weight: 500;
-      padding: 0.75rem 1rem;
-    }
-  }
-`;
+// Theme Colors - Premium Gold & Black
+const THEME = {
+  gold: '#D4AF37',
+  richGold: '#C9A227',
+  softGold: '#E2C878',
+  lightGold: '#F4E3B2',
+  black: '#000000',
+  charcoal: '#1A1A1A',
+  softCharcoal: '#2C2C2C',
+  white: '#FFFFFF',
+  offWhite: '#F8F5F0'
+};
 
 //logic
 const Sales = () => {
@@ -2218,311 +1437,603 @@ const Sales = () => {
 
   if (loading && sales.length === 0) {
     return (
-      <Container className="d-flex justify-content-center align-items-center">
-        <LoadingSpinner animation="border" />
-      </Container>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: 'transparent' }}>
+        <CircularProgress sx={{ color: '#000' }} />
+      </Box>
     );
   }
 
   return (
-    <Container>
-      <PrintStyles />
-      <AnimatedContainer>
-        <HeaderSection>
-          <Row className="">
-            <Col>
-              <h4 className="mb-0 d-flex align-items-center">
-                <IconWrapper style={{ fontSize: "1.3rem", marginRight: "0.6rem" }}>🛒</IconWrapper>
-                Sales Management
-              </h4>
-            </Col>
-            <Col xs="auto">
-              <PrimaryButton
-                onClick={handleShowModal}
-                style={{
-                  padding: "6px 14px",
-                  fontSize: "0.9rem",
-                  borderRadius: "6px"
+    <Box sx={{ padding: '2.5rem', backgroundColor: 'rgba(255, 255, 255, 0.85)', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
+      {/* Header */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '2.5rem'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <ShoppingCartIcon sx={{ fontSize: '2rem', color: THEME.gold }} />
+          <Typography variant="h4" sx={{ fontWeight: 600, color: THEME.charcoal, letterSpacing: '-0.02em', margin: 0 }}>
+            Sales Management
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleShowModal}
+          sx={{
+            backgroundColor: THEME.gold,
+            color: THEME.black,
+            textTransform: 'none',
+            borderRadius: '8px',
+            padding: '10px 24px',
+            fontWeight: 600,
+            boxShadow: '0px 1px 2px rgba(212, 175, 55, 0.2)',
+            '&:hover': {
+              backgroundColor: THEME.richGold,
+              boxShadow: '0px 4px 6px -2px rgba(212, 175, 55, 0.3), 0px 12px 16px -4px rgba(212, 175, 55, 0.4)'
+            }
+          }}
+        >
+          New Sale
+        </Button>
+      </Box>
+
+      {/* Toast Notifications */}
+      {toasts.map(toast => (
+        <Snackbar
+          key={toast.id}
+          open={toast.show}
+          autoHideDuration={6000}
+          onClose={() => removeToast(toast.id)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert 
+            onClose={() => removeToast(toast.id)} 
+            severity={toast.variant === 'danger' ? 'error' : toast.variant === 'warning' ? 'warning' : 'success'}
+            sx={{ width: '100%', borderRadius: '8px' }}
+          >
+            <strong>{toast.title}</strong> {toast.message}
+          </Alert>
+        </Snackbar>
+      ))}
+
+      <TableContainer component={Paper} sx={{ 
+        borderRadius: '12px', 
+        border: `1px solid ${THEME.softGold}`,
+        boxShadow: '0px 1px 2px rgba(212, 175, 55, 0.15)',
+        overflow: 'hidden'
+      }}>
+        <Table>
+          <TableHead sx={{ backgroundColor: THEME.lightGold }}>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>ID</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Buyer</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Items</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Date</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Total</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {sales.map((sale) => (
+              <TableRow 
+                key={sale._id}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: THEME.lightGold
+                  },
+                  transition: 'background-color 0.2s ease'
                 }}
               >
-                + New Sale
-              </PrimaryButton>
-            </Col>
-          </Row>
-        </HeaderSection>
-
-        {/* Toast Notifications */}
-        <StyledToastContainer position="top-end">
-          {toasts.map(toast => (
-            <Toast 
-              key={toast.id}
-              show={toast.show}
-              onClose={() => removeToast(toast.id)}
-              bg={toast.variant}
-              text={toast.variant === 'warning' ? 'dark' : 'white'}
-            >
-              <Toast.Header>
-                <strong className="me-auto">{toast.title}</strong>
-              </Toast.Header>
-              <Toast.Body>{toast.message}</Toast.Body>
-            </Toast>
-          ))}
-        </StyledToastContainer>
-
-        <StyledTable responsive hover>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Buyer</th>
-              <th>Items</th>
-              <th>Date</th>
-              <th>Total</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sales.map((sale) => (
-              <TableRow key={sale._id}>
-                <td><strong>{sale.saleId}</strong></td>
-                <td>
-                  <div>
-                    <strong>{sale.buyer?.name || 'N/A'}</strong>
+                <TableCell sx={{ padding: '16px', fontWeight: 600, color: THEME.charcoal }}>
+                  {sale.saleId}
+                </TableCell>
+                <TableCell sx={{ padding: '16px' }}>
+                  <Box>
+                    <Typography sx={{ fontWeight: 600, color: THEME.charcoal, fontSize: '0.875rem' }}>
+                      {sale.buyer?.name || 'N/A'}
+                    </Typography>
                     {sale.buyer?.phone && (
-                      <div><small className="text-muted">{String(sale.buyer.phone)}</small></div>
+                      <Typography sx={{ fontSize: '0.75rem', color: THEME.softCharcoal }}>
+                        {String(sale.buyer.phone)}
+                      </Typography>
                     )}
-                  </div>
-                </td>
-                <td>
-                  <Badge bg="info">{sale.items?.length || 0} items</Badge>
-                </td>
-                <td>{formatDate(sale.saleDate)}</td>
-                <td><strong>₹{sale.totalAmount?.toFixed(2) || '0.00'}</strong></td>
-                <td>
-                  <SecondaryButton 
-                    size="sm" 
-                    className="me-2" 
-                    onClick={() => handleView(sale)}
-                    disabled={loading}
-                  >
-                    👁️ View
-                  </SecondaryButton>
-                  <SuccessButton 
-                    size="sm"
-                    className="me-2"
-                    onClick={() => handleGenerateInvoice(sale)}
-                    disabled={loading}
-                  >
-                    📄 Invoice
-                  </SuccessButton>
-                  <PrimaryButton
-                    size="sm"
-                    className="me-2"
-                    onClick={() => requestEditSale(sale)}
-                    disabled={loading}
-                  >
-                    ✏️ Edit
-                  </PrimaryButton>
-        {/* Edit Sale Password Confirmation Modal */}
-        <StyledModal show={showEditConfirmModal} onHide={() => setShowEditConfirmModal(false)} size="sm" centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Confirm Edit</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <p>To edit this sale, please enter the admin password:</p>
-            <Form.Group className="mb-3">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                value={editPassword}
-                onChange={e => setEditPassword(e.target.value)}
-                placeholder="Enter password"
-                autoFocus
-              />
-              {editPasswordError && (
-                <Alert variant="danger" className="mt-2">{editPasswordError}</Alert>
-              )}
-            </Form.Group>
-          </Modal.Body>
-          <Modal.Footer>
-            <SecondaryButton onClick={() => setShowEditConfirmModal(false)}>Cancel</SecondaryButton>
-            <PrimaryButton onClick={confirmEditSale}>Edit</PrimaryButton>
-          </Modal.Footer>
-        </StyledModal>
-                  <DangerButton
-                    size="sm"
-                    onClick={() => requestDeleteSale(sale._id)}
-                    disabled={loading}
-                  >
-                    🗑️ Delete
-                  </DangerButton>
-        {/* Delete Sale Password Confirmation Modal */}
-        <StyledModal show={showDeleteConfirmModal} onHide={() => setShowDeleteConfirmModal(false)} size="sm" centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Confirm Delete</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <p>To delete this sale, please enter the admin password:</p>
-            <Form.Group className="mb-3">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                value={deletePassword}
-                onChange={e => setDeletePassword(e.target.value)}
-                placeholder="Enter password"
-                autoFocus
-              />
-              {deletePasswordError && (
-                <Alert variant="danger" className="mt-2">{deletePasswordError}</Alert>
-              )}
-            </Form.Group>
-          </Modal.Body>
-          <Modal.Footer>
-            <SecondaryButton onClick={() => setShowDeleteConfirmModal(false)}>Cancel</SecondaryButton>
-            <DangerButton onClick={confirmDeleteSale}>Delete</DangerButton>
-          </Modal.Footer>
-        </StyledModal>
-                </td>
-              </TableRow>
-            ))}
-          </tbody>
-        </StyledTable>
-        {/* Edit Sale Modal */}
-        <StyledModal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg" centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Edit Sale</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {editSaleData && (
-              <SaleForm
-                initialData={editSaleData}
-                buyers={buyers}
-                products={products}
-                loading={loading}
-                onSubmit={handleEditSubmit}
-                onCancel={() => setShowEditModal(false)}
-              />
-            )}
-          </Modal.Body>
-        </StyledModal>
-
-        {/* New Sale Modal */}
-        <StyledModal show={showModal} onHide={handleCloseModal} size="lg" centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Create New Sale</Modal.Title>
-          </Modal.Header>
-          <Form onSubmit={handleSubmit}>
-            <Modal.Body className="pb-0">
-              <Row>
-                <Col md={6}>
-                  <FormGroup className="mb-3">
-                    <Form.Label>Buyer</Form.Label>
-                    <Form.Select
-                      name="buyer"
-                      value={formData.buyer}
-                      onChange={(e) => handleInputChange("buyer", e.target.value)}
-                      required
-                    >
-                      <option value="">Select Buyer</option>
-                      {buyers.map((buyer) => (
-                        <option key={buyer._id} value={buyer._id}>
-                          {buyer.name}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </FormGroup>
-                </Col>
-                <Col md={6}>
-                  <FormGroup className="mb-3">
-                    <Form.Label>Sale Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      name="saleDate"
-                      value={formData.saleDate}
-                      onChange={(e) => handleInputChange("saleDate", e.target.value)}
-                      required
-                    />
-                  </FormGroup>
-                </Col>
-              </Row>
-
-              <div className="mb-3">
-                <h5 className="mb-2">Scan Items</h5>
-
-                <ScannerStatus $active={scannerActive} className="mb-2">
-                  {scannerActive ? '🟢 Scanner Active' : '🔴 Scanner Inactive'}
-                </ScannerStatus>
-                
-                <ScannerContainer ref={scannerRef} style={{marginBottom: '0.5rem'}} />
-
-                <div className="d-flex gap-2 mb-2">
-                  <ScannerButton
-                    $active={scannerActive}
-                    onClick={scannerActive ? stopScanner : startScanner}
-                  >
-                    {scannerActive ? '⏹️' : '📷'}
-                    {scannerActive ? 'Stop Scanner' : 'Start Scanner'}
-                  </ScannerButton>
-                </div>
-
-                {/* Barcode Input */}
-                <FormGroup className="mb-3">
-                  <Form.Label>Scanned Barcode</Form.Label>
-                  <div className="d-flex gap-2">
-                    <Form.Control
-                      ref={barcodeInputRef}
-                      type="text"
-                      value={scannedCode}
-                      onChange={(e) => setScannedCode(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault(); // Prevent form submission
-                          if (barcodeMode && scannedCode.trim()) {
-                            addBarcodeManually();
-                          }
+                  </Box>
+                </TableCell>
+                <TableCell sx={{ padding: '16px' }}>
+                  <Chip 
+                    label={`${sale.items?.length || 0} items`} 
+                    size="small"
+                    sx={{ 
+                      backgroundColor: THEME.lightGold, 
+                      color: THEME.charcoal,
+                      border: `1px solid ${THEME.softGold}`,
+                      fontWeight: 500
+                    }} 
+                  />
+                </TableCell>
+                <TableCell sx={{ padding: '16px', color: THEME.softCharcoal }}>
+                  {formatDate(sale.saleDate)}
+                </TableCell>
+                <TableCell sx={{ padding: '16px', fontWeight: 600, color: THEME.charcoal }}>
+                  ₹{sale.totalAmount?.toFixed(2) || '0.00'}
+                </TableCell>
+                <TableCell sx={{ padding: '16px' }}>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button 
+                      size="small"
+                      startIcon={<VisibilityIcon />}
+                      onClick={() => handleView(sale)}
+                      disabled={loading}
+                      sx={{
+                        textTransform: 'none',
+                        color: THEME.gold,
+                        borderColor: THEME.softGold,
+                        fontWeight: 500,
+                        '&:hover': {
+                          borderColor: THEME.gold,
+                          backgroundColor: THEME.lightGold
                         }
                       }}
-                      placeholder={barcodeMode ? "Barcode mode active - scan or enter barcode" : "Enter barcode manually"}
-                      disabled={!barcodeMode}
-                    />
-                    <SecondaryButton 
-                      onClick={toggleBarcodeMode}
-                      variant={barcodeMode ? "success" : "outline-primary"}
+                      variant="outlined"
                     >
-                      {barcodeMode ? '✓ Barcode Active' : '📊 Enable Barcode'}
-                    </SecondaryButton>
-                    {barcodeMode && scannedCode && (
-                      <PrimaryButton 
-                        onClick={addBarcodeManually}
-                        variant="primary"
-                      >
-                        ➕ Add Item
-                      </PrimaryButton>
-                    )}
-                  </div>
-                  {barcodeMode && (
-                    <small className="text-muted mt-1 d-block">
-                      📍 Barcode mode is active. Scan barcode or press Enter to add items automatically.
-                    </small>
-                  )}
-                </FormGroup>
-              </div>
+                      View
+                    </Button>
+                    <Button 
+                      size="small"
+                      startIcon={<ReceiptIcon />}
+                      onClick={() => handleGenerateInvoice(sale)}
+                      disabled={loading}
+                      sx={{
+                        textTransform: 'none',
+                        color: THEME.gold,
+                        borderColor: THEME.softGold,
+                        fontWeight: 500,
+                        '&:hover': {
+                          borderColor: THEME.gold,
+                          backgroundColor: THEME.lightGold
+                        }
+                      }}
+                      variant="outlined"
+                    >
+                      Invoice
+                    </Button>
+                    <Button 
+                      size="small"
+                      startIcon={<EditIcon />}
+                      onClick={() => requestEditSale(sale)}
+                      disabled={loading}
+                      sx={{
+                        textTransform: 'none',
+                        color: THEME.gold,
+                        borderColor: THEME.softGold,
+                        fontWeight: 500,
+                        '&:hover': {
+                          borderColor: THEME.gold,
+                          backgroundColor: THEME.lightGold
+                        }
+                      }}
+                      variant="outlined"
+                    >
+                      Edit
+                    </Button>
+                    <Button 
+                      size="small"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => requestDeleteSale(sale._id)}
+                      disabled={loading}
+                      sx={{
+                        textTransform: 'none',
+                        color: '#d32f2f',
+                        borderColor: '#d32f2f',
+                        '&:hover': {
+                          borderColor: '#c62828',
+                          backgroundColor: '#ffebee'
+                        }
+                      }}
+                      variant="outlined"
+                    >
+                      Delete
+                    </Button>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-              <h6 className="mb-2">Scanned Items ({formData.items.length})</h6>
+      {/* Edit Sale Password Confirmation Modal */}
+      <Dialog 
+        open={showEditConfirmModal} 
+        onClose={() => setShowEditConfirmModal(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px'
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, color: '#101828' }}>
+          Confirm Edit
+          <IconButton
+            onClick={() => setShowEditConfirmModal(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: '#667085'
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ marginBottom: '16px', color: '#667085' }}>
+            To edit this sale, please enter the admin password:
+          </Typography>
+          <TextField
+            fullWidth
+            type="password"
+            label="Password"
+            value={editPassword}
+            onChange={e => setEditPassword(e.target.value)}
+            placeholder="Enter password"
+            autoFocus
+            sx={{ marginTop: '8px' }}
+          />
+          {editPasswordError && (
+            <Alert severity="error" sx={{ marginTop: '16px', borderRadius: '8px' }}>
+              {editPasswordError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ padding: '16px 24px' }}>
+          <Button 
+            onClick={() => setShowEditConfirmModal(false)}
+            sx={{ 
+              textTransform: 'none',
+              color: '#667085',
+              borderColor: '#EAECF0',
+              '&:hover': {
+                borderColor: '#D0D5DD',
+                backgroundColor: '#F9FAFB'
+              }
+            }}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmEditSale}
+            variant="contained"
+            sx={{
+              textTransform: 'none',
+              backgroundColor: '#000',
+              '&:hover': {
+                backgroundColor: '#333'
+              }
+            }}
+          >
+            Edit
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Sale Password Confirmation Modal */}
+      <Dialog 
+        open={showDeleteConfirmModal} 
+        onClose={() => setShowDeleteConfirmModal(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px'
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, color: '#101828' }}>
+          Confirm Delete
+          <IconButton
+            onClick={() => setShowDeleteConfirmModal(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: '#667085'
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ marginBottom: '16px', color: '#667085' }}>
+            To delete this sale, please enter the admin password:
+          </Typography>
+          <TextField
+            fullWidth
+            type="password"
+            label="Password"
+            value={deletePassword}
+            onChange={e => setDeletePassword(e.target.value)}
+            placeholder="Enter password"
+            autoFocus
+            sx={{ marginTop: '8px' }}
+          />
+          {deletePasswordError && (
+            <Alert severity="error" sx={{ marginTop: '16px', borderRadius: '8px' }}>
+              {deletePasswordError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ padding: '16px 24px' }}>
+          <Button 
+            onClick={() => setShowDeleteConfirmModal(false)}
+            sx={{ 
+              textTransform: 'none',
+              color: '#667085',
+              borderColor: '#EAECF0',
+              '&:hover': {
+                borderColor: '#D0D5DD',
+                backgroundColor: '#F9FAFB'
+              }
+            }}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmDeleteSale}
+            variant="contained"
+            sx={{
+              textTransform: 'none',
+              backgroundColor: '#d32f2f',
+              '&:hover': {
+                backgroundColor: '#c62828'
+              }
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Sale Modal */}
+      <Dialog 
+        open={showEditModal} 
+        onClose={() => setShowEditModal(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px'
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, color: '#101828' }}>
+          Edit Sale
+          <IconButton
+            onClick={() => setShowEditModal(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: '#667085'
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {editSaleData && (
+            <SaleForm
+              initialData={editSaleData}
+              buyers={buyers}
+              products={products}
+              loading={loading}
+              onSubmit={handleEditSubmit}
+              onCancel={() => setShowEditModal(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* New Sale Modal */}
+      <Dialog 
+        open={showModal} 
+        onClose={handleCloseModal}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px'
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, color: '#101828' }}>
+          Create New Sale
+          <IconButton
+            onClick={handleCloseModal}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: '#667085'
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <Box component="form" onSubmit={handleSubmit}>
+          <DialogContent>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth required>
+                  <InputLabel>Buyer</InputLabel>
+                  <Select
+                    name="buyer"
+                    value={formData.buyer}
+                    label="Buyer"
+                    onChange={(e) => handleInputChange("buyer", e.target.value)}
+                  >
+                    <MenuItem value="">Select Buyer</MenuItem>
+                    {buyers.map((buyer) => (
+                      <MenuItem key={buyer._id} value={buyer._id}>
+                        {buyer.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Sale Date"
+                  name="saleDate"
+                  value={formData.saleDate}
+                  onChange={(e) => handleInputChange("saleDate", e.target.value)}
+                  required
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+            </Grid>
+
+            <Box sx={{ marginTop: '24px', marginBottom: '24px' }}>
+              <Typography variant="h6" sx={{ marginBottom: '16px', fontWeight: 600, color: '#101828' }}>
+                Scan Items
+              </Typography>
+
+              <Alert 
+                severity={scannerActive ? 'success' : 'error'} 
+                sx={{ marginBottom: '16px', borderRadius: '8px' }}
+              >
+                {scannerActive ? '🟢 Scanner Active' : '🔴 Scanner Inactive'}
+              </Alert>
               
-              <Table bordered responsive className="mb-3">
-                <thead className="bg-light">
-                  <tr>
-                    <th>S.No</th>
-                    <th>Barcode</th>
-                    <th>Product Name</th>
-                    <th>Category</th>
-                    <th>Price (₹)</th>
-                    <th>Qty</th>
-                    <th>Total (₹)</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Box 
+                ref={scannerRef} 
+                sx={{ 
+                  width: '100%', 
+                  height: '250px', 
+                  backgroundColor: '#000', 
+                  borderRadius: '8px', 
+                  marginBottom: '16px',
+                  overflow: 'hidden'
+                }} 
+              />
+
+              <Box sx={{ display: 'flex', gap: 1, marginBottom: '16px' }}>
+                <Button
+                  variant="contained"
+                  startIcon={scannerActive ? <CloseIcon /> : <CameraAltIcon />}
+                  onClick={scannerActive ? stopScanner : startScanner}
+                  sx={{
+                    textTransform: 'none',
+                    backgroundColor: scannerActive ? '#d32f2f' : '#000',
+                    '&:hover': {
+                      backgroundColor: scannerActive ? '#c62828' : '#333'
+                    }
+                  }}
+                >
+                  {scannerActive ? 'Stop Scanner' : 'Start Scanner'}
+                </Button>
+              </Box>
+
+                {/* Barcode Input */}
+              <Box sx={{ marginBottom: '24px' }}>
+                <Typography variant="body2" sx={{ marginBottom: '8px', fontWeight: 600, color: '#101828' }}>
+                  Scanned Barcode
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, marginBottom: '8px' }}>
+                  <TextField
+                    inputRef={barcodeInputRef}
+                    type="text"
+                    value={scannedCode}
+                    onChange={(e) => setScannedCode(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (barcodeMode && scannedCode.trim()) {
+                          addBarcodeManually();
+                        }
+                      }
+                    }}
+                    placeholder={barcodeMode ? "Barcode mode active - scan or enter barcode" : "Enter barcode manually"}
+                    disabled={!barcodeMode}
+                    fullWidth
+                    size="small"
+                  />
+                  <Button 
+                    onClick={toggleBarcodeMode}
+                    variant={barcodeMode ? "contained" : "outlined"}
+                    startIcon={<QrCodeScannerIcon />}
+                    sx={{
+                      textTransform: 'none',
+                      minWidth: '180px',
+                      backgroundColor: barcodeMode ? '#2e7d32' : 'transparent',
+                      color: barcodeMode ? '#fff' : '#667085',
+                      borderColor: '#EAECF0',
+                      '&:hover': {
+                        backgroundColor: barcodeMode ? '#1b5e20' : '#F9FAFB',
+                        borderColor: '#D0D5DD'
+                      }
+                    }}
+                  >
+                    {barcodeMode ? '✓ Barcode Active' : 'Enable Barcode'}
+                  </Button>
+                  {barcodeMode && scannedCode && (
+                    <Button 
+                      onClick={addBarcodeManually}
+                      variant="contained"
+                      startIcon={<AddIcon />}
+                      sx={{
+                        textTransform: 'none',
+                        backgroundColor: '#000',
+                        '&:hover': {
+                          backgroundColor: '#333'
+                        }
+                      }}
+                    >
+                      Add Item
+                    </Button>
+                  )}
+                </Box>
+                {barcodeMode && (
+                  <Typography variant="caption" sx={{ color: '#667085', display: 'block', marginTop: '4px' }}>
+                    📍 Barcode mode is active. Scan barcode or press Enter to add items automatically.
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+
+            <Typography variant="h6" sx={{ marginBottom: '16px', fontWeight: 600, color: '#101828' }}>
+              Scanned Items ({formData.items.length})
+            </Typography>
+              
+            <TableContainer component={Paper} sx={{ 
+              marginBottom: '24px',
+              border: '1px solid #EAECF0',
+              borderRadius: '8px',
+              boxShadow: '0px 1px 2px rgba(16, 24, 40, 0.05)'
+            }}>
+              <Table>
+                <TableHead sx={{ backgroundColor: '#F9FAFB' }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>S.No</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Barcode</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Product Name</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Category</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Price (₹)</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Qty</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Total (₹)</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {formData.items.map((item, index) => {
                     const isCombo = item.type === 'combo';
                     const isRTO = item.type === 'rto-product';
@@ -2533,214 +2044,350 @@ const Sales = () => {
                     const lowStock = !isCombo && !isRTO && itemData?.currentStock <= itemData?.minStock;
                     
                     return (
-                      <tr key={index} className={lowStock ? 'table-warning' : ''}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <BarcodeBadge bg={isCombo ? 'success' : 'info'}>
-                            {item.barcode}
-                          </BarcodeBadge>
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 'bold' }}>
-                            {isCombo && <span className="badge bg-success me-1">COMBO</span>}
-                            {isRTO && <span className="badge bg-warning me-1">RTO</span>}
-                            {String(itemName || '')}
-                          </div>
-                          {itemDescription && (
-                            <small className="text-muted">
-                              {String(itemDescription).substring(0, 30)}
-                              {String(itemDescription).length > 30 ? '...' : ''}
-                            </small>
-                          )}
-                          {isCombo && item.comboData?.products && (
-                            <div className="mt-1">
-                              <small className="text-info">
+                      <TableRow key={index} sx={{ 
+                        backgroundColor: lowStock ? '#fff3cd' : 'inherit',
+                        '&:hover': { backgroundColor: lowStock ? '#ffe8a1' : '#F9FAFB' }
+                      }}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={item.barcode}
+                            size="small"
+                            sx={{ 
+                              backgroundColor: isCombo ? '#2e7d32' : '#1976d2',
+                              color: '#fff',
+                              fontFamily: 'monospace',
+                              fontWeight: 500
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Box>
+                            <Box sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              {isCombo && <Chip label="COMBO" size="small" sx={{ backgroundColor: '#2e7d32', color: '#fff', height: '20px' }} />}
+                              {isRTO && <Chip label="RTO" size="small" sx={{ backgroundColor: '#ed6c02', color: '#fff', height: '20px' }} />}
+                              {String(itemName || '')}
+                            </Box>
+                            {itemDescription && (
+                              <Typography variant="caption" sx={{ color: '#667085', display: 'block' }}>
+                                {String(itemDescription).substring(0, 30)}
+                                {String(itemDescription).length > 30 ? '...' : ''}
+                              </Typography>
+                            )}
+                            {isCombo && item.comboData?.products && (
+                              <Typography variant="caption" sx={{ color: '#1976d2', display: 'block', marginTop: '4px' }}>
                                 Contains: {item.comboData.products.map(p => `${p.product?.name || 'Product'} (${p.quantity})`).join(', ')}
-                              </small>
-                            </div>
-                          )}
-                        </td>
-                        <td>{String(itemCategory || '')}</td>
-                        <td>{item.unitPrice.toFixed(2)}</td>
-                        <td>{item.quantity}</td>
-                        <td>{(item.unitPrice * item.quantity).toFixed(2)}</td>
-                        <td>
-                          <DangerButton variant="outline-danger" size="sm" onClick={() => removeItem(index)}>
+                              </Typography>
+                            )}
+                          </Box>
+                        </TableCell>
+                        <TableCell>{String(itemCategory || '')}</TableCell>
+                        <TableCell>₹{item.unitPrice.toFixed(2)}</TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>₹{(item.unitPrice * item.quantity).toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outlined" 
+                            size="small"
+                            startIcon={<DeleteIcon />}
+                            onClick={() => removeItem(index)}
+                            sx={{
+                              textTransform: 'none',
+                              color: '#d32f2f',
+                              borderColor: '#d32f2f',
+                              '&:hover': {
+                                borderColor: '#c62828',
+                                backgroundColor: '#ffebee'
+                              }
+                            }}
+                          >
                             Remove
-                          </DangerButton>
-                        </td>
-                      </tr>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan="6" className="text-end"><strong>Subtotal:</strong></td>
-                    <td><strong>₹{formData.subtotal.toFixed(2)}</strong></td>
-                    <td></td>
-                  </tr>
-                </tfoot>
+                </TableBody>
               </Table>
+              <Box sx={{ 
+                padding: '16px', 
+                borderTop: '2px solid #EAECF0', 
+                backgroundColor: '#F9FAFB',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: 2
+              }}>
+                <Typography sx={{ fontWeight: 600, color: '#101828' }}>Subtotal:</Typography>
+                <Typography sx={{ fontWeight: 600, color: '#101828', fontSize: '1.1rem' }}>
+                  ₹{formData.subtotal.toFixed(2)}
+                </Typography>
+              </Box>
+            </TableContainer>
 
-              {/* Totals Section */}
-              <div className="mb-3">
-                <h5 className="mb-2">Order Summary</h5>
-                <Row className="g-2">
-                  <Col md={3}>
-                    <div className="total-item p-2 border rounded">
-                      <Form.Label className="mb-1 small">Discount (%)</Form.Label>
-                      <div className="d-flex align-items-center">
-                        <Form.Control
-                          type="number"
-                          className="me-2"
-                          size="sm"
-                          style={{width: '60px'}}
-                          value={formData.discount}
-                          onChange={(e) => {
-                            const value = Number(e.target.value);
-                            // Ensure discount is between 0 and 100
-                            handleInputChange("discount", isNaN(value) ? 0 : Math.min(100, Math.max(0, value)));
-                          }}
-                        />
-                        <span style={{color: "#28a745", fontSize: "0.9rem"}}>
-                          -₹{formData.discountAmount.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className="total-item p-2 border rounded">
-                      <Form.Label className="mb-1 small">Tax (%)</Form.Label>
-                      <div className="d-flex align-items-center">
-                        <Form.Control
-                          type="number"
-                          className="me-2"
-                          size="sm"
-                          style={{width: '60px'}}
-                          value={formData.tax}
-                          onChange={(e) => {
-                            const value = Number(e.target.value);
-                            handleInputChange("tax", isNaN(value) ? 0 : value);
-                          }}
-                        />
-                        <span style={{color: "#007bff", fontSize: "0.9rem"}}>
-                          +₹{formData.taxAmount.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className="total-item p-2 border rounded">
-                      <Form.Label className="mb-1 small">Shipping</Form.Label>
-                      <Form.Control
+            {/* Totals Section */}
+            <Box sx={{ marginBottom: '24px' }}>
+              <Typography variant="h6" sx={{ marginBottom: '16px', fontWeight: 600, color: '#101828' }}>
+                Order Summary
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={3}>
+                  <Card sx={{ padding: '16px', border: '1px solid #EAECF0', boxShadow: 'none' }}>
+                    <Typography variant="caption" sx={{ marginBottom: '8px', display: 'block', fontWeight: 600, color: '#667085' }}>
+                      Discount (%)
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <TextField
                         type="number"
-                        step="0.01"
-                        size="sm"
-                        value={formData.shipping}
+                        size="small"
+                        value={formData.discount}
                         onChange={(e) => {
-                          handleInputChange("shipping", Number.parseFloat(e.target.value) || 0);
+                          const value = Number(e.target.value);
+                          handleInputChange("discount", isNaN(value) ? 0 : Math.min(100, Math.max(0, value)));
                         }}
+                        sx={{ width: '80px' }}
                       />
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className="total-item p-2 border rounded">
-                      <Form.Label className="mb-1 small">Other</Form.Label>
-                      <Form.Control
+                      <Typography variant="body2" sx={{ color: '#2e7d32', fontWeight: 600 }}>
+                        -₹{formData.discountAmount.toFixed(2)}
+                      </Typography>
+                    </Box>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <Card sx={{ padding: '16px', border: '1px solid #EAECF0', boxShadow: 'none' }}>
+                    <Typography variant="caption" sx={{ marginBottom: '8px', display: 'block', fontWeight: 600, color: '#667085' }}>
+                      Tax (%)
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <TextField
                         type="number"
-                        step="0.01"
-                        size="sm"
-                        value={formData.other}
+                        size="small"
+                        value={formData.tax}
                         onChange={(e) => {
-                          handleInputChange("other", Number.parseFloat(e.target.value) || 0);
+                          const value = Number(e.target.value);
+                          handleInputChange("tax", isNaN(value) ? 0 : value);
                         }}
+                        sx={{ width: '80px' }}
                       />
-                    </div>
-                  </Col>
-                </Row>
-                
-                <div className="total-final mt-3 p-2 bg-primary text-white rounded text-center">
-                  <h5 className="mb-0">Final Total: ₹{formData.total.toFixed(2)}</h5>
-                </div>
-              </div>
+                      <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 600 }}>
+                        +₹{formData.taxAmount.toFixed(2)}
+                      </Typography>
+                    </Box>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <Card sx={{ padding: '16px', border: '1px solid #EAECF0', boxShadow: 'none' }}>
+                    <Typography variant="caption" sx={{ marginBottom: '8px', display: 'block', fontWeight: 600, color: '#667085' }}>
+                      Shipping
+                    </Typography>
+                    <TextField
+                      type="number"
+                      size="small"
+                      fullWidth
+                      inputProps={{ step: "0.01" }}
+                      value={formData.shipping}
+                      onChange={(e) => {
+                        handleInputChange("shipping", Number.parseFloat(e.target.value) || 0);
+                      }}
+                    />
+                  </Card>
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <Card sx={{ padding: '16px', border: '1px solid #EAECF0', boxShadow: 'none' }}>
+                    <Typography variant="caption" sx={{ marginBottom: '8px', display: 'block', fontWeight: 600, color: '#667085' }}>
+                      Other
+                    </Typography>
+                    <TextField
+                      type="number"
+                      size="small"
+                      fullWidth
+                      inputProps={{ step: "0.01" }}
+                      value={formData.other}
+                      onChange={(e) => {
+                        handleInputChange("other", Number.parseFloat(e.target.value) || 0);
+                      }}
+                    />
+                  </Card>
+                </Grid>
+              </Grid>
+              
+              <Box sx={{ 
+                marginTop: '24px', 
+                padding: '20px', 
+                backgroundColor: '#000', 
+                color: '#fff', 
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}>
+                <Typography variant="h5" sx={{ margin: 0, fontWeight: 600 }}>
+                  Final Total: ₹{formData.total.toFixed(2)}
+                </Typography>
+              </Box>
+            </Box>
 
               {/* Comments Section */}
-              <div className="mb-3">
-                <h5 className="mb-2">Comments</h5>
-                <Form.Control
-                  as="textarea"
+              <Box sx={{ marginBottom: '24px' }}>
+                <Typography variant="h6" sx={{ marginBottom: '8px', fontWeight: 600, color: '#101828' }}>
+                  Comments
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
                   placeholder="Comments or Special Instructions"
                   value={formData.comments}
                   onChange={(e) => handleInputChange("comments", e.target.value)}
-                  rows={3}
                 />
-              </div>
-            </Modal.Body>
-            <Modal.Footer>
-              <SecondaryButton onClick={handleCloseModal}>
+              </Box>
+            </DialogContent>
+            <DialogActions sx={{ padding: '16px 24px' }}>
+              <Button 
+                onClick={handleCloseModal}
+                sx={{ 
+                  textTransform: 'none',
+                  color: '#667085',
+                  borderColor: '#EAECF0',
+                  '&:hover': {
+                    borderColor: '#D0D5DD',
+                    backgroundColor: '#F9FAFB'
+                  }
+                }}
+                variant="outlined"
+              >
                 Cancel
-              </SecondaryButton>
-              <PrimaryButton type="submit" disabled={loading}>
-                {loading ? <LoadingSpinner size="sm" /> : 'Create Sale'}
-              </PrimaryButton>
-            </Modal.Footer>
-          </Form>
-        </StyledModal>
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={loading}
+                variant="contained"
+                sx={{
+                  textTransform: 'none',
+                  backgroundColor: '#000',
+                  '&:hover': {
+                    backgroundColor: '#333'
+                  }
+                }}
+              >
+                {loading ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : 'Create Sale'}
+              </Button>
+            </DialogActions>
+          </Box>
+      </Dialog>
 
-        {/* Delete Item Confirmation Modal */}
-        <StyledModal 
-          show={showDeleteModal} 
-          onHide={() => setShowDeleteModal(false)} 
-          size="sm" 
-          centered
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>Remove Item</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {deleteItemIndex !== null && (
-              <>
-                <p>This item has a quantity of <strong>{formData.items[deleteItemIndex]?.quantity}</strong>.</p>
-                <p>How many units would you like to remove?</p>
-                <Form.Group className="mb-3">
-                  <Form.Label>Quantity to remove:</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min="1"
-                    max={formData.items[deleteItemIndex]?.quantity || 1}
-                    value={deleteQuantity}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val) && val > 0 && val <= formData.items[deleteItemIndex]?.quantity) {
-                        setDeleteQuantity(val);
-                      }
-                    }}
-                  />
-                </Form.Group>
-                <div className="d-flex justify-content-between">
-                  <SecondaryButton onClick={() => setShowDeleteModal(false)}>
-                    Cancel
-                  </SecondaryButton>
-                  <DangerButton onClick={handlePartialDelete}>
-                    Remove
-                  </DangerButton>
-                </div>
-              </>
-            )}
-          </Modal.Body>
-        </StyledModal>
+      {/* Delete Item Confirmation Modal */}
+      <Dialog 
+        open={showDeleteModal} 
+        onClose={() => setShowDeleteModal(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px'
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, color: '#101828' }}>
+          Remove Item
+          <IconButton
+            onClick={() => setShowDeleteModal(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: '#667085'
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {deleteItemIndex !== null && (
+            <Box>
+              <Typography sx={{ marginBottom: '16px', color: '#667085' }}>
+                This item has a quantity of <strong>{formData.items[deleteItemIndex]?.quantity}</strong>.
+              </Typography>
+              <Typography sx={{ marginBottom: '16px', color: '#667085' }}>
+                How many units would you like to remove?
+              </Typography>
+              <TextField
+                fullWidth
+                type="number"
+                label="Quantity to remove"
+                inputProps={{
+                  min: 1,
+                  max: formData.items[deleteItemIndex]?.quantity || 1
+                }}
+                value={deleteQuantity}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val) && val > 0 && val <= formData.items[deleteItemIndex]?.quantity) {
+                    setDeleteQuantity(val);
+                  }
+                }}
+                sx={{ marginTop: '8px' }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ padding: '16px 24px' }}>
+          <Button 
+            onClick={() => setShowDeleteModal(false)}
+            sx={{ 
+              textTransform: 'none',
+              color: '#667085',
+              borderColor: '#EAECF0',
+              '&:hover': {
+                borderColor: '#D0D5DD',
+                backgroundColor: '#F9FAFB'
+              }
+            }}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handlePartialDelete}
+            variant="contained"
+            sx={{
+              textTransform: 'none',
+              backgroundColor: '#d32f2f',
+              '&:hover': {
+                backgroundColor: '#c62828'
+              }
+            }}
+          >
+            Remove
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-        {/* View Sale Modal */}
-        <StyledModal
-          show={showViewModal}
-          onHide={() => setShowViewModal(false)}
-          size="lg"
-          centered
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>Sale Details</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
+      {/* View Sale Modal */}
+      <Dialog
+        open={showViewModal}
+        onClose={() => setShowViewModal(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px'
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, color: '#101828' }}>
+          Sale Details
+          <IconButton
+            onClick={() => setShowViewModal(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: '#667085'
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
             {selectedSale && (
               <>
                 <Row>
@@ -2970,21 +2617,37 @@ const Sales = () => {
                 )}
               </>
             )}
-          </Modal.Body>
-        </StyledModal>
+        </DialogContent>
+      </Dialog>
 
-        {/* Invoice Modal */}
-        <StyledModal
-          show={showInvoiceModal}
-          onHide={() => setShowInvoiceModal(false)}
-          size="xl"
-          centered
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>Invoice</Modal.Title>
-          </Modal.Header>
-          <Modal.Body className="p-0">
-            {invoiceData && (
+      {/* Invoice Modal */}
+      <Dialog
+        open={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        maxWidth="xl"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px'
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, color: '#101828' }}>
+          Invoice
+          <IconButton
+            onClick={() => setShowInvoiceModal(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: '#667085'
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ padding: 0 }}>
+          {invoiceData && (
               <InvoiceContainer>
                 <InvoiceHeader>
                   <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', width: '100%'}}>
@@ -3204,18 +2867,40 @@ const Sales = () => {
                 </InvoiceFooter>
               </InvoiceContainer>
             )}
-          </Modal.Body>
-          <Modal.Footer className="d-print-none">
-            <SecondaryButton onClick={() => setShowInvoiceModal(false)}>
-              Close
-            </SecondaryButton>
-            <PrintButton onClick={handlePrintInvoice}>
-              🖨️ Print Invoice
-            </PrintButton>
-          </Modal.Footer>
-        </StyledModal>
-      </AnimatedContainer>
-    </Container>
+        </DialogContent>
+        <DialogActions sx={{ padding: '16px 24px', '@media print': { display: 'none' } }}>
+          <Button 
+            onClick={() => setShowInvoiceModal(false)}
+            sx={{ 
+              textTransform: 'none',
+              color: '#667085',
+              borderColor: '#EAECF0',
+              '&:hover': {
+                borderColor: '#D0D5DD',
+                backgroundColor: '#F9FAFB'
+              }
+            }}
+            variant="outlined"
+          >
+            Close
+          </Button>
+          <Button 
+            onClick={handlePrintInvoice}
+            variant="contained"
+            startIcon={<PrintIcon />}
+            sx={{
+              textTransform: 'none',
+              backgroundColor: '#000',
+              '&:hover': {
+                backgroundColor: '#333'
+              }
+            }}
+          >
+            Print Invoice
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

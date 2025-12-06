@@ -137,7 +137,7 @@ const Buyers = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, backgroundColor: 'rgba(255, 255, 255, 0.85)', minHeight: '100vh' }}>
       {/* Page Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
         <Box>
