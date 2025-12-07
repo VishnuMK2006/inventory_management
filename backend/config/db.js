@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const monbodburl="mongodb://localhost:27017/";
-// const monbodburl="mongodb+srv://loguser:Athvaitha%40%2B06@cluster0.9m18apu.mongodb.net/invent?retryWrites=true&w=majority";
+// const monbodburl="mongodb://localhost:27017/";
+const monbodburl="mongodb+srv://vishnumanikandan:y9CF5NWxWDWErRTJ@cluster0.dt9pqrb.mongodb.net";
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(monbodburl);
