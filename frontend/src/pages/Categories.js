@@ -260,19 +260,19 @@ const Categories = () => {
         <TableContainer component={Paper} sx={{ border: '1px solid #e0e0e0' }}>
           <Table>
             <TableHead>
-              <TableRow sx={{ bgcolor: '#fafafa' }}>
-                <TableCell sx={{ fontWeight: 600 }}>S.No</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Category Code</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Category Name</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
-                <TableCell sx={{ fontWeight: 600 }} align="center">Actions</TableCell>
+              <TableRow sx={{ bgcolor: '#D4AF37' }}>
+                <TableCell sx={{ fontWeight: 600, color: '#000' }}>S.No</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#000' }}>Category Code</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#000' }}>Category Name</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#000' }}>Description</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#000' }} align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredCategories.map((category, index) => (
                 <TableRow 
                   key={category._id}
-                  sx={{ '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}
+                  sx={{ '&:hover': { bgcolor: '#F4E3B2' } }}
                 >
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>

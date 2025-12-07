@@ -37,6 +37,14 @@ const vendorSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true
+  },
+  ifscCode: {
+    type: String,
+    trim: true
+  },
+  bankName: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true

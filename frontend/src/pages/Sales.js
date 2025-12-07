@@ -180,14 +180,14 @@ const SaleForm = ({ initialData, buyers, products, onSubmit, onCancel, loading }
       <Typography variant="h6" sx={{ fontWeight: 600, color: THEME.charcoal, marginBottom: '1rem' }}>Items</Typography>
       <TableContainer component={Paper} sx={{ marginBottom: '2rem', border: `1px solid ${THEME.softGold}`, borderRadius: '8px' }}>
         <Table>
-          <TableHead sx={{ backgroundColor: THEME.lightGold }}>
+          <TableHead sx={{ backgroundColor: '#D4AF37' }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Product</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Barcode</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Price</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Qty</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Total</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Action</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: '#000' }}>Product</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: '#000' }}>Barcode</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: '#000' }}>Price</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: '#000' }}>Qty</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: '#000' }}>Total</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: '#000' }}>Action</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -423,7 +423,8 @@ import {
   CameraAlt as CameraAltIcon,
   QrCodeScanner as QrCodeScannerIcon,
   ShoppingCart as ShoppingCartIcon,
-  Print as PrintIcon
+  Print as PrintIcon,
+  FileDownload as FileDownloadIcon
 } from '@mui/icons-material';
 import styled from 'styled-components';
 
@@ -899,6 +900,10 @@ const Sales = () => {
 
   // Toast notifications state
   const [toasts, setToasts] = useState([]);
+
+  // Date filter for Excel download
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const scannerRef = useRef(null);
   const barcodeInputRef = useRef(null);
@@ -1850,6 +1855,164 @@ const Sales = () => {
     }
   };
 
+  // Excel Download Function
+  const handleExcelDownload = () => {
+    try {
+      // Filter sales by date range if specified
+      let filteredSales = sales;
+      
+      if (dateFrom || dateTo) {
+        filteredSales = sales.filter(sale => {
+          const saleDate = new Date(sale.saleDate);
+          const fromDate = dateFrom ? new Date(dateFrom) : null;
+          const toDate = dateTo ? new Date(dateTo) : null;
+          
+          if (fromDate && toDate) {
+            return saleDate >= fromDate && saleDate <= toDate;
+          } else if (fromDate) {
+            return saleDate >= fromDate;
+          } else if (toDate) {
+            return saleDate <= toDate;
+          }
+          return true;
+        });
+      }
+
+      if (filteredSales.length === 0) {
+        showError('No sales data found for the selected date range');
+        return;
+      }
+
+      // Debug: Log first sale to check data structure
+      console.log('First sale data:', filteredSales[0]);
+      if (filteredSales[0]?.items?.length > 0) {
+        console.log('First item structure:', filteredSales[0].items[0]);
+      }
+
+      // Create CSV content with proper structure - one row per sale item
+      const headers = [
+        'Sale ID',
+        'Buyer Name',
+        'Buyer Phone',
+        'Sale Date',
+        'Product Name',
+        'Barcode',
+        'Quantity',
+        'Unit Price',
+        'Item Total',
+        'Subtotal',
+        'Discount %',
+        'Discount Amount',
+        'Tax %',
+        'Tax Amount',
+        'Shipping',
+        'Other',
+        'Total Amount',
+        'Comments'
+      ];
+      
+      let csvContent = headers.join(',') + '\n';
+      
+      filteredSales.forEach(sale => {
+        // Common sale data
+        const saleCommonData = [
+          sale.saleId || '',
+          sale.buyer?.name || 'N/A',
+          sale.buyer?.phone || '',
+          formatDate(sale.saleDate)
+        ];
+        
+        const saleFinancialData = [
+          sale.subtotal?.toFixed(2) || '0.00',
+          sale.discount || 0,
+          sale.discountAmount?.toFixed(2) || '0.00',
+          sale.tax || 0,
+          sale.taxAmount?.toFixed(2) || '0.00',
+          sale.shipping?.toFixed(2) || '0.00',
+          sale.other?.toFixed(2) || '0.00',
+          sale.totalAmount?.toFixed(2) || '0.00',
+          (sale.comments || '').replace(/,/g, ';').replace(/\n/g, ' ') // Clean comments
+        ];
+        
+        // If sale has items, create one row per item
+        if (sale.items && sale.items.length > 0) {
+          sale.items.forEach((item, index) => {
+            // Extract product name from various possible structures
+            let productName = 'N/A';
+            if (item.productData && item.productData.name) {
+              productName = item.productData.name;
+            } else if (item.product && typeof item.product === 'object' && item.product.name) {
+              productName = item.product.name;
+            } else if (item.productName) {
+              productName = item.productName;
+            }
+            
+            const row = [
+              ...saleCommonData,
+              productName,
+              item.barcode || item.productData?.barcode || item.product?.barcode || '',
+              item.quantity || 0,
+              item.unitPrice?.toFixed(2) || '0.00',
+              ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2),
+              ...saleFinancialData
+            ];
+            
+            // Escape fields that might contain commas or quotes
+            const escapedRow = row.map(field => {
+              const fieldStr = String(field);
+              if (fieldStr.includes(',') || fieldStr.includes('"') || fieldStr.includes('\n')) {
+                return `"${fieldStr.replace(/"/g, '""')}"`;
+              }
+              return fieldStr;
+            });
+            
+            csvContent += escapedRow.join(',') + '\n';
+          });
+        } else {
+          // If no items, still create one row for the sale
+          const row = [
+            ...saleCommonData,
+            '', // Product Name
+            '', // Barcode
+            0,  // Quantity
+            '0.00', // Unit Price
+            '0.00', // Item Total
+            ...saleFinancialData
+          ];
+          
+          const escapedRow = row.map(field => {
+            const fieldStr = String(field);
+            if (fieldStr.includes(',') || fieldStr.includes('"') || fieldStr.includes('\n')) {
+              return `"${fieldStr.replace(/"/g, '""')}"`;
+            }
+            return fieldStr;
+          });
+          
+          csvContent += escapedRow.join(',') + '\n';
+        }
+      });
+
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      const filename = `Sales_Report_${dateFrom || 'All'}_to_${dateTo || 'All'}_${new Date().toISOString().split('T')[0]}.csv`;
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showSuccess(`Downloaded ${filteredSales.length} sales records`);
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      showError('Failed to download Excel file');
+    }
+  };
+
   if (loading && sales.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: 'transparent' }}>
@@ -1875,9 +2038,43 @@ const Sales = () => {
             Sales Management
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            type="date"
+            label="From Date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            size="small"
+            sx={{ width: 160 }}
+          />
+          <TextField
+            type="date"
+            label="To Date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            size="small"
+            sx={{ width: 160 }}
+          />
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExcelDownload}
+            sx={{
+              color: THEME.gold,
+              borderColor: THEME.gold,
+              '&:hover': {
+                borderColor: THEME.richGold,
+                backgroundColor: THEME.lightGold
+              }
+            }}
+          >
+            Export Excel
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
           onClick={handleShowModal}
           sx={{
             backgroundColor: THEME.gold,
@@ -1895,6 +2092,7 @@ const Sales = () => {
         >
           New Sale
         </Button>
+      </Box>
       </Box>
 
       {/* Toast Notifications */}
@@ -1923,13 +2121,13 @@ const Sales = () => {
         overflow: 'hidden'
       }}>
         <Table>
-          <TableHead sx={{ backgroundColor: THEME.lightGold }}>
+          <TableHead sx={{ backgroundColor: '#D4AF37' }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>ID</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Buyer</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Items</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Date</TableCell>
-              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Total</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: '#000', padding: '16px' }}>ID</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: '#000', padding: '16px' }}>Buyer</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: '#000', padding: '16px' }}>Items</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: '#000', padding: '16px' }}>Date</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: '#000', padding: '16px' }}>Total</TableCell>
               <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, padding: '16px' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -1939,7 +2137,7 @@ const Sales = () => {
                 key={sale._id}
                 sx={{
                   '&:hover': {
-                    backgroundColor: THEME.lightGold
+                    backgroundColor: '#F4E3B2'
                   },
                   transition: 'background-color 0.2s ease'
                 }}
@@ -2447,16 +2645,16 @@ const Sales = () => {
               boxShadow: '0px 1px 2px rgba(16, 24, 40, 0.05)'
             }}>
               <Table>
-                <TableHead sx={{ backgroundColor: '#F9FAFB' }}>
+                <TableHead sx={{ backgroundColor: '#D4AF37' }}>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>S.No</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Barcode</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Product Name</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Category</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Price (₹)</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Qty</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Total (₹)</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#101828' }}>Action</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>S.No</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Barcode</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Product Name</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Category</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Price (₹)</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Qty</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Total (₹)</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Action</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -2973,7 +3171,7 @@ const Sales = () => {
                                   >
                                     {itemName}
                                     <small className="ms-1" style={{ fontSize: '0.7rem' }}>
-                                      ℹ️
+              
                                     </small>
                                   </span>
                                 </OverlayTrigger>
@@ -3151,21 +3349,21 @@ const Sales = () => {
                 }}>
                   <Table sx={{ '@media print': { fontSize: '0.85rem' } }}>
                     <TableHead sx={{ 
-                      backgroundColor: THEME.lightGold,
+                      backgroundColor: '#D4AF37',
                       '@media print': {
-                        backgroundColor: THEME.lightGold + ' !important',
+                        backgroundColor: '#D4AF37 !important',
                         '-webkit-print-color-adjust': 'exact',
                         'print-color-adjust': 'exact'
                       }
                     }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>S.No</TableCell>
-                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Product</TableCell>
-                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Category</TableCell>
-                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Barcode</TableCell>
-                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Price (₹)</TableCell>
-                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Quantity</TableCell>
-                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Total (₹)</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#000', '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>S.No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#000', '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Product</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#000', '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Category</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#000', '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Barcode</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#000', '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Price (₹)</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#000', '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Quantity</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: '#000', '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Total (₹)</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -3359,7 +3557,7 @@ const Sales = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      </Box>
+    </Box>
     </>
   );
 };

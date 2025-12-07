@@ -40,7 +40,9 @@ const Vendors = () => {
     phone: '', 
     address: '', 
     gstNo: '', 
-    accountNo: '' 
+    accountNo: '',
+    ifscCode: '',
+    bankName: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -67,7 +69,9 @@ const Vendors = () => {
       phone: '', 
       address: '', 
       gstNo: '', 
-      accountNo: '' 
+      accountNo: '',
+      ifscCode: '',
+      bankName: ''
     });
     setShowModal(true);
   };
@@ -155,7 +159,7 @@ const Vendors = () => {
         sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}
       >
         <Table>
-          <TableHead sx={{ bgcolor: '#fafafa' }}>
+          <TableHead sx={{ bgcolor: '#D4AF37' }}>
             <TableRow>
               <TableCell sx={{ fontWeight: 600, color: '#000' }}>S.No</TableCell>
               <TableCell sx={{ fontWeight: 600, color: '#000' }}>Name</TableCell>
@@ -172,7 +176,7 @@ const Vendors = () => {
               <TableRow 
                 key={vendor._id} 
                 hover
-                sx={{ '&:hover': { bgcolor: '#fafafa' } }}
+                sx={{ '&:hover': { bgcolor: '#F4E3B2' } }}
               >
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>{vendor.name}</TableCell>
@@ -238,7 +242,7 @@ const Vendors = () => {
           <DialogContent sx={{ pt: 3 }}>
             <Stack spacing={2.5}>
               <TextField
-                label="Name"
+                label="Company Name"
                 name="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -260,7 +264,7 @@ const Vendors = () => {
                 name="phone"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                required
+               
                 fullWidth
                 variant="outlined"
               />
@@ -289,7 +293,23 @@ const Vendors = () => {
                 name="accountNo"
                 value={formData.accountNo}
                 onChange={(e) => setFormData({ ...formData, accountNo: e.target.value })}
-                required
+                
+                fullWidth
+                variant="outlined"
+              />
+              <TextField
+                label="IFSC Code"
+                name="ifscCode"
+                value={formData.ifscCode}
+                onChange={(e) => setFormData({ ...formData, ifscCode: e.target.value })}
+                fullWidth
+                variant="outlined"
+              />
+              <TextField
+                label="Bank Name"
+                name="bankName"
+                value={formData.bankName}
+                onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
                 fullWidth
                 variant="outlined"
               />

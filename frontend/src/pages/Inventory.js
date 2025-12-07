@@ -179,7 +179,7 @@ const Inventory = () => {
         <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
           {lowStock.length > 0 ? (
             <Table>
-              <TableHead sx={{ bgcolor: '#fafafa' }}>
+              <TableHead sx={{ bgcolor: '#D4AF37' }}>
                 <TableRow>
                   <TableCell>
                     <Stack direction="row" alignItems="center" spacing={1}>
@@ -189,7 +189,7 @@ const Inventory = () => {
                         size="small"
                         sx={{ color: '#000', '&.Mui-checked': { color: '#000' } }}
                       />
-                      <Typography variant="subtitle2" fontWeight={600}>Product</Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="#000">Product</Typography>
                     </Stack>
                   </TableCell>
                   <TableCell>
@@ -200,7 +200,7 @@ const Inventory = () => {
                         size="small"
                         sx={{ color: '#000', '&.Mui-checked': { color: '#000' } }}
                       />
-                      <Typography variant="subtitle2" fontWeight={600}>Current Stock</Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="#000">Current Stock</Typography>
                     </Stack>
                   </TableCell>
                   <TableCell>
@@ -211,7 +211,7 @@ const Inventory = () => {
                         size="small"
                         sx={{ color: '#000', '&.Mui-checked': { color: '#000' } }}
                       />
-                      <Typography variant="subtitle2" fontWeight={600}>Status</Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="#000">Status</Typography>
                     </Stack>
                   </TableCell>
                   <TableCell>
@@ -222,14 +222,14 @@ const Inventory = () => {
                         size="small"
                         sx={{ color: '#000', '&.Mui-checked': { color: '#000' } }}
                       />
-                      <Typography variant="subtitle2" fontWeight={600}>Vendor</Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="#000">Vendor</Typography>
                     </Stack>
                   </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {lowStock.map((product) => (
-                  <TableRow key={product._id} hover sx={{ '&:hover': { bgcolor: '#fafafa' } }}>
+                  <TableRow key={product._id} hover sx={{ '&:hover': { bgcolor: '#F4E3B2' } }}>
                     <TableCell>
                       {lowStockColumns.product ? (
                         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -312,7 +312,7 @@ const Inventory = () => {
         <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 2 }}>
           {products.length > 0 ? (
             <Table>
-              <TableHead sx={{ bgcolor: '#fafafa' }}>
+              <TableHead sx={{ bgcolor: '#D4AF37' }}>
                 <TableRow>
                   <TableCell>
                     <Stack direction="row" alignItems="center" spacing={1}>
@@ -322,7 +322,7 @@ const Inventory = () => {
                         size="small"
                         sx={{ color: '#000', '&.Mui-checked': { color: '#000' } }}
                       />
-                      <Typography variant="subtitle2" fontWeight={600}>Name</Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="#000">Name</Typography>
                     </Stack>
                   </TableCell>
                   <TableCell>
@@ -333,7 +333,7 @@ const Inventory = () => {
                         size="small"
                         sx={{ color: '#000', '&.Mui-checked': { color: '#000' } }}
                       />
-                      <Typography variant="subtitle2" fontWeight={600}>ID</Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="#000">ID</Typography>
                     </Stack>
                   </TableCell>
                   <TableCell>
@@ -344,7 +344,7 @@ const Inventory = () => {
                         size="small"
                         sx={{ color: '#000', '&.Mui-checked': { color: '#000' } }}
                       />
-                      <Typography variant="subtitle2" fontWeight={600}>Category</Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="#000">Category</Typography>
                     </Stack>
                   </TableCell>
                   <TableCell>
@@ -355,7 +355,7 @@ const Inventory = () => {
                         size="small"
                         sx={{ color: '#000', '&.Mui-checked': { color: '#000' } }}
                       />
-                      <Typography variant="subtitle2" fontWeight={600}>Stock Level</Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="#000">Stock Level</Typography>
                     </Stack>
                   </TableCell>
                   <TableCell>
@@ -366,7 +366,7 @@ const Inventory = () => {
                         size="small"
                         sx={{ color: '#000', '&.Mui-checked': { color: '#000' } }}
                       />
-                      <Typography variant="subtitle2" fontWeight={600}>Price</Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="#000">Price</Typography>
                     </Stack>
                   </TableCell>
                   <TableCell>
@@ -377,7 +377,7 @@ const Inventory = () => {
                         size="small"
                         sx={{ color: '#000', '&.Mui-checked': { color: '#000' } }}
                       />
-                      <Typography variant="subtitle2" fontWeight={600}>Total</Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="#000">Total</Typography>
                     </Stack>
                   </TableCell>
                   <TableCell>
@@ -388,7 +388,7 @@ const Inventory = () => {
                         size="small"
                         sx={{ color: '#000', '&.Mui-checked': { color: '#000' } }}
                       />
-                      <Typography variant="subtitle2" fontWeight={600}>Vendor</Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="#000">Vendor</Typography>
                     </Stack>
                   </TableCell>
                   <TableCell>
@@ -399,14 +399,14 @@ const Inventory = () => {
                         size="small"
                         sx={{ color: '#000', '&.Mui-checked': { color: '#000' } }}
                       />
-                      <Typography variant="subtitle2" fontWeight={600}>Status</Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="#000">Status</Typography>
                     </Stack>
                   </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {products.map((product) => (
-                  <TableRow key={product._id} hover sx={{ '&:hover': { bgcolor: '#fafafa' } }}>
+                  <TableRow key={product._id} hover sx={{ '&:hover': { bgcolor: '#F4E3B2' } }}>
                     <TableCell>
                       {productColumns.name ? (
                         <Stack direction="row" alignItems="center" spacing={1.5}>

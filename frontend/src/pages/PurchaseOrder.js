@@ -706,21 +706,21 @@ function PurchaseOrder({ vendors = [], items = [] }) {
                     }}>
                         <Table>
                             <TableHead>
-                                <TableRow sx={{ bgcolor: '#fafafa' }}>
-                                    <TableCell sx={{ fontWeight: 600 }}>Barcode ID</TableCell>
-                                    <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
-                                    <TableCell sx={{ fontWeight: 600 }}>Qty</TableCell>
-                                    <TableCell sx={{ fontWeight: 600 }}>Unit Price</TableCell>
-                                    <TableCell sx={{ fontWeight: 600 }}>GST %</TableCell>
-                                    <TableCell sx={{ fontWeight: 600 }}>Item Total</TableCell>
-                                    <TableCell sx={{ fontWeight: 600 }}>GST Amount</TableCell>
-                                    <TableCell sx={{ fontWeight: 600 }}>Total</TableCell>
-                                    <TableCell sx={{ fontWeight: 600 }} align="center">Action</TableCell>
+                                <TableRow sx={{ bgcolor: '#D4AF37' }}>
+                                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Barcode ID</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Description</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Qty</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Unit Price</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>GST %</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Item Total</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>GST Amount</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: '#000' }}>Total</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: '#000' }} align="center">Action</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {formData.items.map((item, index) => (
-                                    <TableRow key={index} sx={{ '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}>
+                                    <TableRow key={index} sx={{ '&:hover': { bgcolor: '#F4E3B2' } }}>
                                         <TableCell>{item.barcodeId || item.itemId}</TableCell>
                                         <TableCell>{item.description}</TableCell>
                                         <TableCell>{item.quantity}</TableCell>

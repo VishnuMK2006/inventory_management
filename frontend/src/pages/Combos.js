@@ -76,6 +76,28 @@ const Combos = () => {
   const [editingCell, setEditingCell] = useState(null);
   const [editableData, setEditableData] = useState([]);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Image Preview Modal
+  const [imagePreviewModal, setImagePreviewModal] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState('');
+  const [previewImageName, setPreviewImageName] = useState('');
+
+  const handleImageClick = (imageUrl, comboName) => {
+    if (imageUrl) {
+      setPreviewImageUrl(imageUrl);
+      setPreviewImageName(comboName);
+      setImagePreviewModal(true);
+    }
+  };
+
+  const handleCloseImagePreview = () => {
+    setImagePreviewModal(false);
+    setPreviewImageUrl('');
+    setPreviewImageName('');
+  };
+
   // Add Item modal
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [selectedComboForItem, setSelectedComboForItem] = useState(null);
@@ -658,7 +680,7 @@ const Combos = () => {
 
   const handleSelectAllCombos = (checked) => {
     if (checked) {
-      setSelectedCombos(combos.map(combo => combo._id));
+      setSelectedCombos(filteredCombos.map(combo => combo._id));
     } else {
       setSelectedCombos([]);
     }
@@ -700,6 +722,24 @@ const Combos = () => {
       setIsDownloadingBarcodes(false);
     }
   };
+
+  // Filter combos based on search query
+  const filteredCombos = combos.filter(combo => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const name = combo.name?.toLowerCase() || '';
+    const barcode = combo.barcode?.toLowerCase() || '';
+    const description = combo.description?.toLowerCase() || '';
+    const category = typeof combo.category === 'object' 
+      ? combo.category.name?.toLowerCase() || '' 
+      : combo.category?.toLowerCase() || '';
+    
+    return name.includes(query) || 
+           barcode.includes(query) || 
+           description.includes(query) ||
+           category.includes(query);
+  });
 
   return (
     <Box sx={{ p: 3, bgcolor: '#fff', minHeight: '100vh' }}>
@@ -759,6 +799,40 @@ const Combos = () => {
         </Grid>
       </Paper>
 
+      {/* Search Bar */}
+      <Paper sx={{ p: 2, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
+        <TextField
+          fullWidth
+          placeholder="🔍 Search combos by name, barcode, category, or description..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          variant="outlined"
+          size="small"
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              '&:hover fieldset': { borderColor: '#D4AF37' },
+              '&.Mui-focused fieldset': { borderColor: '#D4AF37' }
+            }
+          }}
+          InputProps={{
+            endAdornment: searchQuery && (
+              <IconButton
+                size="small"
+                onClick={() => setSearchQuery('')}
+                sx={{ color: '#666' }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            )
+          }}
+        />
+        {searchQuery && (
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            Found {filteredCombos.length} combo(s) matching "{searchQuery}"
+          </Typography>
+        )}
+      </Paper>
+
       {/* Toast Notifications */}
       {toasts.map(toast => (
         <Snackbar
@@ -798,25 +872,26 @@ const Combos = () => {
           <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#D4AF37', color: '#000' }}>
                   <Checkbox
-                    checked={selectedCombos.length === combos.length && combos.length > 0}
+                    checked={filteredCombos.length > 0 && selectedCombos.length === filteredCombos.length}
+                    indeterminate={selectedCombos.length > 0 && selectedCombos.length < filteredCombos.length}
                     onChange={(e) => handleSelectAllCombos(e.target.checked)}
                   />
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Image</TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Barcode</TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Category</TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Products</TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Available</TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Price</TableCell>
-                <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Actions</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#D4AF37', color: '#000' }}>Image</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#D4AF37', color: '#000' }}>Name</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#D4AF37', color: '#000' }}>Barcode</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#D4AF37', color: '#000' }}>Category</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#D4AF37', color: '#000' }}>Products</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#D4AF37', color: '#000' }}>Available</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#D4AF37', color: '#000' }}>Price</TableCell>
+                <TableCell sx={{ fontWeight: 600, bgcolor: '#D4AF37', color: '#000' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {combos.map((combo) => (
-                <TableRow key={combo._id} hover>
+              {filteredCombos.map((combo) => (
+                <TableRow key={combo._id} hover sx={{ '&:hover': { bgcolor: '#F4E3B2' } }}>
                   <TableCell>
                     <Checkbox
                       checked={selectedCombos.includes(combo._id)}
@@ -832,11 +907,14 @@ const Combos = () => {
                           width: '50px',
                           height: '50px',
                           objectFit: 'cover',
-                          borderRadius: '8px'
+                          borderRadius: '8px',
+                          cursor: 'pointer'
                         }}
+                        onClick={() => handleImageClick(combo.imageUrl, combo.name)}
                       />
                     ) : (
                       <Box
+                        onClick={() => handleImageClick(null, combo.name)}
                         sx={{
                           width: '50px',
                           height: '50px',
@@ -844,7 +922,8 @@ const Combos = () => {
                           borderRadius: '8px',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center'
+                          justifyContent: 'center',
+                          cursor: 'pointer'
                         }}
                       >
                         📦
@@ -961,6 +1040,25 @@ const Combos = () => {
             </TableBody>
           </Table>
         </TableContainer>
+      )}
+
+      {/* No Results Message */}
+      {!loading && filteredCombos.length === 0 && searchQuery && (
+        <Paper sx={{ p: 4, textAlign: 'center', border: '1px solid #e0e0e0', boxShadow: 'none' }}>
+          <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+            No combos found
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            No combos match your search "{searchQuery}". Try a different search term.
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={() => setSearchQuery('')}
+            sx={{ mt: 2, color: '#000', borderColor: '#000' }}
+          >
+            Clear Search
+          </Button>
+        </Paper>
       )}
 
       {/* Add/Edit Combo Modal */}
@@ -1155,12 +1253,12 @@ const Combos = () => {
               <TableContainer component={Paper} sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
                 <Table>
                   <TableHead>
-                    <TableRow sx={{ bgcolor: '#fafafa' }}>
-                      <TableCell sx={{ fontWeight: 600 }}>Product</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Unit Price</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Quantity</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Total</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Action</TableCell>
+                    <TableRow sx={{ bgcolor: '#D4AF37' }}>
+                      <TableCell sx={{ fontWeight: 600, color: '#000' }}>Product</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#000' }}>Unit Price</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#000' }}>Quantity</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#000' }}>Total</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: '#000' }}>Action</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1357,15 +1455,15 @@ const Combos = () => {
                   <TableContainer component={Paper} sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
                     <Table>
                       <TableHead>
-                        <TableRow sx={{ bgcolor: '#fafafa' }}>
-                          <TableCell sx={{ fontWeight: 600 }}>Product Name</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Barcode</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Unit Price</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Required Qty</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Available Stock</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Can Make</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Total Value</TableCell>
+                        <TableRow sx={{ bgcolor: '#D4AF37' }}>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Product Name</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Barcode</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Unit Price</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Required Qty</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Available Stock</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Can Make</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Status</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Total Value</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -1571,13 +1669,13 @@ const Combos = () => {
                   <TableContainer sx={{ maxHeight: '400px', overflowY: 'auto' }}>
                     <Table size="small">
                       <TableHead>
-                        <TableRow sx={{ bgcolor: '#fafafa' }}>
-                          <TableCell sx={{ fontWeight: 600 }}>S.No.</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Product Category</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Selling Product Code</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Product Name</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Price/product</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Price/product with GST</TableCell>
+                        <TableRow sx={{ bgcolor: '#D4AF37' }}>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>S.No.</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Product Category</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Selling Product Code</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Product Name</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Price/product</TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#000' }}>Price/product with GST</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -1718,6 +1816,65 @@ const Combos = () => {
             Add Product
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Image Preview Modal */}
+      <Dialog 
+        open={imagePreviewModal} 
+        onClose={handleCloseImagePreview} 
+        maxWidth="lg" 
+        fullWidth
+        PaperProps={{ sx: { bgcolor: 'transparent', boxShadow: 'none' } }}
+      >
+        <IconButton
+          onClick={handleCloseImagePreview}
+          sx={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            bgcolor: 'rgba(255,255,255,0.2)',
+            color: '#fff',
+            zIndex: 1,
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' }
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+        <DialogContent sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          bgcolor: 'rgba(0,0,0,0.9)',
+          p: 2
+        }}>
+          {previewImageUrl ? (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="h6" sx={{ color: '#fff', mb: 2 }}>
+                {previewImageName}
+              </Typography>
+              <img 
+                src={previewImageUrl} 
+                alt={previewImageName} 
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: '80vh', 
+                  objectFit: 'contain',
+                  borderRadius: '8px'
+                }} 
+              />
+            </Box>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography variant="h4" sx={{ color: '#fff', mb: 2 }}>📦</Typography>
+              <Typography variant="h6" sx={{ color: '#fff', mb: 1 }}>
+                No Image Available
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                {previewImageName}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
       </Dialog>
     </Box>
   );

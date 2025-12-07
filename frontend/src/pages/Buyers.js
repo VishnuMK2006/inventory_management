@@ -200,7 +200,7 @@ const Buyers = () => {
           </Box>
         ) : (
           <Table>
-            <TableHead sx={{ bgcolor: '#fafafa' }}>
+            <TableHead sx={{ bgcolor: '#D4AF37' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 600, color: '#000', width: '60px', textAlign: 'center' }}>S.No</TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#000' }}>Name</TableCell>
@@ -216,7 +216,7 @@ const Buyers = () => {
                 <TableRow 
                   key={buyer._id} 
                   hover
-                  sx={{ '&:hover': { bgcolor: '#fafafa' } }}
+                  sx={{ '&:hover': { bgcolor: '#F4E3B2' } }}
                 >
                   <TableCell sx={{ textAlign: 'center' }}>{index + 1}</TableCell>
                   <TableCell>

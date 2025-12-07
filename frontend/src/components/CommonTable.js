@@ -9,10 +9,10 @@ const StyledTable = styled(Table)`
   box-shadow: 0 5px 20px rgba(0,0,0,0.1);
   
   thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #D4AF37;
     
     th {
-      color: white;
+      color: #000;
       border: none;
       padding: 1.2rem;
       font-weight: 600;

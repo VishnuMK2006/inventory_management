@@ -954,20 +954,20 @@ const ProfitLoss = () => {
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: '#fafafa' }}>
-                  <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Product/Combo</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Cost Price</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Sold Price</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Quantity</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Profit/Loss</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }} align="center">Actions</TableCell>
+                <TableRow sx={{ bgcolor: '#D4AF37' }}>
+                  <TableCell sx={{ fontWeight: 600, color: '#000' }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: '#000' }}>Product/Combo</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: '#000' }}>Cost Price</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: '#000' }}>Sold Price</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: '#000' }}>Quantity</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: '#000' }}>Profit/Loss</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: '#000' }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: '#000' }} align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {profitData.slice(0, 20).map((item, index) => (
-                  <TableRow key={index} sx={{ '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}>
+                  <TableRow key={index} sx={{ '&:hover': { bgcolor: '#F4E3B2' } }}>
                     <TableCell>{item.date ? new Date(item.date).toLocaleDateString() : '-'}</TableCell>
                     <TableCell>{item.product}</TableCell>
                     <TableCell>{formatCurrency(item.costPrice)}</TableCell>
@@ -1060,7 +1060,7 @@ const ProfitLoss = () => {
               </TableHead>
               <TableBody>
                 {uploadResults.map((result, index) => (
-                  <TableRow key={index} sx={{ '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}>
+                  <TableRow key={index} sx={{ '&:hover': { bgcolor: '#F4E3B2' } }}>
                     <TableCell>{result.Month || result.month || '-'}</TableCell>
                     <TableCell>{result['S.No.'] || result.sno || '-'}</TableCell>
                     <TableCell>{result['Order Date'] || result.orderDate || '-'}</TableCell>
@@ -1149,28 +1149,28 @@ const ProfitLoss = () => {
             <Table stickyHeader size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Month</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>S.No.</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Order Date</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Order id</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>SKU</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Quantity</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Status</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Payment</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Payment Date</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Payment Status</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Purchase Price</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Profit</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Re-use / Claim</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Reused Date</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Status of Product</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }}>Remarks</TableCell>
-                  <TableCell sx={{ bgcolor: '#fafafa', fontWeight: 600 }} align="center">Actions</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Month</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>S.No.</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Order Date</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Order id</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>SKU</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Quantity</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Status</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Payment</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Payment Date</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Payment Status</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Purchase Price</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Profit</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Re-use / Claim</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Reused Date</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Status of Product</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }}>Remarks</TableCell>
+                  <TableCell sx={{ bgcolor: '#D4AF37', fontWeight: 600, color: '#000' }} align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {uploadResults.map((result, index) => (
-                  <TableRow key={index} sx={{ '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}>
+                  <TableRow key={index} sx={{ '&:hover': { bgcolor: '#F4E3B2' } }}>
                     <TableCell>{result.Month || result.month || '-'}</TableCell>
                     <TableCell>{result['S.No.'] || result.sno || result.serialNumber || '-'}</TableCell>
                     <TableCell>{result['Order Date'] || result.orderDate || '-'}</TableCell>

@@ -145,6 +145,25 @@ const Products = () => {
   const rpuScannerRef = useRef(null);
   const rpuBarcodeInputRef = useRef(null);
 
+  // Image Preview Modal
+  const [imagePreviewModal, setImagePreviewModal] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState('');
+  const [previewImageName, setPreviewImageName] = useState('');
+
+  const handleImageClick = (imageUrl, productName) => {
+    if (imageUrl) {
+      setPreviewImageUrl(imageUrl);
+      setPreviewImageName(productName);
+      setImagePreviewModal(true);
+    }
+  };
+
+  const handleCloseImagePreview = () => {
+    setImagePreviewModal(false);
+    setPreviewImageUrl('');
+    setPreviewImageName('');
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchVendors();
@@ -482,25 +501,29 @@ const Products = () => {
             objectFit: 'cover',
             cursor: 'pointer'
           }}
-          onClick={() => openImagePreview(product.image)}
+          onClick={() => handleImageClick(product.image, product.name)}
         />
       );
     }
 
     return (
-      <div style={{
-        width: '40px',
-        height: '40px',
-        borderRadius: '8px',
-        background: 'linear-gradient(135deg, #3498db, #2980b9)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontWeight: 'bold'
-      }}>
+      <Box 
+        onClick={() => handleImageClick(null, product.name)}
+        sx={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '8px',
+          background: 'linear-gradient(135deg, #3498db, #2980b9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontWeight: 'bold',
+          cursor: 'pointer'
+        }}
+      >
         {product.name.charAt(0)}
-      </div>
+      </Box>
     );
   };
 
@@ -1602,7 +1625,7 @@ const Products = () => {
             <TableBody>
               {filterProductsByBarcode().length > 0 ? (
                 filterProductsByBarcode().map((product, index) => (
-                  <TableRow key={product._id} hover sx={{ '&:hover': { bgcolor: THEME.lightGold } }}>
+                  <TableRow key={product._id} hover sx={{ '&:hover': { bgcolor: '#F4E3B2' } }}>
                     <TableCell padding="checkbox">
                       <Checkbox 
                         checked={selectedProducts.includes(product._id)}
@@ -1885,6 +1908,65 @@ const Products = () => {
       </Dialog>
 
       {/* Image Preview Modal */}
+      <Dialog 
+        open={imagePreviewModal} 
+        onClose={handleCloseImagePreview} 
+        maxWidth="lg" 
+        fullWidth
+        PaperProps={{ sx: { bgcolor: 'transparent', boxShadow: 'none' } }}
+      >
+        <IconButton
+          onClick={handleCloseImagePreview}
+          sx={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            bgcolor: 'rgba(255,255,255,0.2)',
+            color: '#fff',
+            zIndex: 1,
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' }
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+        <DialogContent sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          bgcolor: 'rgba(0,0,0,0.9)',
+          p: 2
+        }}>
+          {previewImageUrl ? (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="h6" sx={{ color: '#fff', mb: 2 }}>
+                {previewImageName}
+              </Typography>
+              <img 
+                src={previewImageUrl} 
+                alt={previewImageName} 
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: '80vh', 
+                  objectFit: 'contain',
+                  borderRadius: '8px'
+                }} 
+              />
+            </Box>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <Typography variant="h4" sx={{ color: '#fff', mb: 2 }}>📦</Typography>
+              <Typography variant="h6" sx={{ color: '#fff', mb: 1 }}>
+                No Image Available
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                {previewImageName}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Old Image Preview Modal - keeping for backward compatibility */}
       <Dialog open={!!imagePreview} onClose={closeImagePreview} maxWidth="lg" PaperProps={{ sx: { bgcolor: 'transparent', boxShadow: 'none' } }}>
         <IconButton
           onClick={closeImagePreview}
@@ -1940,15 +2022,21 @@ const Products = () => {
                       InputLabelProps={{ shrink: true }}
                       size="small"
                     />
-                    <TextField
-                      fullWidth
-                      label="Customer Name"
-                      value={rtoFormData.customerName}
-                      onChange={(e) => handleRTOInputChange('customerName', e.target.value)}
-                      placeholder="Enter customer name"
-                      required
-                      size="small"
-                    />
+                    <FormControl fullWidth required size="small">
+                      <InputLabel>Customer Name</InputLabel>
+                      <Select
+                        value={rtoFormData.customerName}
+                        onChange={(e) => handleRTOInputChange('customerName', e.target.value)}
+                        label="Customer Name"
+                      >
+                        <MenuItem value="">Select customer...</MenuItem>
+                        {vendors.map((vendor) => (
+                          <MenuItem key={vendor._id} value={vendor.name}>
+                            {vendor.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                     <TextField
                       fullWidth
                       type="tel"
@@ -2302,15 +2390,21 @@ const Products = () => {
                       InputLabelProps={{ shrink: true }}
                       size="small"
                     />
-                    <TextField
-                      fullWidth
-                      label="Customer Name"
-                      value={rpuFormData.customerName}
-                      onChange={(e) => handleRPUInputChange('customerName', e.target.value)}
-                      placeholder="Enter customer name"
-                      required
-                      size="small"
-                    />
+                    <FormControl fullWidth required size="small">
+                      <InputLabel>Customer Name</InputLabel>
+                      <Select
+                        value={rpuFormData.customerName}
+                        onChange={(e) => handleRPUInputChange('customerName', e.target.value)}
+                        label="Customer Name"
+                      >
+                        <MenuItem value="">Select customer...</MenuItem>
+                        {vendors.map((vendor) => (
+                          <MenuItem key={vendor._id} value={vendor.name}>
+                            {vendor.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
                     <TextField
                       fullWidth
                       type="tel"

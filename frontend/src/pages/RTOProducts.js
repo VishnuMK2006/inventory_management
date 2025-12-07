@@ -228,7 +228,7 @@ const RTOProducts = () => {
             </TableHead>
             <TableBody>
               {products.map(product => (
-                <TableRow key={product._id} hover sx={{ '&:hover': { bgcolor: THEME.lightGold } }}>
+                <TableRow key={product._id} hover sx={{ '&:hover': { bgcolor: '#F4E3B2' } }}>
                   <TableCell>
                     <Chip
                       label={product.rtoId || product.barcode || 'N/A'}
