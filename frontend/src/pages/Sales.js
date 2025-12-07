@@ -378,6 +378,7 @@ const SaleForm = ({ initialData, buyers, products, onSubmit, onCancel, loading }
 import React, { useState, useEffect, useRef } from "react";
 import { OverlayTrigger, Popover, Row, Col, Form, FormGroup, Table as BootstrapTable, Badge } from "react-bootstrap";
 import { salesAPI, buyersAPI, productsAPI, barcodesAPI } from "../services/api";
+import logo from '../logo.jpeg';
 import Quagga from "quagga";
 import {
   Box,
@@ -668,67 +669,72 @@ const BarcodeBadge = styled.span`
 const PrintStyles = () => (
   <style>{`
     @media print {
-      /* Hide everything except invoice */
+      /* Page setup */
+      @page {
+        size: A4;
+        margin: 15mm;
+      }
+      
+      /* Reset body */
       body {
         background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
       
-      body > *:not(#root) {
-        display: none !important;
+      /* Hide everything first */
+      body * {
+        visibility: hidden;
       }
       
-      /* Hide the sales page content */
-      #root > *:not(.MuiDialog-root) {
-        display: none !important;
+      /* Show only invoice and its children */
+      #invoice-print-area,
+      #invoice-print-area * {
+        visibility: visible !important;
       }
       
-      /* Hide Material UI overlay */
+      /* Position invoice at top */
+      #invoice-print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+        background: white !important;
+      }
+      
+      /* Hide Material UI backdrop and unnecessary elements */
       .MuiBackdrop-root,
-      .MuiModal-backdrop {
-        display: none !important;
-      }
-      
-      /* Hide navbar, sidebar, headers */
+      .MuiModal-backdrop,
+      .MuiDialogTitle-root,
+      .MuiDialogActions-root,
       header, nav, aside, .no-print {
         display: none !important;
+        visibility: hidden !important;
       }
       
-      /* Show only dialog content */
-      .MuiDialog-root {
-        position: static !important;
-      }
-      
-      .MuiDialog-container {
-        display: block !important;
-        height: auto !important;
-      }
-      
-      .MuiDialog-paper {
-        max-width: 100% !important;
-        max-height: 100% !important;
-        margin: 0 !important;
-        box-shadow: none !important;
-        overflow: visible !important;
-        background: white !important;
-      }
-      
-      /* Hide dialog title and actions during print */
-      .MuiDialogTitle-root,
-      .MuiDialogActions-root {
-        display: none !important;
-      }
-      
-      /* Invoice specific */
-      #invoice-print-area {
+      /* Tables */
+      table {
         width: 100% !important;
-        padding: 10mm !important;
-        margin: 0 !important;
-        background: white !important;
+        border-collapse: collapse !important;
+        page-break-inside: auto !important;
       }
       
-      /* Page breaks */
-      .page-break {
-        page-break-after: always;
+      thead {
+        display: table-header-group !important;
+      }
+      
+      tbody {
+        display: table-row-group !important;
+      }
+      
+      tr {
+        page-break-inside: avoid !important;
+        page-break-after: auto !important;
+      }
+      
+      td, th {
+        page-break-inside: avoid !important;
       }
       
       /* Ensure colors print */
@@ -738,10 +744,43 @@ const PrintStyles = () => (
         color-adjust: exact !important;
       }
       
-      /* Remove page margins */
-      @page {
-        margin: 10mm;
-        size: A4;
+      /* Logo */
+      .company-logo-img {
+        max-width: 60px !important;
+        max-height: 60px !important;
+        display: block !important;
+      }
+      
+      /* Typography adjustments */
+      h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid !important;
+        color: #000 !important;
+      }
+      
+      p, span, div {
+        color: #000 !important;
+      }
+      
+      /* Remove unnecessary decorations */
+      .MuiPaper-root {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+      }
+      
+      /* Ensure text is visible */
+      .MuiTableCell-root,
+      .MuiTypography-root {
+        color: #000 !important;
+      }
+      
+      /* Grid layout */
+      .MuiGrid-container {
+        page-break-inside: avoid !important;
+      }
+      
+      /* Box component */
+      .MuiBox-root {
+        page-break-inside: avoid !important;
       }
     }
   `}</style>
@@ -1778,17 +1817,36 @@ const Sales = () => {
   const handlePrintInvoice = () => {
     // Ensure logo image is loaded before printing
     const logoImg = document.querySelector('.company-logo-img');
+    
+    // Create a function to trigger print
+    const triggerPrint = () => {
+      // Set document title for the PDF filename
+      const originalTitle = document.title;
+      document.title = `Invoice-${invoiceData?.saleId || 'SALE'}-${new Date().toISOString().split('T')[0]}`;
+      
+      // Add print-specific class to body
+      document.body.classList.add('printing-invoice');
+      
+      // Trigger print dialog
+      window.print();
+      
+      // Restore original title after print
+      setTimeout(() => {
+        document.title = originalTitle;
+        document.body.classList.remove('printing-invoice');
+      }, 1000);
+    };
+    
+    // Check if logo needs to load
     if (logoImg && !logoImg.complete) {
       logoImg.onload = () => {
-        setTimeout(() => {
-          window.print();
-        }, 500);
+        setTimeout(triggerPrint, 500);
       };
+      // Fallback if image fails to load
+      setTimeout(triggerPrint, 2000);
     } else {
-      // Add a delay to ensure styles are applied
-      setTimeout(() => {
-        window.print();
-      }, 500);
+      // Add a delay to ensure all styles and content are rendered
+      setTimeout(triggerPrint, 500);
     }
   };
 
@@ -3033,29 +3091,30 @@ const Sales = () => {
           {invoiceData && (
               <InvoiceContainer id="invoice-print-area">
                 <InvoiceHeader>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, width: '100%', '@media print': { gap: 1 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, width: '100%','@media print': { gap: 1 } }}>
                     <img 
-                      src="/logo_vp.jpeg" 
-                      alt="Velpaari Enterprises Logo" 
+                      src={logo}
+                      alt="Velpaari Logo" 
                       className="company-logo-img"
                       style={{
-                        width: '60px',
-                        height: '60px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: '2px solid #D4AF37'
+                        width: '80px',
+                        height: '80px',
+                        objectFit: 'contain', marginBottom: '50px',marginTop: '0px'
                       }}
                       onError={(e) => {
                         console.log('Logo failed to load');
                         e.target.style.display='none';
                       }}
                     />
-                    <Box sx={{ textAlign: 'center', flex: 1 }}>
-                      <Typography sx={{ color: THEME.gold, fontSize: { xs: '20px', md: '28px' }, fontWeight: 700, margin: 0, lineHeight: 1.2, '@media print': { fontSize: '22px' } }}>
-                        VELPAARI ENTERPRISES
+                    <Box sx={{ textAlign: 'center'}}>
+                      <Typography sx={{ color: THEME.gold, fontSize: { xs: '24px', md: '32px' }, fontWeight: 700, margin: 0, lineHeight: 1.2, letterSpacing: '0.05em', '@media print': { fontSize: '26px' } }}>
+                        VELPAARI ENTERPRISES  
                       </Typography>
-                      <Typography sx={{ color: THEME.softCharcoal, fontSize: { xs: '14px', md: '16px' }, margin: '4px 0 0 0', '@media print': { fontSize: '12px' } }}>
-                        Sales Invoice
+                      <Typography sx={{ color: THEME.charcoal, fontSize: { xs: '10px', md: '12px' }, margin: '2px 0 8px 0', letterSpacing: '0.15em', fontWeight: 500, '@media print': { fontSize: '10px' } }}>
+                        FROM EVERYDAY TO EXCLUSIVE
+                      </Typography>
+                      <Typography sx={{ color: THEME.softCharcoal, fontSize: { xs: '14px', md: '16px' }, margin: '4px 0 0 0', fontWeight: 600, '@media print': { fontSize: '14px' } }}>
+                        SALES INVOICE
                       </Typography>
                     </Box>
                   </Box>
@@ -3145,7 +3204,7 @@ const Sales = () => {
                                 overlay={
                                   <Popover id={`invoice-combo-popover-${idx}`} style={{ maxWidth: '350px' }}>
                                     <Popover.Header as="h3" className="bg-success text-white">
-                                      <strong>📦 Combo Breakdown</strong>
+                                      <strong> Combo Breakdown</strong>
                                     </Popover.Header>
                                     <Popover.Body>
                                       {item.combo?.products && item.combo.products.length > 0 ? (
@@ -3191,12 +3250,12 @@ const Sales = () => {
                                 <span 
                                   style={{ 
                                     cursor: 'help', 
-                                    textDecoration: 'underline dotted',
-                                    color: '#198754'
+                                    textDecoration: 'none',
+                                    color: '#000000ff'
                                   }}
-                                  title="Hover to see combo products"
+                    
                                 >
-                                  [COMBO] {itemName} ℹ️
+                                   {itemName}
                                 </span>
                               </OverlayTrigger>
                             ) : (

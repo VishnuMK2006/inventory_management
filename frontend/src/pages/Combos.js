@@ -470,7 +470,7 @@ const Combos = () => {
 
   const calculateComboValue = () => {
     return formData.products.reduce((total, item) => {
-      return total + (item.product.price * item.quantity);
+      return total + ((item.product.sellingPrice || item.product.price) * item.quantity);
     }, 0);
   };
 
@@ -912,6 +912,9 @@ const Combos = () => {
                     <Typography variant="body2" sx={{ fontWeight: 600, color: '#2e7d32' }}>
                       ₹{combo.price?.toFixed(2) || '0.00'}
                     </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Selling Price
+                    </Typography>
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
@@ -1183,7 +1186,7 @@ const Combos = () => {
                             </Typography>
                           </Box>
                         </TableCell>
-                        <TableCell>₹{item.product.price?.toFixed(2)}</TableCell>
+                        <TableCell>₹{(item.product.sellingPrice || item.product.price)?.toFixed(2)}</TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Button
@@ -1208,7 +1211,7 @@ const Combos = () => {
                             </Button>
                           </Box>
                         </TableCell>
-                        <TableCell>₹{(item.product.price * item.quantity).toFixed(2)}</TableCell>
+                        <TableCell>₹{((item.product.sellingPrice || item.product.price) * item.quantity).toFixed(2)}</TableCell>
                         <TableCell>
                           <Button
                             variant="outlined"

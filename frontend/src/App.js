@@ -57,7 +57,7 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+        <Box sx={{ display: 'flex', minHeight: '100vh', margin: 0, padding: 0 }}>
           <Sidebar />
           <Box
             component="main"
@@ -68,6 +68,8 @@ function App() {
               width: '100%',
               display: 'flex',
               flexDirection: 'column',
+              margin: 0,
+              padding: 0,
             }}
           >
             <Header />
