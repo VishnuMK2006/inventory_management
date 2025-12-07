@@ -41,7 +41,7 @@ import {
   CameraAlt as CameraIcon,
   Inventory as InventoryIcon
 } from '@mui/icons-material';
-import { productsAPI, vendorsAPI, returnsAPI, categoriesAPI, barcodesAPI } from '../services/api';
+import { productsAPI, vendorsAPI, returnsAPI, categoriesAPI, barcodesAPI, combosAPI } from '../services/api';
 import Quagga from 'quagga';
 
 // Theme Colors - Premium Gold & Black
@@ -111,7 +111,7 @@ const Products = () => {
     customerName: '',
     customerPhone: '',
     customerEmail: '',
-    reason: '',
+    reason: 'not_satisfied',
     items: [],
     totalAmount: 0,
     comments: '',
@@ -132,7 +132,7 @@ const Products = () => {
     customerName: '',
     customerPhone: '',
     customerEmail: '',
-    reason: 'other',
+    reason: 'not_satisfied',
     items: [],
     totalAmount: 0,
     comments: '',
@@ -206,7 +206,8 @@ const Products = () => {
         name: product.name,
         description: product.description || '',
         category: product.category?._id || '',
-        price: product.price,
+        costPrice: product.costPrice || product.price || '',
+        sellingPrice: product.sellingPrice || product.price || '',
         minquantity: product.minquantity,
         quantity: product.quantity,
         vendor: product.vendor?._id || '',
@@ -220,7 +221,8 @@ const Products = () => {
         name: '',
         description: '',
         category: '',
-        price: '',
+        costPrice: '',
+        sellingPrice: '',
         minquantity: '',
         quantity: '',
         vendor: '',
@@ -295,7 +297,8 @@ const Products = () => {
         name: formData.name,
         description: formData.description,
         category: formData.category,
-        price: parseFloat(formData.price),
+        costPrice: parseFloat(formData.costPrice),
+        sellingPrice: parseFloat(formData.sellingPrice),
         minquantity: parseInt(formData.minquantity),
         quantity: parseInt(formData.quantity),
         vendor: formData.vendor,
@@ -600,6 +603,12 @@ const Products = () => {
       return;
     }
 
+    if (!rtoFormData.reason || !['not_satisfied', 'wrong_item'].includes(rtoFormData.reason)) {
+      setError('Please select a valid return reason');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
     try {
       setLoading(true);
       
@@ -641,7 +650,7 @@ const Products = () => {
           customerName: '',
           customerPhone: '',
           customerEmail: '',
-          reason: '',
+          reason: 'not_satisfied',
           items: [],
           totalAmount: 0,
           comments: '',
@@ -670,7 +679,7 @@ const Products = () => {
       customerName: '',
       customerPhone: '',
       customerEmail: '',
-      reason: '',
+      reason: 'not_satisfied',
       items: [],
       totalAmount: 0,
       comments: '',
@@ -781,8 +790,8 @@ const Products = () => {
             productName: productMatch.name,
             barcode: productMatch.barcode,
             quantity: 1,
-            unitPrice: productMatch.price,
-            total: productMatch.price
+            unitPrice: productMatch.sellingPrice || productMatch.price,
+            total: productMatch.sellingPrice || productMatch.price
           });
         }
         
@@ -825,8 +834,8 @@ const Products = () => {
                 productName: product.name,
                 barcode: product.barcode,
                 quantity: 1,
-                unitPrice: product.price,
-                total: product.price
+                unitPrice: product.sellingPrice || product.price,
+                total: product.sellingPrice || product.price
               });
             }
             
@@ -845,12 +854,136 @@ const Products = () => {
             // Clear success message after 3 seconds
             setTimeout(() => setSuccess(''), 3000);
           } else {
-            setError(`Product with barcode ${rtoScannedCode} not found`);
-            setTimeout(() => setError(''), 3000);
+            // Product not found, try searching for combo
+            try {
+              const comboResponse = await combosAPI.getByBarcode(rtoScannedCode);
+              if (comboResponse.data) {
+                const combo = comboResponse.data;
+                
+                // Add all products from the combo
+                let newItems = [...rtoFormData.items];
+                
+                if (combo.products && combo.products.length > 0) {
+                  // Add each product in the combo
+                  combo.products.forEach(comboProduct => {
+                    const existingItemIndex = newItems.findIndex(item => 
+                      item.product === comboProduct.product._id
+                    );
+                    
+                    if (existingItemIndex !== -1) {
+                      // Increment quantity of existing item
+                      newItems[existingItemIndex] = {
+                        ...newItems[existingItemIndex],
+                        quantity: newItems[existingItemIndex].quantity + (comboProduct.quantity || 1)
+                      };
+                    } else {
+                      // Add new item from combo
+                      newItems.push({
+                        product: comboProduct.product._id,
+                        productName: comboProduct.product.name,
+                        barcode: comboProduct.product.barcode,
+                        quantity: comboProduct.quantity || 1,
+                        unitPrice: comboProduct.product.sellingPrice || comboProduct.product.price,
+                        total: ((comboProduct.product.sellingPrice || comboProduct.product.price) * (comboProduct.quantity || 1))
+                      });
+                    }
+                  });
+                  
+                  // Calculate total amount
+                  const totalAmount = newItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+                  
+                  setRTOFormData(prev => ({
+                    ...prev,
+                    items: newItems,
+                    totalAmount
+                  }));
+                  
+                  setRTOScannedCode("");
+                  setSuccess(`Added combo "${combo.name}" with ${combo.products.length} products to return items`);
+                  
+                  // Clear success message after 3 seconds
+                  setTimeout(() => setSuccess(''), 3000);
+                } else {
+                  setError(`Combo "${combo.name}" has no products`);
+                  setTimeout(() => setError(''), 3000);
+                  setRTOScannedCode("");
+                }
+              } else {
+                setError(`Product or combo with barcode ${rtoScannedCode} not found`);
+                setTimeout(() => setError(''), 3000);
+                setRTOScannedCode("");
+              }
+            } catch (comboError) {
+              setError(`Product or combo with barcode ${rtoScannedCode} not found`);
+              setTimeout(() => setError(''), 3000);
+              setRTOScannedCode("");
+            }
           }
         } catch (error) {
-          setError(`Product with barcode ${rtoScannedCode} not found`);
-          setTimeout(() => setError(''), 3000);
+          // Try searching for combo if product API fails
+          try {
+            const comboResponse = await combosAPI.getByBarcode(rtoScannedCode);
+            if (comboResponse.data) {
+              const combo = comboResponse.data;
+              
+              // Add all products from the combo
+              let newItems = [...rtoFormData.items];
+              
+              if (combo.products && combo.products.length > 0) {
+                // Add each product in the combo
+                combo.products.forEach(comboProduct => {
+                  const existingItemIndex = newItems.findIndex(item => 
+                    item.product === comboProduct.product._id
+                  );
+                  
+                  if (existingItemIndex !== -1) {
+                    // Increment quantity of existing item
+                    newItems[existingItemIndex] = {
+                      ...newItems[existingItemIndex],
+                      quantity: newItems[existingItemIndex].quantity + (comboProduct.quantity || 1)
+                    };
+                  } else {
+                    // Add new item from combo
+                    newItems.push({
+                      product: comboProduct.product._id,
+                      productName: comboProduct.product.name,
+                      barcode: comboProduct.product.barcode,
+                      quantity: comboProduct.quantity || 1,
+                      unitPrice: comboProduct.product.sellingPrice || comboProduct.product.price,
+                      total: ((comboProduct.product.sellingPrice || comboProduct.product.price) * (comboProduct.quantity || 1))
+                    });
+                  }
+                });
+                
+                // Calculate total amount
+                const totalAmount = newItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+                
+                setRTOFormData(prev => ({
+                  ...prev,
+                  items: newItems,
+                  totalAmount
+                }));
+                
+                setRTOScannedCode("");
+                setSuccess(`Added combo "${combo.name}" with ${combo.products.length} products to return items`);
+                
+                // Clear success message after 3 seconds
+                setTimeout(() => setSuccess(''), 3000);
+              } else {
+                setError(`Combo "${combo.name}" has no products`);
+                setTimeout(() => setError(''), 3000);
+                setRTOScannedCode("");
+              }
+            } else {
+              setError(`Product or combo with barcode ${rtoScannedCode} not found`);
+              setTimeout(() => setError(''), 3000);
+              setRTOScannedCode("");
+            }
+          } catch (comboError) {
+            setError(`Product or combo with barcode ${rtoScannedCode} not found`);
+            setTimeout(() => setError(''), 3000);
+            setRTOScannedCode("");
+          }
         }
       }
       
@@ -1026,7 +1159,7 @@ const Products = () => {
       customerName: '',
       customerPhone: '',
       customerEmail: '',
-      reason: 'other',
+      reason: 'not_satisfied',
       items: [],
       totalAmount: 0,
       comments: '',
@@ -1137,8 +1270,8 @@ const Products = () => {
             productName: productMatch.name,
             barcode: productMatch.barcode,
             quantity: 1,
-            unitPrice: productMatch.price,
-            total: productMatch.price
+            unitPrice: productMatch.sellingPrice || productMatch.price,
+            total: productMatch.sellingPrice || productMatch.price
           });
         }
         
@@ -1181,8 +1314,8 @@ const Products = () => {
                 productName: product.name,
                 barcode: product.barcode,
                 quantity: 1,
-                unitPrice: product.price,
-                total: product.price
+                unitPrice: product.sellingPrice || product.price,
+                total: product.sellingPrice || product.price
               });
             }
             
@@ -1201,12 +1334,114 @@ const Products = () => {
             // Clear success message after 3 seconds
             setTimeout(() => setSuccess(''), 3000);
           } else {
-            setError(`Product with barcode ${rpuScannedCode} not found`);
-            setTimeout(() => setError(''), 3000);
+            // Product not found, try combo barcode
+            try {
+              const comboResponse = await combosAPI.getByBarcode(rpuScannedCode);
+              if (comboResponse.data) {
+                const combo = comboResponse.data;
+                
+                // Add all products from the combo
+                let newItems = [...rpuFormData.items];
+                
+                combo.products.forEach(comboProduct => {
+                  const existingItemIndex = newItems.findIndex(item => item.product === comboProduct.product._id);
+                  
+                  if (existingItemIndex !== -1) {
+                    // Increment quantity by combo product quantity
+                    newItems[existingItemIndex] = {
+                      ...newItems[existingItemIndex],
+                      quantity: newItems[existingItemIndex].quantity + comboProduct.quantity
+                    };
+                  } else {
+                    // Add new item
+                    newItems.push({
+                      product: comboProduct.product._id,
+                      productName: comboProduct.product.name,
+                      barcode: comboProduct.product.barcode,
+                      quantity: comboProduct.quantity,
+                      unitPrice: comboProduct.product.sellingPrice || comboProduct.product.price,
+                      total: (comboProduct.product.sellingPrice || comboProduct.product.price) * comboProduct.quantity
+                    });
+                  }
+                });
+                
+                // Calculate total amount
+                const totalAmount = newItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+                
+                setRPUFormData(prev => ({
+                  ...prev,
+                  items: newItems,
+                  totalAmount
+                }));
+                
+                setRPUScannedCode("");
+                setSuccess(`Added combo "${combo.name}" with ${combo.products.length} products to processing items`);
+                
+                // Clear success message after 3 seconds
+                setTimeout(() => setSuccess(''), 3000);
+              } else {
+                setError(`Product or combo with barcode ${rpuScannedCode} not found`);
+                setTimeout(() => setError(''), 3000);
+              }
+            } catch (comboError) {
+              setError(`Product or combo with barcode ${rpuScannedCode} not found`);
+              setTimeout(() => setError(''), 3000);
+            }
           }
         } catch (error) {
-          setError(`Product with barcode ${rpuScannedCode} not found`);
-          setTimeout(() => setError(''), 3000);
+          // Try combo barcode if product API also fails
+          try {
+            const comboResponse = await combosAPI.getByBarcode(rpuScannedCode);
+            if (comboResponse.data) {
+              const combo = comboResponse.data;
+              
+              // Add all products from the combo
+              let newItems = [...rpuFormData.items];
+              
+              combo.products.forEach(comboProduct => {
+                const existingItemIndex = newItems.findIndex(item => item.product === comboProduct.product._id);
+                
+                if (existingItemIndex !== -1) {
+                  // Increment quantity by combo product quantity
+                  newItems[existingItemIndex] = {
+                    ...newItems[existingItemIndex],
+                    quantity: newItems[existingItemIndex].quantity + comboProduct.quantity
+                  };
+                } else {
+                  // Add new item
+                  newItems.push({
+                    product: comboProduct.product._id,
+                    productName: comboProduct.product.name,
+                    barcode: comboProduct.product.barcode,
+                    quantity: comboProduct.quantity,
+                    unitPrice: comboProduct.product.sellingPrice || comboProduct.product.price,
+                    total: (comboProduct.product.sellingPrice || comboProduct.product.price) * comboProduct.quantity
+                  });
+                }
+              });
+              
+              // Calculate total amount
+              const totalAmount = newItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+              
+              setRPUFormData(prev => ({
+                ...prev,
+                items: newItems,
+                totalAmount
+              }));
+              
+              setRPUScannedCode("");
+              setSuccess(`Added combo "${combo.name}" with ${combo.products.length} products to processing items`);
+              
+              // Clear success message after 3 seconds
+              setTimeout(() => setSuccess(''), 3000);
+            } else {
+              setError(`Product or combo with barcode ${rpuScannedCode} not found`);
+              setTimeout(() => setError(''), 3000);
+            }
+          } catch (comboError) {
+            setError(`Product or combo with barcode ${rpuScannedCode} not found`);
+            setTimeout(() => setError(''), 3000);
+          }
         }
       }
       
@@ -1340,9 +1575,9 @@ const Products = () => {
         </Box>
       )}
 
-      <TableContainer component={Paper} sx={{ boxShadow: '0px 1px 2px rgba(212, 175, 55, 0.15)', border: `1px solid ${THEME.softGold}`, borderRadius: '12px', overflow: 'hidden' }}>
+      <TableContainer component={Paper} sx={{ boxShadow: '0px 1px 2px rgba(212, 175, 55, 0.15)', border: `1px solid ${THEME.softGold}`, borderRadius: '12px', overflowX: 'auto' }}>
         {products.length > 0 ? (
-          <Table>
+          <Table sx={{ minWidth: 1000 }}>
             <TableHead sx={{ bgcolor: THEME.gold }}>
               <TableRow>
                 <TableCell padding="checkbox" sx={{ color: THEME.black }}>
@@ -1356,7 +1591,8 @@ const Products = () => {
                 <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Product</TableCell>
                 <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Barcode</TableCell>
                 <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Category</TableCell>
-                <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Price</TableCell>
+                <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Cost Price</TableCell>
+                <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Selling Price</TableCell>
                 <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Min Qty</TableCell>
                 <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Stock Level</TableCell>
                 <TableCell sx={{ color: THEME.black, fontWeight: 600 }}>Status</TableCell>
@@ -1384,7 +1620,8 @@ const Products = () => {
                     <TableCell>
                       {product.category?.code ? `${product.category.code} - ${product.category.name}` : 'N/A'}
                     </TableCell>
-                    <TableCell>₹{product.price?.toLocaleString('en-IN') || 0}</TableCell>
+                    <TableCell>₹{(product.costPrice || product.price)?.toLocaleString('en-IN') || 0}</TableCell>
+                    <TableCell>₹{(product.sellingPrice || product.price)?.toLocaleString('en-IN') || 0}</TableCell>
                     <TableCell>{product.minquantity}</TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1531,12 +1768,23 @@ const Products = () => {
               <TextField
                 fullWidth
                 type="number"
-                label="Price (₹)"
-                name="price"
-                value={formData.price}
+                label="Cost Price (₹)"
+                name="costPrice"
+                value={formData.costPrice}
                 onChange={handleInputChange}
                 required
-                inputProps={{ step: '1' }}
+                inputProps={{ step: '0.01', min: '0' }}
+              />
+
+              <TextField
+                fullWidth
+                type="number"
+                label="Selling Price (₹)"
+                name="sellingPrice"
+                value={formData.sellingPrice}
+                onChange={handleInputChange}
+                required
+                inputProps={{ step: '0.01', min: '0' }}
               />
 
               <TextField
@@ -1658,116 +1906,138 @@ const Products = () => {
 
       {/* RTO (Return to Origin) Modal */}
       {showRTOModal && (
-        <ModalOverlay onClick={handleCloseRTOModal}>
-          <ModalContainer onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px' }}>
-            <ModalHeader>
-              <div>
-                <ModalTitle>
-                  <i className="bi bi-arrow-return-left" style={{ marginRight: '0.5rem' }}></i>
+        <Dialog open={showRTOModal} onClose={handleCloseRTOModal} maxWidth="md" fullWidth>
+          <DialogTitle sx={{ bgcolor: THEME.gold, color: THEME.black, pb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
                   Return to Origin (RTO)
-                </ModalTitle>
-                <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.2rem' }}>
+                </Typography>
+                <Typography variant="caption" sx={{ color: THEME.softCharcoal, mt: 0.5, display: 'block' }}>
                   Process customer returns and automatically restore inventory quantities
-                </div>
-              </div>
-              <StyledCloseButton onClick={handleCloseRTOModal}>
-                <i className="bi bi-x"></i>
-              </StyledCloseButton>
-            </ModalHeader>
-            <form onSubmit={handleRTOSubmit}>
-              <ModalBody>
+                </Typography>
+              </Box>
+              <IconButton onClick={handleCloseRTOModal} size="small" sx={{ color: THEME.black }}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+          <form onSubmit={handleRTOSubmit}>
+            <DialogContent sx={{ p: 3 }}>
                 {/* Customer Information */}
-                <div style={{ marginBottom: '2rem' }}>
-                  <h4 style={{ color: '#2c3e50', marginBottom: '1rem', borderBottom: '2px solid #3498db', paddingBottom: '0.5rem' }}>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ color: THEME.charcoal, mb: 2, pb: 1, borderBottom: `2px solid ${THEME.gold}`, fontWeight: 600 }}>
                     Customer Information
-                  </h4>
-                  <FormGrid>
-                    <FormGroup>
-                      <Label>Return Date</Label>
-                      <Input
-                        type="date"
-                        value={rtoFormData.returnDate}
-                        onChange={(e) => handleRTOInputChange('returnDate', e.target.value)}
-                        required
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label>Customer Name</Label>
-                      <Input
-                        type="text"
-                        value={rtoFormData.customerName}
-                        onChange={(e) => handleRTOInputChange('customerName', e.target.value)}
-                        placeholder="Enter customer name"
-                        required
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label>Customer Phone</Label>
-                      <Input
-                        type="tel"
-                        value={rtoFormData.customerPhone}
-                        onChange={(e) => handleRTOInputChange('customerPhone', e.target.value)}
-                        placeholder="Enter phone number"
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label>Customer Email</Label>
-                      <Input
-                        type="email"
-                        value={rtoFormData.customerEmail}
-                        onChange={(e) => handleRTOInputChange('customerEmail', e.target.value)}
-                        placeholder="Enter email address"
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label>Return Reason</Label>
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label="Return Date"
+                      value={rtoFormData.returnDate}
+                      onChange={(e) => handleRTOInputChange('returnDate', e.target.value)}
+                      required
+                      InputLabelProps={{ shrink: true }}
+                      size="small"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Customer Name"
+                      value={rtoFormData.customerName}
+                      onChange={(e) => handleRTOInputChange('customerName', e.target.value)}
+                      placeholder="Enter customer name"
+                      required
+                      size="small"
+                    />
+                    <TextField
+                      fullWidth
+                      type="tel"
+                      label="Customer Phone"
+                      value={rtoFormData.customerPhone}
+                      onChange={(e) => handleRTOInputChange('customerPhone', e.target.value)}
+                      placeholder="Enter phone number"
+                      size="small"
+                    />
+                    <TextField
+                      fullWidth
+                      type="email"
+                      label="Customer Email"
+                      value={rtoFormData.customerEmail}
+                      onChange={(e) => handleRTOInputChange('customerEmail', e.target.value)}
+                      placeholder="Enter email address"
+                      size="small"
+                    />
+                    <FormControl fullWidth required size="small">
+                      <InputLabel>Return Reason</InputLabel>
                       <Select
                         value={rtoFormData.reason}
                         onChange={(e) => handleRTOInputChange('reason', e.target.value)}
-                        required
+                        label="Return Reason"
                       >
-                        <option value="">Select reason</option>
-                        <option value="defective">Defective Product</option>
-                        <option value="wrong_item">Wrong Item Delivered</option>
-                        <option value="damaged">Damaged During Shipping</option>
-                        <option value="not_satisfied">Customer Not Satisfied</option>
-                        <option value="warranty_claim">Warranty Claim</option>
-                        <option value="other">Other</option>
+                        <MenuItem value="not_satisfied">Customer not reached</MenuItem>
+                        <MenuItem value="wrong_item">Wrong item delivered (claim)</MenuItem>
                       </Select>
-                    </FormGroup>
-                  </FormGrid>
-                </div>
+                    </FormControl>
+                  </Box>
+                </Box>
 
                 {/* Barcode Scanning Section */}
-                <div style={{ marginBottom: '2rem' }}>
-                  <h4 style={{ color: '#2c3e50', marginBottom: '1rem', borderBottom: '2px solid #3498db', paddingBottom: '0.5rem' }}>
-                    <i className="bi bi-upc-scan" style={{ marginRight: '0.5rem' }}></i>
-                    Scan Return Items
-                  </h4>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ color: THEME.charcoal, mb: 2, pb: 1, borderBottom: `2px solid ${THEME.gold}`, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    📷 Scan Return Items
+                  </Typography>
 
-                  <ScannerStatus $active={rtoScannerActive} style={{ marginBottom: '1rem' }}>
-                    {rtoScannerActive ? '🟢 Scanner Active' : '🔴 Scanner Inactive'}
-                  </ScannerStatus>
+                  <Alert severity={rtoScannerActive ? 'success' : 'info'} sx={{ mb: 2 }}>
+                    {rtoScannerActive ? '🟢Active' : '🔴Inactive'}
+                  </Alert>
                   
-                  <ScannerContainer ref={rtoScannerRef} style={{ marginBottom: '1rem' }} />
+                  <Box
+                    ref={rtoScannerRef}
+                    sx={{
+                      mb: 2,
+                      height: 300,
+                      bgcolor: '#000',
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      position: 'relative',
+                      border: `2px solid ${THEME.gold}`,
+                      '& video, & canvas': {
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }
+                    }}
+                  />
 
-                  <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                    <ScannerButton
+                  <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                    <Button
                       type="button"
-                      $active={rtoScannerActive}
+                      variant={rtoScannerActive ? 'contained' : 'outlined'}
                       onClick={rtoScannerActive ? stopRTOScanner : startRTOScanner}
+                      sx={{
+                        bgcolor: rtoScannerActive ? '#d32f2f' : 'transparent',
+                        borderColor: THEME.gold,
+                        color: rtoScannerActive ? '#fff' : THEME.gold,
+                        '&:hover': {
+                          bgcolor: rtoScannerActive ? '#c62828' : THEME.lightGold,
+                          borderColor: THEME.gold
+                        }
+                      }}
                     >
                       {rtoScannerActive ? '⏹️ Stop Scanner' : '📷 Start Scanner'}
-                    </ScannerButton>
-                  </div>
+                    </Button>
+                  </Box>
 
                   {/* Barcode Input */}
-                  <FormGroup style={{ marginBottom: '1rem' }}>
-                    <Label>Scanned Barcode</Label>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <Input
-                        ref={rtoBarcodeInputRef}
+                  <Box sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <TextField
+                        inputRef={rtoBarcodeInputRef}
                         type="text"
+                        label="Scanned Barcode"
                         value={rtoScannedCode}
                         onChange={(e) => setRTOScannedCode(e.target.value)}
                         onKeyPress={(e) => {
@@ -1780,359 +2050,394 @@ const Products = () => {
                         }}
                         placeholder={rtoBarcodeMode ? "Barcode mode active - scan or enter barcode" : "Enter barcode manually"}
                         disabled={!rtoBarcodeMode}
-                        style={{ flex: '1', minWidth: '200px' }}
+                        size="small"
+                        sx={{ flex: 1, minWidth: 200 }}
                       />
-                      <SecondaryButton 
+                      <Button
                         type="button"
+                        variant={rtoBarcodeMode ? 'contained' : 'outlined'}
                         onClick={toggleRTOBarcodeMode}
-                        style={{
-                          background: rtoBarcodeMode ? '#28a745' : 'transparent',
-                          color: rtoBarcodeMode ? 'white' : '#3498db',
-                          border: rtoBarcodeMode ? '2px solid #28a745' : '2px solid #3498db'
+                        sx={{
+                          bgcolor: rtoBarcodeMode ? '#2e7d32' : 'transparent',
+                          borderColor: rtoBarcodeMode ? '#2e7d32' : THEME.gold,
+                          color: rtoBarcodeMode ? '#fff' : THEME.gold,
+                          '&:hover': {
+                            bgcolor: rtoBarcodeMode ? '#1b5e20' : THEME.lightGold,
+                            borderColor: rtoBarcodeMode ? '#2e7d32' : THEME.gold
+                          }
                         }}
                       >
                         {rtoBarcodeMode ? '✓ Barcode Active' : '📊 Enable Barcode'}
-                      </SecondaryButton>
+                      </Button>
                       {rtoBarcodeMode && rtoScannedCode && (
-                        <StyledActionButton 
+                        <Button
                           type="button"
+                          variant="contained"
                           onClick={addRTOBarcodeManually}
-                          style={{ background: 'linear-gradient(to right, #28a745, #20c997)' }}
+                          sx={{
+                            bgcolor: '#2e7d32',
+                            '&:hover': { bgcolor: '#1b5e20' }
+                          }}
                         >
                           ➕ Add Item
-                        </StyledActionButton>
+                        </Button>
                       )}
-                    </div>
+                    </Box>
                     {rtoBarcodeMode && (
-                      <small style={{ color: '#6c757d', marginTop: '0.5rem', display: 'block' }}>
+                      <Typography variant="caption" sx={{ color: '#666', mt: 1, display: 'block' }}>
                         📍 Barcode mode is active. Scan barcode or press Enter to add items automatically.
-                      </small>
+                      </Typography>
                     )}
-                  </FormGroup>
-                </div>
+                  </Box>
+                </Box>
 
                 {/* Return Items */}
-                <div style={{ marginBottom: '2rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h4 style={{ color: '#2c3e50', margin: 0, borderBottom: '2px solid #3498db', paddingBottom: '0.5rem' }}>
+                <Box sx={{ mb: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ color: THEME.charcoal, fontWeight: 600, pb: 1, borderBottom: `2px solid ${THEME.gold}` }}>
                       Return Items ({rtoFormData.items.length})
-                    </h4>
-                    <StyledActionButton type="button" onClick={handleAddRTOItem}>
-                      <i className="bi bi-plus-circle"></i>
+                    </Typography>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                      onClick={handleAddRTOItem}
+                      sx={{
+                        borderColor: THEME.gold,
+                        color: THEME.gold,
+                        '&:hover': { borderColor: THEME.richGold, bgcolor: THEME.lightGold }
+                      }}
+                    >
                       Add Item Manually
-                    </StyledActionButton>
-                  </div>
+                    </Button>
+                  </Box>
 
                   {rtoFormData.items.length > 0 ? (
-                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead style={{ background: 'linear-gradient(to right, #3498db)', color: 'white' }}>
-                          <tr>
-                            <th style={{ padding: '0.8rem', textAlign: 'left', border: 'none' }}>Product</th>
-                            <th style={{ padding: '0.8rem', textAlign: 'left', border: 'none' }}>Barcode</th>
-                            <th style={{ padding: '0.8rem', textAlign: 'left', border: 'none' }}>Price</th>
-                            <th style={{ padding: '0.8rem', textAlign: 'left', border: 'none' }}>Quantity</th>
-                            <th style={{ padding: '0.8rem', textAlign: 'left', border: 'none' }}>Total</th>
-                            <th style={{ padding: '0.8rem', textAlign: 'left', border: 'none' }}>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                    <TableContainer component={Paper} sx={{ border: `1px solid ${THEME.softGold}`, borderRadius: 2 }}>
+                      <Table>
+                        <TableHead sx={{ bgcolor: THEME.lightGold }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 600, color: THEME.black }}>Product</TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: THEME.black }}>Barcode</TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: THEME.black }}>Price</TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: THEME.black }}>Quantity</TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: THEME.black }}>Total</TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: THEME.black }}>Action</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
                           {rtoFormData.items.map((item, index) => (
-                            <tr key={index} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                              <td style={{ padding: '0.8rem' }}>
-                                <Select
-                                  value={item.product}
-                                  onChange={(e) => handleRTOProductSelect(index, e.target.value)}
-                                  required
-                                  style={{ minWidth: '200px' }}
-                                >
-                                  <option value="">Select Product</option>
-                                  {products.map(product => (
-                                    <option key={product._id} value={product._id}>
-                                      {product.name}
-                                    </option>
-                                  ))}
-                                </Select>
-                              </td>
-                              <td style={{ padding: '0.8rem' }}>
-                                <span style={{
-                                  background: 'linear-gradient(to right, #3498db)',
-                                  color: 'white',
-                                  padding: '0.2rem 0.5rem',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem'
-                                }}>
-                                  {item.barcode || 'N/A'}
-                                </span>
-                              </td>
-                              <td style={{ padding: '0.8rem' }}>
-                                <Input
+                            <TableRow key={index} hover>
+                              <TableCell>
+                                <FormControl fullWidth size="small">
+                                  <Select
+                                    value={item.product}
+                                    onChange={(e) => handleRTOProductSelect(index, e.target.value)}
+                                    required
+                                  >
+                                    <MenuItem value="">Select Product</MenuItem>
+                                    {products.map(product => (
+                                      <MenuItem key={product._id} value={product._id}>
+                                        {product.name}
+                                      </MenuItem>
+                                    ))}
+                                  </Select>
+                                </FormControl>
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={item.barcode || 'N/A'}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: THEME.gold,
+                                    color: THEME.black,
+                                    fontWeight: 500
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <TextField
                                   type="number"
-                                  step="0.01"
-                                  min="0"
+                                  inputProps={{ step: '0.01', min: '0' }}
                                   value={item.unitPrice}
                                   onChange={(e) => handleRTOItemChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                                  style={{ width: '100px' }}
+                                  size="small"
+                                  sx={{ width: 100 }}
                                 />
-                              </td>
-                              <td style={{ padding: '0.8rem' }}>
-                                <Input
+                              </TableCell>
+                              <TableCell>
+                                <TextField
                                   type="number"
-                                  min="1"
+                                  inputProps={{ min: '1' }}
                                   value={item.quantity}
                                   onChange={(e) => handleRTOItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
-                                  style={{ width: '80px' }}
+                                  size="small"
+                                  sx={{ width: 80 }}
                                 />
-                              </td>
-                              <td style={{ padding: '0.8rem', fontWeight: 'bold' }}>
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>
                                 ₹{(item.unitPrice * item.quantity).toFixed(2)}
-                              </td>
-                              <td style={{ padding: '0.8rem' }}>
-                                <SecondaryButton
-                                  type="button"
+                              </TableCell>
+                              <TableCell>
+                                <IconButton
+                                  size="small"
                                   onClick={() => handleRemoveRTOItem(index)}
-                                  style={{
-                                    background: '#e74c3c',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '0.3rem 0.8rem',
-                                    fontSize: '0.8rem'
-                                  }}
+                                  sx={{ color: '#d32f2f' }}
                                 >
-                                  <i className="bi bi-trash"></i>
-                                </SecondaryButton>
-                              </td>
-                            </tr>
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
                           ))}
-                        </tbody>
-                        <tfoot>
-                          <tr style={{ background: '#f8f9fa', fontWeight: 'bold' }}>
-                            <td colSpan="4" style={{ padding: '0.8rem', textAlign: 'right' }}>
+                          <TableRow sx={{ bgcolor: '#fafafa' }}>
+                            <TableCell colSpan={4} sx={{ textAlign: 'right', fontWeight: 600 }}>
                               Total Return Amount:
-                            </td>
-                            <td style={{ padding: '0.8rem', fontSize: '1.1rem', color: '#e74c3c' }}>
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#d32f2f' }}>
                               ₹{rtoFormData.totalAmount.toFixed(2)}
-                            </td>
-                            <td></td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
+                            </TableCell>
+                            <TableCell />
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
                   ) : (
-                    <div style={{
-                      textAlign: 'center',
-                      padding: '2rem',
-                      background: '#f8f9fa',
-                      borderRadius: '8px',
-                      border: '2px dashed #dee2e6'
-                    }}>
-                      <i className="bi bi-box" style={{ fontSize: '2rem', color: '#6c757d', marginBottom: '1rem' }}></i>
-                      <p style={{ color: '#6c757d', margin: 0 }}>No items added yet. Click "Add Item" to start.</p>
-                    </div>
+                    <Paper
+                      sx={{
+                        textAlign: 'center',
+                        p: 4,
+                        bgcolor: '#fafafa',
+                        border: '2px dashed #ddd',
+                        borderRadius: 2
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '2rem', color: '#999', mb: 1 }}>📦</Typography>
+                      <Typography sx={{ color: '#666' }}>No items added yet. Click "Add Item" to start.</Typography>
+                    </Paper>
                   )}
-                </div>
+                </Box>
 
                 {/* Comments */}
-                <FormGroup>
-                  <Label>Additional Comments</Label>
-                  <TextArea
+                <Box sx={{ mb: 2 }}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    label="Additional Comments"
                     value={rtoFormData.comments}
                     onChange={(e) => handleRTOInputChange('comments', e.target.value)}
                     placeholder="Enter any additional notes about the return..."
-                    rows="3"
                   />
-                </FormGroup>
-              </ModalBody>
+                </Box>
+              </DialogContent>
               
-              <ModalFooter>
-                <SecondaryButton type="button" onClick={handleCloseRTOModal} disabled={loading}>
-                  Cancel
-                </SecondaryButton>
-                <PrimaryButton 
-                  type="submit" 
+              <DialogActions sx={{ p: 2, bgcolor: '#fafafa', borderTop: `1px solid ${THEME.softGold}` }}>
+                <Button
+                  type="button"
+                  onClick={handleCloseRTOModal}
                   disabled={loading}
-                  style={{ background: 'linear-gradient(to right, #e74c3c, #c0392b)' }}
+                  sx={{ color: '#666', textTransform: 'none' }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={loading}
+                  sx={{
+                    bgcolor: '#d32f2f',
+                    '&:hover': { bgcolor: '#c62828' },
+                    textTransform: 'none'
+                  }}
                 >
                   {loading ? (
                     <>
-                      <i className="bi bi-arrow-clockwise spin" style={{ marginRight: '0.5rem' }}></i>
+                      <CircularProgress size={16} sx={{ mr: 1, color: '#fff' }} />
                       Processing...
                     </>
                   ) : (
                     <>
-                      <i className="bi bi-check-circle" style={{ marginRight: '0.5rem' }}></i>
-                      Process Return
+                      ✓ Process Return
                     </>
                   )}
-                </PrimaryButton>
-              </ModalFooter>
+                </Button>
+              </DialogActions>
             </form>
-          </ModalContainer>
-        </ModalOverlay>
+          </Dialog>
       )}
 
       {/* RPU (Return Pick Up) Modal */}
       {showRPUModal && (
-        <ModalOverlay onClick={handleCloseRPUModal}>
-          <ModalContainer onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px' }}>
-            <ModalHeader>
-              <div>
-                <ModalTitle>
-                  <i className="bi bi-box-arrow-in-up" style={{ marginRight: '0.5rem' }}></i>
-                  Return Pick Up (RPU)
-                </ModalTitle>
-                <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.2rem' }}>
+        <Dialog open={showRPUModal} onClose={handleCloseRPUModal} maxWidth="md" fullWidth>
+          <DialogTitle sx={{ bgcolor:THEME.gold ,color:THEME.offWhite, pb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1, color: THEME.black }}>
+                   Return Pick Up (RPU)
+                </Typography>
+                <Typography variant="caption" sx={{ color: THEME.charcoal, mt: 0.5, display: 'block' }}>
                   Record customer return pickup (no inventory changes)
-                </div>
-              </div>
-              <StyledCloseButton onClick={handleCloseRPUModal}>
-                <i className="bi bi-x"></i>
-              </StyledCloseButton>
-            </ModalHeader>
-            <form onSubmit={handleRPUSubmit}>
-              <ModalBody>
+                </Typography>
+              </Box>
+              <IconButton onClick={handleCloseRPUModal} size="small" sx={{ color: THEME.white }}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+          <form onSubmit={handleRPUSubmit}>
+            <DialogContent sx={{ p: 3 }}>
                 {/* Customer Information */}
-                <div style={{ marginBottom: '2rem' }}>
-                  <h4 style={{ color: '#2c3e50', marginBottom: '1rem', borderBottom: '2px solid #e74c3c', paddingBottom: '0.5rem' }}>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ color: THEME.charcoal, mb: 2, pb: 1, borderBottom: `2px solid ${THEME.black}`, fontWeight: 600 }}>
                     Customer Information
-                  </h4>
-                  <FormGrid>
-                    <FormGroup>
-                      <Label>Pickup Date</Label>
-                      <Input
-                        type="date"
-                        value={rpuFormData.returnDate}
-                        onChange={(e) => handleRPUInputChange('returnDate', e.target.value)}
-                        required
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label>Customer Name</Label>
-                      <Input
-                        type="text"
-                        value={rpuFormData.customerName}
-                        onChange={(e) => handleRPUInputChange('customerName', e.target.value)}
-                        placeholder="Enter customer name"
-                        required
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label>Customer Phone</Label>
-                      <Input
-                        type="tel"
-                        value={rpuFormData.customerPhone}
-                        onChange={(e) => handleRPUInputChange('customerPhone', e.target.value)}
-                        placeholder="Enter phone number"
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label>Customer Email</Label>
-                      <Input
-                        type="email"
-                        value={rpuFormData.customerEmail}
-                        onChange={(e) => handleRPUInputChange('customerEmail', e.target.value)}
-                        placeholder="Enter email address"
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label>Pickup Reason</Label>
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label="Pickup Date"
+                      value={rpuFormData.returnDate}
+                      onChange={(e) => handleRPUInputChange('returnDate', e.target.value)}
+                      required
+                      InputLabelProps={{ shrink: true }}
+                      size="small"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Customer Name"
+                      value={rpuFormData.customerName}
+                      onChange={(e) => handleRPUInputChange('customerName', e.target.value)}
+                      placeholder="Enter customer name"
+                      required
+                      size="small"
+                    />
+                    <TextField
+                      fullWidth
+                      type="tel"
+                      label="Customer Phone"
+                      value={rpuFormData.customerPhone}
+                      onChange={(e) => handleRPUInputChange('customerPhone', e.target.value)}
+                      placeholder="Enter phone number"
+                      size="small"
+                    />
+                    <TextField
+                      fullWidth
+                      type="email"
+                      label="Customer Email"
+                      value={rpuFormData.customerEmail}
+                      onChange={(e) => handleRPUInputChange('customerEmail', e.target.value)}
+                      placeholder="Enter email address"
+                      size="small"
+                    />
+                    <FormControl fullWidth required size="small">
+                      <InputLabel>Pickup Reason</InputLabel>
                       <Select
                         value={rpuFormData.reason}
                         onChange={(e) => handleRPUInputChange('reason', e.target.value)}
-                        required
+                        label="Pickup Reason"
+                        placeholder="Select Reason"
                       >
-                        <option value="">Select reason</option>
-                        <option value="defective">Defective Product</option>
-                        <option value="wrong_item">Wrong Item Delivered</option>
-                        <option value="damaged">Damaged During Shipping</option>
-                        <option value="not_satisfied">Customer Not Satisfied</option>
-                        <option value="warranty_claim">Warranty Claim</option>
-                        <option value="other">Other</option>
+                        <MenuItem value="not_satisfied">Customer not reached</MenuItem>
+                        <MenuItem value="wrong_item">Wrong item delivered (claim)</MenuItem>
                       </Select>
-                    </FormGroup>
-                  </FormGrid>
-                </div>
+                    </FormControl>
+                  </Box>
+                </Box>
 
                 {/* Item Scanner Section */}
-                <div style={{ marginBottom: '2rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h4 style={{ color: '#2c3e50', margin: 0, borderBottom: '2px solid #e74c3c', paddingBottom: '0.5rem' }}>
+                <Box sx={{ mb: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ color: THEME.charcoal, fontWeight: 600, pb: 1, borderBottom: `2px solid ${THEME.black}` }}>
                       Items to Process
-                    </h4>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                      <StyledActionButton 
-                        type="button" 
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                      <Button
+                        type="button"
+                        variant="contained"
                         onClick={toggleRPUBarcodeMode}
-                        style={{ 
-                          fontSize: '0.8rem', 
-                          padding: '0.3rem 0.8rem',
-                          backgroundColor: rpuBarcodeMode ? '#e74c3c' : '#95a5a6',
-                          color: 'white',
-                          border: 'none'
+                        size="small"
+                        sx={{
+                          bgcolor: rpuBarcodeMode ? THEME.black : '#95a5a6',
+                          color: THEME.white,
+                          '&:hover': { bgcolor: rpuBarcodeMode ? THEME.charcoal : '#7f8c8d' },
+                          textTransform: 'none'
                         }}
                       >
-                        <i className={`bi bi-${rpuBarcodeMode ? 'keyboard' : 'upc-scan'}`} style={{ marginRight: '0.3rem' }}></i>
-                        {rpuBarcodeMode ? 'Manual Entry' : 'Scan Mode'}
-                      </StyledActionButton>
-                      <StyledActionButton 
-                        type="button" 
+                        {rpuBarcodeMode ? '⌨️ Manual Entry' : '📊 Scan Mode'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="contained"
                         onClick={rpuScannerActive ? stopRPUScanner : startRPUScanner}
-                        style={{ 
-                          fontSize: '0.8rem', 
-                          padding: '0.3rem 0.8rem',
-                          backgroundColor: rpuScannerActive ? '#e74c3c' : '#27ae60',
-                          color: 'white',
-                          border: 'none'
+                        size="small"
+                        sx={{
+                          bgcolor: rpuScannerActive ? '#d32f2f' : '#2e7d32',
+                          color: THEME.white,
+                          '&:hover': { bgcolor: rpuScannerActive ? '#c62828' : '#1b5e20' },
+                          textTransform: 'none'
                         }}
                       >
-                        <i className={`bi bi-${rpuScannerActive ? 'stop-circle' : 'camera'}`} style={{ marginRight: '0.3rem' }}></i>
-                        {rpuScannerActive ? 'Stop Camera' : 'Start Camera'}
-                      </StyledActionButton>
-                    </div>
-                  </div>
+                        {rpuScannerActive ? '⏹️ Stop Camera' : '📷 Start Camera'}
+                      </Button>
+                    </Box>
+                  </Box>
 
                   {/* Scanner Container */}
                   {rpuScannerActive && (
-                    <div style={{ 
-                      marginBottom: '1rem', 
-                      border: '2px solid #e74c3c', 
-                      borderRadius: '8px', 
-                      overflow: 'hidden',
-                      position: 'relative'
-                    }}>
-                      <div 
-                        ref={rpuScannerRef} 
-                        style={{ 
-                          width: '100%', 
-                          height: '250px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: '#f8f9fa'
+                    <Box
+                      sx={{
+                        mb: 2,
+                        border: `2px solid ${THEME.black}`,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        position: 'relative'
+                      }}
+                    >
+                      <Box
+                        ref={rpuScannerRef}
+                        sx={{
+                          width: '100%',
+                          height: 300,
+                          bgcolor: '#000',
+                          position: 'relative',
+                          '& video, & canvas': {
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }
                         }}
                       />
-                      <div style={{
-                        position: 'absolute',
-                        top: '10px',
-                        left: '10px',
-                        backgroundColor: 'rgba(231, 76, 60, 0.9)',
-                        color: 'white',
-                        padding: '0.5rem',
-                        borderRadius: '4px',
-                        fontSize: '0.8rem'
-                      }}>
-                        <i className="bi bi-camera" style={{ marginRight: '0.3rem' }}></i>
-                        RPU Scanner Active
-                      </div>
-                    </div>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 10,
+                          left: 10,
+                          bgcolor: 'rgba(0, 0, 0, 0.8)',
+                          color: THEME.white,
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: 1,
+                          fontSize: '0.8rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5
+                        }}
+                      >
+                        📷 RPU Scanner Active
+                      </Box>
+                    </Box>
                   )}
 
                   {/* Manual Barcode Input */}
                   {rpuBarcodeMode && (
-                    <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                      <Input
-                        ref={rpuBarcodeInputRef}
+                    <Box sx={{ mb: 2, display: 'flex', gap: 1, alignItems: 'center' }}>
+                      <TextField
+                        inputRef={rpuBarcodeInputRef}
                         type="text"
+                        label="Barcode"
                         value={rpuScannedCode}
                         onChange={(e) => setRPUScannedCode(e.target.value)}
                         placeholder="Enter or scan barcode..."
@@ -2142,262 +2447,205 @@ const Products = () => {
                             addRPUBarcodeManually();
                           }
                         }}
-                        style={{ flex: 1 }}
+                        size="small"
+                        sx={{ flex: 1 }}
                       />
-                      <StyledActionButton 
-                        type="button" 
+                      <Button
+                        type="button"
+                        variant="contained"
                         onClick={addRPUBarcodeManually}
-                        style={{ 
-                          padding: '0.5rem 1rem',
-                          backgroundColor: '#e74c3c',
-                          color: 'white',
-                          border: 'none'
+                        sx={{
+                          bgcolor: THEME.black,
+                          '&:hover': { bgcolor: THEME.charcoal },
+                          textTransform: 'none'
                         }}
                       >
-                        <i className="bi bi-plus-circle" style={{ marginRight: '0.3rem' }}></i>
-                        Add Item
-                      </StyledActionButton>
-                    </div>
+                        ➕ Add Item
+                      </Button>
+                    </Box>
                   )}
 
                   {/* Scanned Code Display */}
                   {rpuScannedCode && !rpuBarcodeMode && (
-                    <div style={{
-                      padding: '0.8rem',
-                      backgroundColor: '#d4edda',
-                      border: '1px solid #c3e6cb',
-                      borderRadius: '4px',
-                      marginBottom: '1rem',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <span>
-                        <i className="bi bi-upc-scan" style={{ marginRight: '0.5rem', color: '#155724' }}></i>
-                        Scanned: <strong>{rpuScannedCode}</strong>
-                      </span>
-                    </div>
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                      Scanned: <strong>{rpuScannedCode}</strong>
+                    </Alert>
                   )}
-                </div>
+                </Box>
 
                 {/* Items List */}
-                <div style={{ marginBottom: '2rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h5 style={{ color: '#2c3e50', margin: 0 }}>Items ({rpuFormData.items.length})</h5>
-                    <StyledActionButton 
-                      type="button" 
+                <Box sx={{ mb: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ color: THEME.charcoal, fontWeight: 600 }}>Items ({rpuFormData.items.length})</Typography>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      startIcon={<AddIcon />}
                       onClick={handleAddRPUItem}
-                      style={{ 
-                        fontSize: '0.8rem', 
-                        padding: '0.3rem 0.8rem',
-                        backgroundColor: '#e74c3c',
-                        color: 'white',
-                        border: 'none'
+                      size="small"
+                      sx={{
+                        borderColor: THEME.black,
+                        color: THEME.black,
+                        '&:hover': { borderColor: THEME.charcoal, bgcolor: '#f5f5f5' },
+                        textTransform: 'none'
                       }}
                     >
-                      <i className="bi bi-plus" style={{ marginRight: '0.3rem' }}></i>
                       Add Item
-                    </StyledActionButton>
-                  </div>
+                    </Button>
+                  </Box>
 
                   {rpuFormData.items.length === 0 ? (
-                    <div style={{
-                      padding: '2rem',
-                      textAlign: 'center',
-                      backgroundColor: '#f8f9fa',
-                      border: '2px dashed #dee2e6',
-                      borderRadius: '8px',
-                      color: '#6c757d'
-                    }}>
-                      <i className="bi bi-inbox" style={{ fontSize: '2rem', marginBottom: '1rem', display: 'block' }}></i>
-                      <p style={{ margin: 0, fontSize: '0.9rem' }}>
+                    <Paper
+                      sx={{
+                        textAlign: 'center',
+                        p: 4,
+                        bgcolor: '#fafafa',
+                        border: '2px dashed #ddd',
+                        borderRadius: 2
+                      }}
+                    >
+                      <Typography sx={{ fontSize: '2rem', color: '#999', mb: 1 }}>📦</Typography>
+                      <Typography sx={{ color: '#666', fontSize: '0.9rem' }}>
                         No items added yet. Use the camera scanner or add items manually.
-                      </p>
-                    </div>
+                      </Typography>
+                    </Paper>
                   ) : (
-                    <div style={{ 
-                      border: '1px solid #e0e0e0', 
-                      borderRadius: '8px',
-                      maxHeight: '300px',
-                      overflowY: 'auto'
-                    }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead style={{ backgroundColor: '#f8f9fa', position: 'sticky', top: 0 }}>
-                          <tr>
-                            <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '1px solid #e0e0e0', fontSize: '0.85rem', fontWeight: '600' }}>Product</th>
-                            <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '1px solid #e0e0e0', fontSize: '0.85rem', fontWeight: '600', width: '100px' }}>Barcode</th>
-                            <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '1px solid #e0e0e0', fontSize: '0.85rem', fontWeight: '600', width: '80px' }}>Qty</th>
-                            <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '1px solid #e0e0e0', fontSize: '0.85rem', fontWeight: '600', width: '100px' }}>Unit Price</th>
-                            <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '1px solid #e0e0e0', fontSize: '0.85rem', fontWeight: '600', width: '100px' }}>Total</th>
-                            <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '1px solid #e0e0e0', fontSize: '0.85rem', fontWeight: '600', width: '50px' }}>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                    <TableContainer component={Paper} sx={{ border: `1px solid ${THEME.softGold}`, borderRadius: 2, maxHeight: 400 }}>
+                      <Table stickyHeader>
+                        <TableHead>
+                          <TableRow sx={{ bgcolor: '#fafafa' }}>
+                            <TableCell sx={{ fontWeight: 600, bgcolor: '#fafafa' }}>Product</TableCell>
+                            <TableCell sx={{ fontWeight: 600, width: 100, bgcolor: '#fafafa' }}>Barcode</TableCell>
+                            <TableCell sx={{ fontWeight: 600, width: 80, textAlign: 'center', bgcolor: '#fafafa' }}>Qty</TableCell>
+                            <TableCell sx={{ fontWeight: 600, width: 100, textAlign: 'right', bgcolor: '#fafafa' }}>Unit Price</TableCell>
+                            <TableCell sx={{ fontWeight: 600, width: 100, textAlign: 'right', bgcolor: '#fafafa' }}>Total</TableCell>
+                            <TableCell sx={{ fontWeight: 600, width: 50, textAlign: 'center', bgcolor: '#fafafa' }}>Action</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
                           {rpuFormData.items.map((item, index) => (
-                            <tr key={index} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                              <td style={{ padding: '0.75rem' }}>
-                                <select
-                                  value={item.product}
-                                  onChange={(e) => handleRPUProductSelect(index, e.target.value)}
-                                  style={{
-                                    width: '100%',
-                                    padding: '0.4rem',
-                                    border: '1px solid #ddd',
-                                    borderRadius: '4px',
-                                    fontSize: '0.85rem'
-                                  }}
-                                  required
-                                >
-                                  <option value="">Select Product</option>
-                                  {products.map(product => (
-                                    <option key={product._id} value={product._id}>
-                                      {product.name}
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
-                              <td style={{ padding: '0.75rem', fontSize: '0.8rem', color: '#666' }}>
-                                {item.barcode || '-'}
-                              </td>
-                              <td style={{ padding: '0.75rem' }}>
-                                <input
+                            <TableRow key={index} hover>
+                              <TableCell>
+                                <FormControl fullWidth size="small">
+                                  <Select
+                                    value={item.product}
+                                    onChange={(e) => handleRPUProductSelect(index, e.target.value)}
+                                    required
+                                  >
+                                    <MenuItem value="">Select Product</MenuItem>
+                                    {products.map(product => (
+                                      <MenuItem key={product._id} value={product._id}>
+                                        {product.name}
+                                      </MenuItem>
+                                    ))}
+                                  </Select>
+                                </FormControl>
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={item.barcode || 'N/A'}
+                                  size="small"
+                                  sx={{ bgcolor: THEME.softGold, color: THEME.black, fontSize: '0.8rem' }}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <TextField
                                   type="number"
                                   value={item.quantity}
                                   onChange={(e) => handleRPUItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
-                                  min="1"
-                                  style={{
-                                    width: '60px',
-                                    padding: '0.4rem',
-                                    border: '1px solid #ddd',
-                                    borderRadius: '4px',
-                                    textAlign: 'center',
-                                    fontSize: '0.85rem'
-                                  }}
+                                  inputProps={{ min: 1 }}
+                                  size="small"
+                                  sx={{ width: 60 }}
                                   required
                                 />
-                              </td>
-                              <td style={{ padding: '0.75rem', textAlign: 'right', fontSize: '0.85rem' }}>
-                                ${(item.unitPrice || 0).toFixed(2)}
-                              </td>
-                              <td style={{ padding: '0.75rem', textAlign: 'right', fontSize: '0.85rem', fontWeight: '600' }}>
-                                ${((item.unitPrice || 0) * (item.quantity || 0)).toFixed(2)}
-                              </td>
-                              <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                                <button
-                                  type="button"
+                              </TableCell>
+                              <TableCell sx={{ textAlign: 'right' }}>
+                                ₹{(item.unitPrice || 0).toFixed(2)}
+                              </TableCell>
+                              <TableCell sx={{ textAlign: 'right', fontWeight: 600 }}>
+                                ₹{((item.unitPrice || 0) * (item.quantity || 0)).toFixed(2)}
+                              </TableCell>
+                              <TableCell sx={{ textAlign: 'center' }}>
+                                <IconButton
+                                  size="small"
                                   onClick={() => handleRemoveRPUItem(index)}
-                                  style={{
-                                    padding: '0.3rem',
-                                    backgroundColor: '#dc3545',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontSize: '0.8rem'
-                                  }}
+                                  sx={{ color: '#d32f2f' }}
                                 >
-                                  <i className="bi bi-trash"></i>
-                                </button>
-                              </td>
-                            </tr>
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
                           ))}
-                        </tbody>
-                      </table>
-
-                      {/* Total Section */}
-                      <div style={{
-                        padding: '1rem',
-                        backgroundColor: '#f8f9fa',
-                        borderTop: '2px solid #e0e0e0',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}>
-                        <span style={{ fontSize: '1rem', fontWeight: '600', color: '#2c3e50' }}>
-                          Total Amount:
-                        </span>
-                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#e74c3c' }}>
-                          ${rpuFormData.totalAmount.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
+                          <TableRow sx={{ bgcolor: '#fafafa' }}>
+                            <TableCell colSpan={4} sx={{ textAlign: 'right', fontWeight: 600 }}>
+                              Total Amount:
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 700, fontSize: '1.1rem', color: THEME.black, textAlign: 'right' }}>
+                              ₹{rpuFormData.totalAmount.toFixed(2)}
+                            </TableCell>
+                            <TableCell />
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
                   )}
-                </div>
+                </Box>
 
                 {/* Comments Section */}
-                <div style={{ marginBottom: '1rem' }}>
-                  <h4 style={{ color: '#2c3e50', marginBottom: '1rem', borderBottom: '2px solid #e74c3c', paddingBottom: '0.5rem' }}>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ color: THEME.charcoal, mb: 2, pb: 1, borderBottom: `2px solid ${THEME.black}`, fontWeight: 600 }}>
                     Additional Notes
-                  </h4>
-                  <FormGroup>
-                    <Label>Comments/Notes</Label>
-                    <textarea
-                      value={rpuFormData.comments}
-                      onChange={(e) => handleRPUInputChange('comments', e.target.value)}
-                      placeholder="Additional notes about the pickup..."
-                      style={{
-                        width: '100%',
-                        minHeight: '80px',
-                        padding: '0.75rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        fontSize: '0.9rem',
-                        fontFamily: 'inherit',
-                        resize: 'vertical'
-                      }}
-                    />
-                  </FormGroup>
-                </div>
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    label="Comments/Notes"
+                    value={rpuFormData.comments}
+                    onChange={(e) => handleRPUInputChange('comments', e.target.value)}
+                    placeholder="Additional notes about the pickup..."
+                  />
+                </Box>
 
                 {/* Info Alert */}
-                <div style={{
-                  padding: '1rem',
-                  backgroundColor: '#fff3cd',
-                  border: '1px solid #ffeaa7',
-                  borderRadius: '8px',
-                  marginBottom: '1rem',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>
-                  <i className="bi bi-info-circle-fill" style={{ 
-                    color: '#856404', 
-                    fontSize: '1.2rem', 
-                    marginRight: '0.75rem',
-                    flexShrink: 0
-                  }}></i>
-                  <div style={{ fontSize: '0.9rem', color: '#856404' }}>
-                    <strong>Note:</strong> RPU (Return Pick Up) only records the transaction. 
-                    Product inventory quantities will <strong>NOT</strong> be modified during this process.
-                  </div>
-                </div>
-              </ModalBody>
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  <strong>Note:</strong> RPU (Return Pick Up) only records the transaction. 
+                  Product inventory quantities will <strong>NOT</strong> be modified during this process.
+                </Alert>
+              </DialogContent>
 
-              <ModalFooter>
-                <SecondaryButton type="button" onClick={handleCloseRPUModal}>
-                  <i className="bi bi-x-circle" style={{ marginRight: '0.5rem' }}></i>
+              <DialogActions sx={{ p: 2, bgcolor: '#fafafa', borderTop: `1px solid ${THEME.softGold}` }}>
+                <Button
+                  type="button"
+                  onClick={handleCloseRPUModal}
+                  sx={{ color: '#666', textTransform: 'none' }}
+                >
                   Cancel
-                </SecondaryButton>
-                <PrimaryButton 
-                  type="submit" 
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
                   disabled={loading || rpuFormData.items.length === 0}
-                  style={{ backgroundColor: '#e74c3c', borderColor: '#c0392b' }}
+                  sx={{
+                    bgcolor: THEME.black,
+                    '&:hover': { bgcolor: THEME.charcoal },
+                    textTransform: 'none'
+                  }}
                 >
                   {loading ? (
                     <>
-                      <i className="bi bi-arrow-clockwise spin" style={{ marginRight: '0.5rem' }}></i>
+                      <CircularProgress size={16} sx={{ mr: 1, color: '#fff' }} />
                       Recording...
                     </>
                   ) : (
                     <>
-                      <i className="bi bi-box-arrow-in-up" style={{ marginRight: '0.5rem' }}></i>
                       Record Pickup
                     </>
                   )}
-                </PrimaryButton>
-              </ModalFooter>
+                </Button>
+              </DialogActions>
             </form>
-          </ModalContainer>
-        </ModalOverlay>
+          </Dialog>
       )}
     </Box>
   );

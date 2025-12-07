@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 const RTOProductSchema = new Schema({
   rtoId: {
     type: String,
-    unique: true,
+    unique: false,
     required: false // Auto-generated
   },
   // Reference back to Return record so we can link and clean up
@@ -72,7 +72,7 @@ const RTOProductSchema = new Schema({
   },
   reason: {
     type: String,
-    enum: ['defective', 'wrong_item', 'damaged', 'not_satisfied', 'warranty_claim', 'other'],
+    enum: ['not_satisfied', 'wrong_item'],
     required: false
   }
 }, {

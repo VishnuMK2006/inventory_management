@@ -281,7 +281,7 @@ const UploadedDataManagement = () => {
                   {formatCurrency(summary?.profitSummary?.deliveredProfit)}
                 </Typography>
                 <Typography sx={{ fontSize: '0.875rem', color: THEME.charcoal, fontWeight: 500 }}>
-                  ✅ Delivered Profit
+                  Delivered Profit
                 </Typography>
               </CardContent>
             </Card>
@@ -302,7 +302,7 @@ const UploadedDataManagement = () => {
                   {formatCurrency(summary?.profitSummary?.rtoProfit || 0)}
                 </Typography>
                 <Typography sx={{ fontSize: '0.875rem', color: THEME.charcoal, fontWeight: 500 }}>
-                  📦 RTO Profit
+                    RTO Profit
                 </Typography>
               </CardContent>
             </Card>
@@ -323,7 +323,7 @@ const UploadedDataManagement = () => {
                   {formatCurrency(summary?.profitSummary?.rpuProfit || 0)}
                 </Typography>
                 <Typography sx={{ fontSize: '0.875rem', color: '#667085', fontWeight: 500 }}>
-                  🔄 RPU Profit
+                     RPU Profit
                 </Typography>
               </CardContent>
             </Card>
@@ -344,7 +344,7 @@ const UploadedDataManagement = () => {
                   {formatCurrency(summary?.profitSummary?.netProfit)}
                 </Typography>
                 <Typography sx={{ fontSize: '0.875rem', color: '#667085', fontWeight: 500 }}>
-                  💰 Net Profit
+                     Net Profit
                 </Typography>
               </CardContent>
             </Card>
@@ -622,7 +622,7 @@ const UploadedDataManagement = () => {
                       <Typography sx={{ fontSize: '1.5rem', fontWeight: 700, color: '#ed6c02', marginBottom: '8px' }}>
                         {formatCurrency(selectedUpload?.profitSummary?.rtoProfit || 0)}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#667085' }}>📦 RTO Profit</Typography>
+                      <Typography variant="caption" sx={{ color: '#667085' }}>  RTO Profit</Typography>
                     </CardContent>
                   </Card>
                 </Grid>
@@ -632,7 +632,7 @@ const UploadedDataManagement = () => {
                       <Typography sx={{ fontSize: '1.5rem', fontWeight: 700, color: '#d32f2f', marginBottom: '8px' }}>
                         {formatCurrency(selectedUpload?.profitSummary?.rpuProfit || 0)}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#667085' }}>🔄 RPU Profit</Typography>
+                      <Typography variant="caption" sx={{ color: '#667085' }}>   RPU Profit</Typography>
                     </CardContent>
                   </Card>
                 </Grid>
@@ -647,7 +647,7 @@ const UploadedDataManagement = () => {
                       }}>
                         {formatCurrency(selectedUpload?.profitSummary?.netProfit)}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#667085' }}>💰 Net Profit</Typography>
+                      <Typography variant="caption" sx={{ color: '#667085' }}>   Net Profit</Typography>
                     </CardContent>
                   </Card>
                 </Grid>
@@ -684,7 +684,7 @@ const UploadedDataManagement = () => {
                           </TableCell>
                           <TableCell>
                             <Chip 
-                              label={item.status === 'rtu' ? '📦 RTO' : item.status === 'rpu' ? '🔄 RPU' : '✅ Delivered'}
+                              label={item.status === 'rtu' ? '  RTO' : item.status === 'rpu' ? '   RPU' : '✅ Delivered'}
                               size="small"
                               sx={{ 
                                 backgroundColor: 

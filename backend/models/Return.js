@@ -64,7 +64,7 @@ const ReturnSchema = new Schema({
   },
   reason: {
     type: String,
-    enum: ['defective', 'wrong_item', 'damaged', 'not_satisfied', 'warranty_claim', 'other'],
+    enum: ['not_satisfied', 'wrong_item'],
     required: true
   },
   items: [ReturnItemSchema],

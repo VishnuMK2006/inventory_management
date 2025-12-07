@@ -183,7 +183,9 @@ const createReturn = async (req, res) => {
     // Also create RTOProduct documents for each item so RTO inventory can be tracked separately
     if (category === 'RTO' && processedItems.length > 0) {
       const RTOProduct = require('../models/RTOProduct');
-      const rtoDocs = processedItems.map(item => ({
+      const timestamp = Date.now();
+      const rtoDocs = processedItems.map((item, index) => ({
+        rtoId: `RTO${timestamp}${index}`,
         product: item.product,
         productName: item.productName,
         barcode: item.barcode,
@@ -218,8 +220,8 @@ const createReturn = async (req, res) => {
     });
 
   } catch (error) {
+    console.log("Hello"+error);
     console.error('Error creating return:', error);
-    
     if (error.name === 'ValidationError') {
       const validationErrors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({
@@ -227,6 +229,8 @@ const createReturn = async (req, res) => {
         errors: validationErrors
       });
     }
+
+
     
     res.status(500).json({ 
       message: 'Failed to create return', 

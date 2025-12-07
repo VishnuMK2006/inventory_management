@@ -146,54 +146,57 @@ const SaleForm = ({ initialData, buyers, products, onSubmit, onCancel, loading }
   };
 
   return (
-    <Form onSubmit={handleSubmit}>
-      <Row>
-        <Col md={6}>
-          <FormGroup className="mb-3">
-            <Form.Label>Buyer</Form.Label>
-            <Form.Select
+    <Box component="form" onSubmit={handleSubmit}>
+      <Grid container spacing={2} sx={{ marginBottom: '2rem' }}>
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth required>
+            <InputLabel>Buyer</InputLabel>
+            <Select
               name="buyer"
               value={formData.buyer}
+              label="Buyer"
               onChange={e => handleInputChange('buyer', e.target.value)}
-              required
             >
-              <option value="">Select Buyer</option>
+              <MenuItem value="">Select Buyer</MenuItem>
               {buyers.map(buyer => (
-                <option key={buyer._id} value={buyer._id}>{buyer.name}</option>
+                <MenuItem key={buyer._id} value={buyer._id}>{buyer.name}</MenuItem>
               ))}
-            </Form.Select>
-          </FormGroup>
-        </Col>
-        <Col md={6}>
-          <FormGroup className="mb-3">
-            <Form.Label>Sale Date</Form.Label>
-              <Form.Control
-                type="date"
-                name="saleDate"
-                value={formData.saleDate}
-                onChange={e => handleInputChange('saleDate', e.target.value)}
-                required
-              />
-          </FormGroup>
-        </Col>
-      </Row>
-      <h6>Items</h6>
-      <Table bordered responsive className="mb-3">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Barcode</th>
-            <th>Price</th>
-            <th>Qty</th>
-            <th>Total</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            type="date"
+            label="Sale Date"
+            name="saleDate"
+            value={formData.saleDate}
+            onChange={e => handleInputChange('saleDate', e.target.value)}
+            required
+            InputLabelProps={{ shrink: true }}
+          />
+        </Grid>
+      </Grid>
+      <Typography variant="h6" sx={{ fontWeight: 600, color: THEME.charcoal, marginBottom: '1rem' }}>Items</Typography>
+      <TableContainer component={Paper} sx={{ marginBottom: '2rem', border: `1px solid ${THEME.softGold}`, borderRadius: '8px' }}>
+        <Table>
+          <TableHead sx={{ backgroundColor: THEME.lightGold }}>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Product</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Barcode</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Price</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Qty</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Total</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Action</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
           {formData.items.map((item, idx) => (
-            <tr key={idx}>
-              <td>
-                <Form.Select
+            <TableRow key={idx}>
+              <TableCell>
+                <Select
+                  size="small"
+                  fullWidth
                   value={item.product}
                   onChange={e => handleProductSelect(idx, e.target.value)}
                   required
@@ -229,106 +232,151 @@ const SaleForm = ({ initialData, buyers, products, onSubmit, onCancel, loading }
                       </option>
                     );
                   })}
-                </Form.Select>
-              </td>
-              <td>{item.barcode}</td>
-              <td>
-                <Form.Control
+                </Select>
+              </TableCell>
+              <TableCell>{item.barcode}</TableCell>
+              <TableCell>
+                <TextField
+                  size="small"
                   type="number"
-                  step="any"
+                  inputProps={{ step: "any", min: "0" }}
                   value={item.unitPrice}
-                  min="0"
                   onChange={e => handleItemChange(idx, 'unitPrice', Number(e.target.value))}
                   required
                 />
-              </td>
-              <td>
-                <Form.Control
-                  type="number" 
+              </TableCell>
+              <TableCell>
+                <TextField
+                  size="small"
+                  type="number"
+                  inputProps={{ min: "1" }}
                   value={item.quantity}
-                  min="1"
                   onChange={e => handleItemChange(idx, 'quantity', Number(e.target.value))}
                   required
                 />
-              </td>
-              <td>{(item.unitPrice * item.quantity).toFixed(2)}</td>
-              <td>
-                <DangerButton size="sm" onClick={() => handleRemoveItem(idx)}>Remove</DangerButton>
-              </td>
-            </tr>
+              </TableCell>
+              <TableCell>₹{(item.unitPrice * item.quantity).toFixed(2)}</TableCell>
+              <TableCell>
+                <Button 
+                  size="small" 
+                  variant="contained"
+                  onClick={() => handleRemoveItem(idx)}
+                  sx={{ 
+                    backgroundColor: '#d32f2f',
+                    '&:hover': { backgroundColor: '#c62828' }
+                  }}
+                >
+                  Remove
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </Table>
-      <Button variant="secondary" onClick={handleAddItem} className="mb-3">+ Add Item</Button>
-      <Row className="mb-3">
-        <Col md={3}>
-          <FormGroup>
-            <Form.Label>Discount (%)</Form.Label>
-            <Form.Control
-              type="number"
-              value={formData.discount}
-              min="0"
-              max="100"
-              onChange={e => handleInputChange('discount', Number(e.target.value))}
-            />
-          </FormGroup>
-        </Col>
-        <Col md={3}>
-          <FormGroup>
-            <Form.Label>Tax (%)</Form.Label>
-            <Form.Control
-              type="number"
-              value={formData.tax}
-              min="0"
-              max="100"
-              onChange={e => handleInputChange('tax', Number(e.target.value))}
-            />
-          </FormGroup>
-        </Col>
-        <Col md={3}>
-          <FormGroup>
-            <Form.Label>Shipping</Form.Label>
-            <Form.Control
-              type="number"
-              value={formData.shipping}
-              min="0"
-              onChange={e => handleInputChange('shipping', Number(e.target.value))}
-            />
-          </FormGroup>
-        </Col>
-        <Col md={3}>
-          <FormGroup>
-            <Form.Label>Other</Form.Label>
-            <Form.Control
-              type="number"
-              value={formData.other}
-              min="0"
-              onChange={e => handleInputChange('other', Number(e.target.value))}
-            />
-          </FormGroup>
-        </Col>
-      </Row>
-      <div className="mb-3">
-        <strong>Final Total: ₹{formData.total.toFixed(2)}</strong>
-      </div>
-      <FormGroup className="mb-3">
-        <Form.Label>Comments</Form.Label>
-        <Form.Control
-          as="textarea"
-          value={formData.comments}
-          onChange={e => handleInputChange('comments', e.target.value)}
-          rows={2}
-        />
-      </FormGroup>
-      <div className="d-flex justify-content-end gap-2">
-        <SecondaryButton type="button" onClick={onCancel}>Cancel</SecondaryButton>
-        <PrimaryButton type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save'}</PrimaryButton>
-      </div>
-    </Form>
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Button 
+        variant="outlined" 
+        onClick={handleAddItem} 
+        sx={{ 
+          marginBottom: '2rem',
+          color: THEME.gold,
+          borderColor: THEME.softGold,
+          '&:hover': { borderColor: THEME.gold, backgroundColor: THEME.lightGold }
+        }}
+      >
+        + Add Item
+      </Button>
+      <Grid container spacing={2} sx={{ marginBottom: '2rem' }}>
+        <Grid item xs={12} md={3}>
+          <TextField
+            fullWidth
+            type="number"
+            label="Discount (%)"
+            value={formData.discount}
+            inputProps={{ min: "0", max: "100" }}
+            onChange={e => handleInputChange('discount', Number(e.target.value))}
+          />
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <TextField
+            fullWidth
+            type="number"
+            label="Tax (%)"
+            value={formData.tax}
+            inputProps={{ min: "0", max: "100" }}
+            onChange={e => handleInputChange('tax', Number(e.target.value))}
+          />
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <TextField
+            fullWidth
+            type="number"
+            label="Shipping"
+            value={formData.shipping}
+            inputProps={{ min: "0" }}
+            onChange={e => handleInputChange('shipping', Number(e.target.value))}
+          />
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <TextField
+            fullWidth
+            type="number"
+            label="Other"
+            value={formData.other}
+            inputProps={{ min: "0" }}
+            onChange={e => handleInputChange('other', Number(e.target.value))}
+          />
+        </Grid>
+      </Grid>
+      <Box sx={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: THEME.black, color: THEME.white, borderRadius: '8px', textAlign: 'center' }}>
+        <Typography variant="h5" sx={{ fontWeight: 600 }}>Fi: ₹{formData.total.toFixed(2)}</Typography>
+      </Box>
+      <TextField
+        fullWidth
+        multiline
+        rows={2}
+        label="Comments"
+        value={formData.comments}
+        onChange={e => handleInputChange('comments', e.target.value)}
+        sx={{ marginBottom: '2rem' }}
+      />
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+        <Button 
+          type="button" 
+          onClick={onCancel}
+          variant="outlined"
+          sx={{
+            textTransform: 'none',
+            color: THEME.softCharcoal,
+            borderColor: '#EAECF0',
+            '&:hover': {
+              borderColor: '#D0D5DD',
+              backgroundColor: '#F9FAFB'
+            }
+          }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          disabled={loading}
+          variant="contained"
+          sx={{
+            textTransform: 'none',
+            backgroundColor: THEME.black,
+            '&:hover': {
+              backgroundColor: THEME.charcoal
+            }
+          }}
+        >
+          {loading ? 'Saving...' : 'Save'}
+        </Button>
+      </Box>
+    </Box>
   );
 };
 import React, { useState, useEffect, useRef } from "react";
-import { OverlayTrigger, Popover } from "react-bootstrap";
+import { OverlayTrigger, Popover, Row, Col, Form, FormGroup, Table as BootstrapTable, Badge } from "react-bootstrap";
 import { salesAPI, buyersAPI, productsAPI, barcodesAPI } from "../services/api";
 import Quagga from "quagga";
 import {
@@ -376,6 +424,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Print as PrintIcon
 } from '@mui/icons-material';
+import styled from 'styled-components';
 
 // Theme Colors - Premium Gold & Black
 const THEME = {
@@ -389,6 +438,314 @@ const THEME = {
   white: '#FFFFFF',
   offWhite: '#F8F5F0'
 };
+
+// Styled Components
+const PrimaryButton = styled(Button)`
+  && {
+    background-color: ${THEME.black};
+    color: ${THEME.white};
+    &:hover {
+      background-color: ${THEME.charcoal};
+    }
+  }
+`;
+
+const SecondaryButton = styled(Button)`
+  && {
+    background-color: transparent;
+    color: ${THEME.charcoal};
+    border: 1px solid #EAECF0;
+    &:hover {
+      background-color: #F9FAFB;
+      border-color: #D0D5DD;
+    }
+  }
+`;
+
+const DangerButton = styled(Button)`
+  && {
+    background-color: #d32f2f;
+    color: ${THEME.white};
+    &:hover {
+      background-color: #c62828;
+    }
+  }
+`;
+
+const TotalDisplay = styled.div`
+  padding: 20px;
+  background-color: ${THEME.black};
+  color: ${THEME.white};
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+`;
+
+const InvoiceContainer = styled.div`
+  padding: 2rem;
+  background: white;
+  max-width: 1200px;
+  margin: 0 auto;
+  
+  @media print {
+    padding: 0.5rem;
+    margin: 0;
+    max-width: 100%;
+    
+    /* Hide all non-invoice elements */
+    body * {
+      visibility: hidden;
+    }
+    
+    /* Show only the invoice */
+    &, & * {
+      visibility: visible;
+    }
+    
+    /* Position invoice at top of page */
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+`;
+
+const InvoiceHeader = styled.div`
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #D4AF37;
+  
+  @media print {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    page-break-after: avoid;
+  }
+`;
+
+const InvoiceDetails = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  
+  @media print {
+    gap: 1rem;
+    margin-bottom: 1rem;
+    page-break-inside: avoid;
+  }
+`;
+
+const InvoiceSection = styled.div`
+  h3 {
+    color: #D4AF37;
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  p {
+    margin: 0.3rem 0;
+    color: #333;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  
+  @media print {
+    h3 {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      font-size: 0.85rem;
+      margin: 0.2rem 0;
+    }
+  }
+`;
+
+const InvoiceTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+  
+  thead {
+    background-color: #D4AF37;
+    color: white;
+  }
+  
+  th, td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  
+  tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  @media print {
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    
+    th, td {
+      padding: 6px 8px;
+    }
+    
+    page-break-inside: avoid;
+  }
+`;
+
+const InvoiceSummary = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  
+  @media print {
+    gap: 1rem;
+    page-break-inside: avoid;
+  }
+`;
+
+const SummaryTable = styled.table`
+  width: 100%;
+  
+  td {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  td:last-child {
+    text-align: right;
+  }
+  
+  tr:last-child {
+    font-size: 1.2rem;
+    td {
+      border-top: 2px solid #D4AF37;
+      padding-top: 12px;
+    }
+  }
+  
+  @media print {
+    font-size: 0.85rem;
+    
+    td {
+      padding: 4px 6px;
+    }
+    
+    tr:last-child {
+      font-size: 1rem;
+    }
+  }
+`;
+
+const InvoiceFooter = styled.div`
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid #ddd;
+  text-align: center;
+  color: #666;
+  
+  @media print {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    page-break-inside: avoid;
+    font-size: 0.8rem;
+  }
+`;
+
+const BarcodeBadge = styled.span`
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: ${props => props.bg === 'success' ? '#2e7d32' : props.bg === 'info' ? '#D4AF37' : '#666'};
+  color: white;
+`;
+
+// Global Print Styles Component
+const PrintStyles = () => (
+  <style>{`
+    @media print {
+      /* Hide everything except invoice */
+      body {
+        background: white !important;
+      }
+      
+      body > *:not(#root) {
+        display: none !important;
+      }
+      
+      /* Hide the sales page content */
+      #root > *:not(.MuiDialog-root) {
+        display: none !important;
+      }
+      
+      /* Hide Material UI overlay */
+      .MuiBackdrop-root,
+      .MuiModal-backdrop {
+        display: none !important;
+      }
+      
+      /* Hide navbar, sidebar, headers */
+      header, nav, aside, .no-print {
+        display: none !important;
+      }
+      
+      /* Show only dialog content */
+      .MuiDialog-root {
+        position: static !important;
+      }
+      
+      .MuiDialog-container {
+        display: block !important;
+        height: auto !important;
+      }
+      
+      .MuiDialog-paper {
+        max-width: 100% !important;
+        max-height: 100% !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        background: white !important;
+      }
+      
+      /* Hide dialog title and actions during print */
+      .MuiDialogTitle-root,
+      .MuiDialogActions-root {
+        display: none !important;
+      }
+      
+      /* Invoice specific */
+      #invoice-print-area {
+        width: 100% !important;
+        padding: 10mm !important;
+        margin: 0 !important;
+        background: white !important;
+      }
+      
+      /* Page breaks */
+      .page-break {
+        page-break-after: always;
+      }
+      
+      /* Ensure colors print */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+      
+      /* Remove page margins */
+      @page {
+        margin: 10mm;
+        size: A4;
+      }
+    }
+  `}</style>
+);
 
 //logic
 const Sales = () => {
@@ -1444,9 +1801,11 @@ const Sales = () => {
   }
 
   return (
-    <Box sx={{ padding: '2.5rem', backgroundColor: 'rgba(255, 255, 255, 0.85)', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
-      {/* Header */}
-      <Box sx={{ 
+    <>
+      <PrintStyles />
+      <Box sx={{ padding: '2.5rem', backgroundColor: 'rgba(255, 255, 255, 0.85)', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
+        {/* Header */}
+        <Box sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
@@ -1871,7 +2230,7 @@ const Sales = () => {
           <DialogContent>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <FormControl fullWidth required>
+                <FormControl fullWidth required sx={{ minWidth: "200px" }}>
                   <InputLabel>Buyer</InputLabel>
                   <Select
                     name="buyer"
@@ -1918,11 +2277,20 @@ const Sales = () => {
                 ref={scannerRef} 
                 sx={{ 
                   width: '100%', 
-                  height: '250px', 
+                  height: '300px', 
                   backgroundColor: '#000', 
                   borderRadius: '8px', 
                   marginBottom: '16px',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  position: 'relative',
+                  '& video, & canvas': {
+                    width: '100% !important',
+                    height: '100% !important',
+                    objectFit: 'cover',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0
+                  }
                 }} 
               />
 
@@ -2054,7 +2422,7 @@ const Sales = () => {
                             label={item.barcode}
                             size="small"
                             sx={{ 
-                              backgroundColor: isCombo ? '#2e7d32' : '#1976d2',
+                              backgroundColor: isCombo ? '#2e7d32' : '#D4AF37',
                               color: '#fff',
                               fontFamily: 'monospace',
                               fontWeight: 500
@@ -2075,7 +2443,7 @@ const Sales = () => {
                               </Typography>
                             )}
                             {isCombo && item.comboData?.products && (
-                              <Typography variant="caption" sx={{ color: '#1976d2', display: 'block', marginTop: '4px' }}>
+                              <Typography variant="caption" sx={{ color: '#D4AF37', display: 'block', marginTop: '4px' }}>
                                 Contains: {item.comboData.products.map(p => `${p.product?.name || 'Product'} (${p.quantity})`).join(', ')}
                               </Typography>
                             )}
@@ -2169,7 +2537,7 @@ const Sales = () => {
                         }}
                         sx={{ width: '80px' }}
                       />
-                      <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 600 }}>
+                      <Typography variant="body2" sx={{ color: '#D4AF37', fontWeight: 600 }}>
                         +₹{formData.taxAmount.toFixed(2)}
                       </Typography>
                     </Box>
@@ -2219,7 +2587,7 @@ const Sales = () => {
                 borderRadius: '8px',
                 textAlign: 'center'
               }}>
-                <Typography variant="h5" sx={{ margin: 0, fontWeight: 600 }}>
+                <Typography variant="h5" sx={{ margin: 0, fontWeight: 600, color: '#fff' }}>
                   Final Total: ₹{formData.total.toFixed(2)}
                 </Typography>
               </Box>
@@ -2390,39 +2758,47 @@ const Sales = () => {
         <DialogContent>
             {selectedSale && (
               <>
-                <Row>
-                  <Col md={6}>
-                    <h6>Sale Information</h6>
-                    <p><strong>ID:</strong> {selectedSale.saleId}</p>
-                    <p><strong>Date:</strong> {formatDate(selectedSale.saleDate)}</p>
-                    <p><strong>Time:</strong> {selectedSale.createdAt ? new Date(selectedSale.createdAt).toLocaleTimeString('en-GB') : new Date(selectedSale.saleDate).toLocaleTimeString('en-GB')}</p>
-                    <p><strong>Status:</strong> <Badge bg="success">{selectedSale.status || 'completed'}</Badge></p>
-                  </Col>
-                  <Col md={6}>
-                    <h6>Buyer Details</h6>
-                    <p><strong>Name:</strong> {selectedSale.buyer?.name || 'N/A'}</p>
-                    <p><strong>Email:</strong> {selectedSale.buyer?.email || 'N/A'}</p>
-                    <p><strong>Phone:</strong> {selectedSale.buyer?.phone || 'N/A'}</p>
-                    {selectedSale.buyer?.address && (
-                      <p><strong>Address:</strong> {selectedSale.buyer.address}</p>
-                    )}
-                  </Col>
-                </Row>
+                <Grid container spacing={3} sx={{ marginBottom: '2rem' }}>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: THEME.charcoal, marginBottom: '1rem' }}>Sale Information</Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Typography><strong>ID:</strong> {selectedSale.saleId}</Typography>
+                      <Typography><strong>Date:</strong> {formatDate(selectedSale.saleDate)}</Typography>
+                      <Typography><strong>Time:</strong> {selectedSale.createdAt ? new Date(selectedSale.createdAt).toLocaleTimeString('en-GB') : new Date(selectedSale.saleDate).toLocaleTimeString('en-GB')}</Typography>
+                      <Box>
+                        <Typography component="span"><strong>Status:</strong> </Typography>
+                        <Chip label={selectedSale.status || 'completed'} size="small" sx={{ backgroundColor: '#2e7d32', color: 'white', marginLeft: '8px' }} />
+                      </Box>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: THEME.charcoal, marginBottom: '1rem' }}>Buyer Details</Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Typography><strong>Name:</strong> {selectedSale.buyer?.name || 'N/A'}</Typography>
+                      <Typography><strong>Email:</strong> {selectedSale.buyer?.email || 'N/A'}</Typography>
+                      <Typography><strong>Phone:</strong> {selectedSale.buyer?.phone || 'N/A'}</Typography>
+                      {selectedSale.buyer?.address && (
+                        <Typography><strong>Address:</strong> {selectedSale.buyer.address}</Typography>
+                      )}
+                    </Box>
+                  </Grid>
+                </Grid>
 
-                <h6 className="mt-4">Items ({selectedSale.items?.length || 0})</h6>
-                <Table striped bordered responsive>
-                  <thead style={{ background: '#3498db' }}>
-                    <tr>
-                      <th>S.No</th>
-                      <th>Product</th>
-                      <th>Category</th>
-                      <th>Barcode</th>
-                      <th>Price</th>
-                      <th>Quantity</th>
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: THEME.charcoal, marginBottom: '1rem', marginTop: '1rem' }}>Items ({selectedSale.items?.length || 0})</Typography>
+                <TableContainer component={Paper} sx={{ marginBottom: '2rem', border: `1px solid ${THEME.softGold}`, borderRadius: '8px' }}>
+                  <Table>
+                    <TableHead sx={{ backgroundColor: THEME.lightGold }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>S.No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Product</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Category</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Barcode</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Price</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Quantity</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal }}>Total</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
                     {(selectedSale.items || []).map((item, idx) => {
                       const isCombo = item.type === 'combo';
                       
@@ -2450,11 +2826,11 @@ const Sales = () => {
                       const itemTotal = unitPrice * quantity;
                       
                       return (
-                        <tr key={item._id || idx}>
-                          <td>{idx + 1}</td>
-                          <td>
-                            <div>
-                              {isCombo && <Badge bg="success" className="me-2">COMBO</Badge>}
+                        <TableRow key={item._id || idx}>
+                          <TableCell>{idx + 1}</TableCell>
+                          <TableCell>
+                            <Box>
+                              {isCombo && <Chip label="COMBO" size="small" sx={{ backgroundColor: '#2e7d32', color: 'white', marginRight: '8px' }} />}
                               {isCombo ? (
                                 <OverlayTrigger
                                   trigger={['hover', 'focus']}
@@ -2544,76 +2920,75 @@ const Sales = () => {
                                   </span>
                                 </OverlayTrigger>
                               ) : (
-                                <strong>{itemName}</strong>
+                                <Typography component="span" sx={{ fontWeight: 600 }}>{itemName}</Typography>
                               )}
                               {itemDescription && (
-                                <div>
-                                  <small className="text-muted">
+                                <Box>
+                                  <Typography variant="caption" sx={{ color: THEME.softCharcoal }}>
                                     {itemDescription.length > 50 
                                       ? `${itemDescription.substring(0, 50)}...` 
                                       : itemDescription}
-                                  </small>
-                                </div>
+                                  </Typography>
+                                </Box>
                               )}
-                            </div>
-                          </td>
-                          <td>{String(itemCategory || '')}</td>
-                          <td>
+                            </Box>
+                          </TableCell>
+                          <TableCell>{String(itemCategory || '')}</TableCell>
+                          <TableCell>
                             <BarcodeBadge bg={isCombo ? 'success' : 'info'}>
                               {String(barcode || '')}
                             </BarcodeBadge>
-                          </td>
-                          <td>₹{unitPrice.toFixed(2)}</td>
-                          <td>{quantity}</td>
-                          <td>₹{itemTotal.toFixed(2)}</td>
-                        </tr>
+                          </TableCell>
+                          <TableCell>₹{unitPrice.toFixed(2)}</TableCell>
+                          <TableCell>{quantity}</TableCell>
+                          <TableCell>₹{itemTotal.toFixed(2)}</TableCell>
+                        </TableRow>
                       );
                     })}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan="6" className="text-end"><strong>Subtotal:</strong></td>
-                      <td><strong>₹{selectedSale.subtotal?.toFixed(2) || selectedSale.subtotalAmount?.toFixed(2) || selectedSale.totalAmount?.toFixed(2) || '0.00'}</strong></td>
-                    </tr>
-                  </tfoot>
+                    <TableRow sx={{ backgroundColor: THEME.lightGold }}>
+                      <TableCell colSpan={6} sx={{ textAlign: 'right', fontWeight: 600 }}>Subtotal:</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>₹{selectedSale.subtotal?.toFixed(2) || selectedSale.subtotalAmount?.toFixed(2) || selectedSale.totalAmount?.toFixed(2) || '0.00'}</TableCell>
+                    </TableRow>
+                  </TableBody>
                 </Table>
+                </TableContainer>
                 
-                <Row className="mt-3">
-                  <Col md={3}>
-                    <div className="p-2 border rounded text-center">
-                      <small>Discount</small>
-                      <p className="mb-0 text-success">-₹{selectedSale.discountAmount?.toFixed(2) || selectedSale.discount?.toFixed(2) || "0.00"}</p>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className="p-2 border rounded text-center">
-                      <small>Tax</small>
-                      <p className="mb-0 text-primary">+₹{selectedSale.taxAmount?.toFixed(2) || selectedSale.tax?.toFixed(2) || "0.00"}</p>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className="p-2 border rounded text-center">
-                      <small>Shipping</small>
-                      <p className="mb-0">₹{selectedSale.shippingAmount?.toFixed(2) || selectedSale.shipping?.toFixed(2) || "0.00"}</p>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className="p-2 border rounded text-center">
-                      <small>Other</small>
-                      <p className="mb-0">₹{selectedSale.otherAmount?.toFixed(2) || selectedSale.other?.toFixed(2) || "0.00"}</p>
-                    </div>
-                  </Col>
-                </Row>
+                <Grid container spacing={2} sx={{ marginTop: '1rem' }}>
+                  <Grid item xs={12} md={3}>
+                    <Card sx={{ padding: '16px', border: `1px solid ${THEME.softGold}`, boxShadow: 'none', textAlign: 'center' }}>
+                      <Typography variant="caption" sx={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: THEME.softCharcoal }}>Discount</Typography>
+                      <Typography sx={{ margin: 0, color: '#2e7d32', fontWeight: 600 }}>-₹{selectedSale.discountAmount?.toFixed(2) || selectedSale.discount?.toFixed(2) || "0.00"}</Typography>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Card sx={{ padding: '16px', border: `1px solid ${THEME.softGold}`, boxShadow: 'none', textAlign: 'center' }}>
+                      <Typography variant="caption" sx={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: THEME.softCharcoal }}>Tax</Typography>
+                      <Typography sx={{ margin: 0, color: '#D4AF37', fontWeight: 600 }}>+₹{selectedSale.taxAmount?.toFixed(2) || selectedSale.tax?.toFixed(2) || "0.00"}</Typography>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Card sx={{ padding: '16px', border: `1px solid ${THEME.softGold}`, boxShadow: 'none', textAlign: 'center' }}>
+                      <Typography variant="caption" sx={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: THEME.softCharcoal }}>Shipping</Typography>
+                      <Typography sx={{ margin: 0, fontWeight: 600 }}>₹{selectedSale.shippingAmount?.toFixed(2) || selectedSale.shipping?.toFixed(2) || "0.00"}</Typography>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Card sx={{ padding: '16px', border: `1px solid ${THEME.softGold}`, boxShadow: 'none', textAlign: 'center' }}>
+                      <Typography variant="caption" sx={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: THEME.softCharcoal }}>Other</Typography>
+                      <Typography sx={{ margin: 0, fontWeight: 600 }}>₹{selectedSale.otherAmount?.toFixed(2) || selectedSale.other?.toFixed(2) || "0.00"}</Typography>
+                    </Card>
+                  </Grid>
+                </Grid>
                 
-                <TotalDisplay className="mt-4">Total: ₹{selectedSale.totalAmount?.toFixed(2) || '0.00'}</TotalDisplay>
+                <TotalDisplay style={{ marginTop: '2rem' }}>Total: ₹{selectedSale.totalAmount?.toFixed(2) || '0.00'}</TotalDisplay>
                 
                 {selectedSale.comments && (
-                  <div className="mt-3">
-                    <h6>Comments</h6>
-                    <div className="p-3 bg-light rounded">
-                      <p className="mb-0">{selectedSale.comments}</p>
-                    </div>
-                  </div>
+                  <Box sx={{ marginTop: '2rem' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: THEME.charcoal, marginBottom: '1rem' }}>Comments</Typography>
+                    <Box sx={{ padding: '1.5rem', backgroundColor: THEME.offWhite, borderRadius: '8px', border: `1px solid ${THEME.softGold}` }}>
+                      <Typography sx={{ margin: 0 }}>{selectedSale.comments}</Typography>
+                    </Box>
+                  </Box>
                 )}
               </>
             )}
@@ -2628,57 +3003,62 @@ const Sales = () => {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: '12px'
+            borderRadius: '12px',
+            '@media print': {
+              maxWidth: '100%',
+              margin: 0,
+              borderRadius: 0,
+              boxShadow: 'none'
+            }
           }
         }}
       >
-        <DialogTitle sx={{ fontWeight: 600, color: '#101828' }}>
+        <DialogTitle sx={{ fontWeight: 600, color: '#101828', '@media print': { display: 'none' } }}>
           Invoice
           <IconButton
             onClick={() => setShowInvoiceModal(false)}
+            className="no-print"
             sx={{
               position: 'absolute',
               right: 8,
               top: 8,
-              color: '#667085'
+              color: '#667085',
+              '@media print': { display: 'none' }
             }}
           >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ padding: 0 }}>
+        <DialogContent sx={{ padding: 0, '@media print': { padding: 0, overflow: 'visible' } }}>
           {invoiceData && (
-              <InvoiceContainer>
+              <InvoiceContainer id="invoice-print-area">
                 <InvoiceHeader>
-                  <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', width: '100%'}}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, width: '100%', '@media print': { gap: 1 } }}>
                     <img 
                       src="/logo_vp.jpeg" 
                       alt="Velpaari Enterprises Logo" 
+                      className="company-logo-img"
                       style={{
                         width: '60px',
                         height: '60px',
                         borderRadius: '50%',
                         objectFit: 'cover',
-                        border: '2px solid #2980b9'
+                        border: '2px solid #D4AF37'
                       }}
                       onError={(e) => {
                         console.log('Logo failed to load');
                         e.target.style.display='none';
                       }}
-                      onLoad={(e) => {
-                        console.log('Logo loaded successfully');
-                      }}
-                      crossOrigin="anonymous"
                     />
-                    <div style={{textAlign: 'center', flex: '1'}}>
-                      <div style={{color: '#3498db', fontSize: '28px', fontWeight: 'bold', margin: '0', lineHeight: '1.2'}}>
+                    <Box sx={{ textAlign: 'center', flex: 1 }}>
+                      <Typography sx={{ color: THEME.gold, fontSize: { xs: '20px', md: '28px' }, fontWeight: 700, margin: 0, lineHeight: 1.2, '@media print': { fontSize: '22px' } }}>
                         VELPAARI ENTERPRISES
-                      </div>
-                      <div style={{color: '#666', fontSize: '16px', margin: '5px 0 0 0', fontWeight: 'normal'}}>
+                      </Typography>
+                      <Typography sx={{ color: THEME.softCharcoal, fontSize: { xs: '14px', md: '16px' }, margin: '4px 0 0 0', '@media print': { fontSize: '12px' } }}>
                         Sales Invoice
-                      </div>
-                    </div>
-                  </div>
+                      </Typography>
+                    </Box>
+                  </Box>
                 </InvoiceHeader>
 
                 <InvoiceDetails>
@@ -2700,19 +3080,36 @@ const Sales = () => {
                   </InvoiceSection>
                 </InvoiceDetails>
 
-                <InvoiceTable>
-                  <thead>
-                    <tr>
-                      <th>S.No</th>
-                      <th>Product</th>
-                      <th>Category</th>
-                      <th>Barcode</th>
-                      <th>Price (₹)</th>
-                      <th>Quantity</th>
-                      <th>Total (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <TableContainer component={Paper} sx={{ 
+                  marginBottom: '2rem', 
+                  border: `1px solid ${THEME.softGold}`, 
+                  borderRadius: '8px', 
+                  '@media print': { 
+                    boxShadow: 'none', 
+                    border: `1px solid ${THEME.softGold}`,
+                    borderRadius: 0
+                  } 
+                }}>
+                  <Table sx={{ '@media print': { fontSize: '0.85rem' } }}>
+                    <TableHead sx={{ 
+                      backgroundColor: THEME.lightGold,
+                      '@media print': {
+                        backgroundColor: THEME.lightGold + ' !important',
+                        '-webkit-print-color-adjust': 'exact',
+                        'print-color-adjust': 'exact'
+                      }
+                    }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>S.No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Product</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Category</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Barcode</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Price (₹)</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Quantity</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: THEME.charcoal, '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>Total (₹)</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
                     {(invoiceData.items || []).map((item, idx) => {
                       const isCombo = item.type === 'combo';
                       
@@ -2738,9 +3135,9 @@ const Sales = () => {
                       const itemTotal = unitPrice * quantity;
                       
                       return (
-                        <tr key={item._id || idx}>
-                          <td>{idx + 1}</td>
-                          <td>
+                        <TableRow key={item._id || idx}>
+                          <TableCell>{idx + 1}</TableCell>
+                          <TableCell>
                             {isCombo ? (
                               <OverlayTrigger
                                 trigger={['hover', 'focus']}
@@ -2805,66 +3202,69 @@ const Sales = () => {
                             ) : (
                               itemName
                             )}
-                          </td>
-                          <td>{String(itemCategory || '')}</td>
-                          <td>{String(barcode || '')}</td>
-                          <td>₹{unitPrice.toFixed(2)}</td>
-                          <td>{quantity}</td>
-                          <td>₹{itemTotal.toFixed(2)}</td>
-                        </tr>
+                          </TableCell>
+                          <TableCell sx={{ '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>{String(itemCategory || '')}</TableCell>
+                          <TableCell sx={{ '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>{String(barcode || '')}</TableCell>
+                          <TableCell sx={{ '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>₹{unitPrice.toFixed(2)}</TableCell>
+                          <TableCell sx={{ '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>{quantity}</TableCell>
+                          <TableCell sx={{ '@media print': { padding: '6px 8px', fontSize: '0.85rem' } }}>₹{itemTotal.toFixed(2)}</TableCell>
+                        </TableRow>
                       );
                     })}
-                  </tbody>
-                </InvoiceTable>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
-                <InvoiceSummary>
-                  <div></div>
-                  <SummaryTable>
-                    <tbody>
-                      <tr>
-                        <td>Subtotal:</td>
-                        <td>₹{invoiceData.subtotal?.toFixed(2) || invoiceData.subtotalAmount?.toFixed(2) || '0.00'}</td>
-                      </tr>
-                      <tr>
-                        <td>Discount ({invoiceData.discount || 0}%):</td>
-                        <td>-₹{invoiceData.discountAmount?.toFixed(2) || '0.00'}</td>
-                      </tr>
-                      <tr>
-                        <td>Tax ({invoiceData.tax || 0}%):</td>
-                        <td>+₹{invoiceData.taxAmount?.toFixed(2) || '0.00'}</td>
-                      </tr>
-                      <tr>
-                        <td>Shipping:</td>
-                        <td>₹{invoiceData.shipping?.toFixed(2) || '0.00'}</td>
-                      </tr>
-                      <tr>
-                        <td>Others:</td>
-                        <td>₹{invoiceData.other?.toFixed(2) || '0.00'}</td>
-                      </tr>
-                      <tr>
-                        <td><strong>Grand Total:</strong></td>
-                        <td><strong>₹{invoiceData.totalAmount?.toFixed(2) || '0.00'}</strong></td>
-                      </tr>
-                    </tbody>
-                  </SummaryTable>
-                </InvoiceSummary>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', '@media print': { gap: '1rem' } }}>
+                  <Box></Box>
+                  <TableContainer component={Paper} sx={{ border: `1px solid ${THEME.softGold}`, borderRadius: '8px', '@media print': { boxShadow: 'none' } }}>
+                    <Table size="small">
+                      <TableBody>
+                        <TableRow>
+                          <TableCell sx={{ borderBottom: `1px solid ${THEME.softGold}`, padding: '8px' }}>Subtotal:</TableCell>
+                          <TableCell sx={{ borderBottom: `1px solid ${THEME.softGold}`, padding: '8px', textAlign: 'right' }}>₹{invoiceData.subtotal?.toFixed(2) || invoiceData.subtotalAmount?.toFixed(2) || '0.00'}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ borderBottom: `1px solid ${THEME.softGold}`, padding: '8px' }}>Discount ({invoiceData.discount || 0}%):</TableCell>
+                          <TableCell sx={{ borderBottom: `1px solid ${THEME.softGold}`, padding: '8px', textAlign: 'right', color: '#2e7d32' }}>-₹{invoiceData.discountAmount?.toFixed(2) || '0.00'}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ borderBottom: `1px solid ${THEME.softGold}`, padding: '8px' }}>Tax ({invoiceData.tax || 0}%):</TableCell>
+                          <TableCell sx={{ borderBottom: `1px solid ${THEME.softGold}`, padding: '8px', textAlign: 'right', color: '#D4AF37' }}>+₹{invoiceData.taxAmount?.toFixed(2) || '0.00'}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ borderBottom: `1px solid ${THEME.softGold}`, padding: '8px' }}>Shipping:</TableCell>
+                          <TableCell sx={{ borderBottom: `1px solid ${THEME.softGold}`, padding: '8px', textAlign: 'right' }}>₹{invoiceData.shipping?.toFixed(2) || '0.00'}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ borderBottom: `1px solid ${THEME.softGold}`, padding: '8px' }}>Others:</TableCell>
+                          <TableCell sx={{ borderBottom: `1px solid ${THEME.softGold}`, padding: '8px', textAlign: 'right' }}>₹{invoiceData.other?.toFixed(2) || '0.00'}</TableCell>
+                        </TableRow>
+                        <TableRow sx={{ backgroundColor: THEME.lightGold }}>
+                          <TableCell sx={{ borderTop: `2px solid ${THEME.gold}`, padding: '12px', fontWeight: 700, fontSize: '1.1rem' }}>Grand Total:</TableCell>
+                          <TableCell sx={{ borderTop: `2px solid ${THEME.gold}`, padding: '12px', textAlign: 'right', fontWeight: 700, fontSize: '1.1rem' }}>₹{invoiceData.totalAmount?.toFixed(2) || '0.00'}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
 
                 {invoiceData.comments && (
-                  <div style={{ marginTop: '2rem', padding: '1rem', background: '#f8f9fa', borderRadius: '8px' }}>
-                    <h4 style={{ color: '#3498db', marginBottom: '1rem' }}>Comments</h4>
-                    <p style={{ margin: 0 }}>{invoiceData.comments}</p>
-                  </div>
+                  <Box sx={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: THEME.offWhite, borderRadius: '8px', border: `1px solid ${THEME.softGold}` }}>
+                    <Typography variant="h6" sx={{ color: THEME.gold, marginBottom: '1rem', fontWeight: 600 }}>Comments</Typography>
+                    <Typography sx={{ margin: 0 }}>{invoiceData.comments}</Typography>
+                  </Box>
                 )}
 
-                <InvoiceFooter>
-                  <p><strong>Thank you for purchasing!</strong></p>
-                  <p>Generated on {formatDate(new Date())} at {new Date().toLocaleTimeString('en-US', {
+                <Box sx={{ marginTop: '3rem', paddingTop: '2rem', borderTop: `2px solid ${THEME.softGold}`, textAlign: 'center', color: THEME.softCharcoal, '@media print': { marginTop: '2rem' } }}>
+                  <Typography sx={{ fontWeight: 600 }}>Thank you for purchasing!</Typography>
+                  <Typography>Generated on {formatDate(new Date())} at {new Date().toLocaleTimeString('en-US', {
                     hour: '2-digit',
                     minute: '2-digit',
                     second: '2-digit',
                     hour12: false
-                  })}</p>
-                </InvoiceFooter>
+                  })}</Typography>
+                </Box>
               </InvoiceContainer>
             )}
         </DialogContent>
@@ -2900,7 +3300,8 @@ const Sales = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+      </Box>
+    </>
   );
 };
 

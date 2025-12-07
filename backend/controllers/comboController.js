@@ -2,13 +2,14 @@ const Combo = require('../models/Combo');
 const Product = require('../models/Product');
 const cloudinary = require('../config/cloudinary');
 const multer = require('multer');
+const mongoose = require('mongoose');
 
 const storage = multer.memoryStorage();
 
 // Get all combos
 exports.getAllCombos = async (req, res) => {
   try {
-    const combos = await Combo.find()
+    const combos = await Combo.find({ isActive: true })
       .populate('category', 'name code')
       .populate('products.product', 'name price barcode quantity')
       .sort({ createdAt: -1 });
@@ -212,13 +213,48 @@ exports.updateCombo = async (req, res) => {
 // Delete combo (soft delete)
 exports.deleteCombo = async (req, res) => {
   try {
-    const combo = await Combo.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
+    const comboId = req.params.id;
+    console.log('Delete combo request received for ID:', comboId);
+    
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(comboId)) {
+      console.log('Invalid ObjectId format:', comboId);
+      return res.status(400).json({ message: 'Invalid combo ID format' });
+    }
+    
+    const combo = await Combo.findById(comboId);
     if (!combo) {
+      console.log('Combo not found with ID:', comboId);
       return res.status(404).json({ message: 'Combo not found' });
     }
-    res.json({ message: 'Combo deleted successfully' });
+    
+    // Check if already deleted
+    if (combo.isActive === false) {
+      console.log('Combo already deleted:', combo.name);
+      return res.status(400).json({ message: 'Combo is already deleted' });
+    }
+    
+    console.log('Found combo:', combo.name, '- Setting isActive to false');
+    combo.isActive = false;
+    await combo.save();
+    
+    console.log('Combo deleted successfully:', combo.name);
+    res.json({ 
+      message: 'Combo deleted successfully',
+      success: true,
+      combo: {
+        id: combo._id,
+        name: combo.name,
+        isActive: combo.isActive
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error deleting combo:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      message: error.message,
+      error: error.toString()
+    });
   }
 };
 

@@ -831,7 +831,7 @@ const ProfitLoss = () => {
         </Grid>
         <Grid container spacing={2} sx={{ mt: 2 }}>
           <Grid item xs={12} md={8}>
-            <FormControl fullWidth>
+            <FormControl fullWidth sx={{ minWidth: "280px" }}>
               <InputLabel>Load Saved Uploads</InputLabel>
               <Select
                 value={selectedSheetId || ''}

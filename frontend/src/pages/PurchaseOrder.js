@@ -54,9 +54,9 @@ function PurchaseOrder({ vendors = [], items = [] }) {
     const [selectedVendorId, setSelectedVendorId] = useState("");
     const [selectedItemId, setSelectedItemId] = useState("");
     const [formData, setFormData] = useState({
-        companyName: "Velpaari Enterprises",
-        streetAddress: "5/3 ,32b Pasumai nagar, Thiruchengode main road, Alampalayam (po)",
-        cityStateZip: " Erode-638008",
+        companyName: "VELPAARI ENTERPRISES",
+        streetAddress: "5/3, 32b Pasumai Nagar, Thiruchengode Main Road, Alampalayam (PO)",
+        cityStateZip: " Erode, TamilNadu - 638008",
         phone: "9500791500",
         date: new Date().toLocaleDateString(),
         poNumber: "",
@@ -70,8 +70,8 @@ function PurchaseOrder({ vendors = [], items = [] }) {
         vendorAccountNo: "",
         shipToName: "VELPAARI ENTERPRISES ",
         shipToCompany: "VELPAARI ENTERPRISES",
-        shipToAddress: "5/3 ,32b Pasumai nagar, Thiruchengode main road, Alampalayam (po)",
-        shipToCityStateZip: "Erode-638008",
+        shipToAddress: "5/3, 32b Pasumai Nagar, Thiruchengode Main Road, Alampalayam (PO)",
+        shipToCityStateZip: "Erode, TamilNadu - 638008",
         shipToPhone: "9500791500",
         items: [],
         subtotal: 0,
@@ -439,7 +439,7 @@ function PurchaseOrder({ vendors = [], items = [] }) {
                 </Typography>
                 <Grid container spacing={2}>
                     <Grid item xs={12} md={6}>
-                        <FormControl fullWidth>
+                        <FormControl fullWidth sx={{ minWidth: "200px" }}>
                             <InputLabel>Select Vendor</InputLabel>
                             <Select
                                 value={selectedVendorId}
@@ -565,7 +565,7 @@ function PurchaseOrder({ vendors = [], items = [] }) {
                 <Grid container spacing={2}>
                     {!manualItemEntry ? (
                         <Grid item xs={12} md={6}>
-                            <FormControl fullWidth>
+                            <FormControl fullWidth sx={{ minWidth: "200px" }}>
                                 <InputLabel>Select Product</InputLabel>
                                 <Select
                                     value={selectedItemId}

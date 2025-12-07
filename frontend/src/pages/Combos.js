@@ -69,6 +69,9 @@ const Combos = () => {
   const [selectedCombos, setSelectedCombos] = useState([]);
   const [isDownloadingBarcodes, setIsDownloadingBarcodes] = useState(false);
 
+  // Delete state
+  const [deletingComboId, setDeletingComboId] = useState(null);
+
   // Editable upload data
   const [editingCell, setEditingCell] = useState(null);
   const [editableData, setEditableData] = useState([]);
@@ -374,16 +377,36 @@ const Combos = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this combo?')) {
+    // Prevent multiple delete operations
+    if (deletingComboId) {
+      showError('Please wait, another delete operation is in progress');
+      return;
+    }
+
+    if (window.confirm('Are you sure you want to delete this combo? This action cannot be undone.')) {
       try {
-        setLoading(true);
-        await combosAPI.delete(id);
-        showSuccess('Combo deleted successfully');
-        fetchCombos();
+        setDeletingComboId(id);
+        console.log('Attempting to delete combo with ID:', id);
+        
+        const response = await combosAPI.delete(id);
+        console.log('Delete response:', response.data);
+        
+        if (response.data.success || response.data.message === 'Combo deleted successfully') {
+          showSuccess('Combo deleted successfully! Refreshing list...');
+          // Wait a moment before refreshing to ensure database is updated
+          setTimeout(async () => {
+            await fetchCombos();
+            setDeletingComboId(null);
+          }, 500);
+        } else {
+          throw new Error('Unexpected response from server');
+        }
       } catch (error) {
-        showError('Failed to delete combo');
-      } finally {
-        setLoading(false);
+        console.error('Delete error:', error);
+        console.error('Error response:', error.response);
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to delete combo';
+        showError(`Delete failed: ${errorMessage}`);
+        setDeletingComboId(null);
       }
     }
   };
@@ -912,6 +935,7 @@ const Combos = () => {
                         size="small"
                         onClick={() => handleEdit(combo)}
                         sx={{ color: '#000' }}
+                        disabled={deletingComboId === combo._id}
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
@@ -919,8 +943,13 @@ const Combos = () => {
                         size="small"
                         onClick={() => handleDelete(combo._id)}
                         sx={{ color: '#d32f2f' }}
+                        disabled={deletingComboId !== null}
                       >
-                        <DeleteIcon fontSize="small" />
+                        {deletingComboId === combo._id ? (
+                          <CircularProgress size={20} sx={{ color: '#d32f2f' }} />
+                        ) : (
+                          <DeleteIcon fontSize="small" />
+                        )}
                       </IconButton>
                     </Box>
                   </TableCell>
@@ -939,7 +968,7 @@ const Combos = () => {
         fullWidth
       >
         <DialogTitle sx={{ bgcolor: '#000', color: '#fff' }}>
-          {editMode ? '✏️ Edit Combo' : '✨ Add New Combo'}
+          {editMode ? '✏️ Edit Combo' : 'Add New Combo'}
           <IconButton
             onClick={handleCloseModal}
             sx={{ position: 'absolute', right: 8, top: 8, color: '#fff' }}
@@ -952,7 +981,7 @@ const Combos = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Combo Name *"
+                label="Combo Name "
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="Enter combo name"
@@ -962,7 +991,7 @@ const Combos = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Barcode *"
+                label="Barcode "
                 value={formData.barcode}
                 onChange={(e) => handleInputChange('barcode', e.target.value)}
                 placeholder="Enter barcode (e.g., EW00L002)"
@@ -970,7 +999,7 @@ const Combos = () => {
               />
             </Grid>
             <Grid item xs={12}>
-              <FormControl fullWidth>
+              <FormControl fullWidth sx={{ minWidth: "280px" }}>
                 <InputLabel>Category</InputLabel>
                 <Select
                   value={formData.category}
@@ -1040,7 +1069,7 @@ const Combos = () => {
             </Typography>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
+                <FormControl fullWidth sx={{ minWidth: "280px" }}>
                   <InputLabel>Select Product</InputLabel>
                   <Select
                     value={selectedProduct}

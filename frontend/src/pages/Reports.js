@@ -289,12 +289,12 @@ const Reports = () => {
       </Stack>
 
       {/* Statistics Overview */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
+      <Grid container  spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} sx={{ minWidth: "150px" }} sm={6} md={3}>
           <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
             <CardContent>
               <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                📈 Total Sales
+                 Total Sales
               </Typography>
               <Typography variant="h5" sx={{ fontWeight: 700, color: '#000' }}>
                 ₹{reportSummary?.totalSales.toFixed(2) || calculateTotals(filteredSales).toFixed(2)}
@@ -302,11 +302,11 @@ const Reports = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item sx={{ minWidth: "150px" }} xs={12} sm={6} md={3}>
           <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
             <CardContent>
               <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                🛒 Total Purchases
+                Total Purchases
               </Typography>
               <Typography variant="h5" sx={{ fontWeight: 700, color: '#000' }}>
                 ₹{reportSummary?.totalPurchase.toFixed(2) || calculateTotals(filteredPurchases).toFixed(2)}
@@ -314,11 +314,11 @@ const Reports = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item sx={{ minWidth: "150px" }} xs={12} sm={6} md={3}>
           <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
             <CardContent>
               <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                💰 Net Profit
+                 Net Profit
               </Typography>
               <Typography 
                 variant="h5" 
@@ -336,7 +336,7 @@ const Reports = () => {
           <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
             <CardContent>
               <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                📅 Date Range
+                 Date
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 600, color: '#000' }}>
                 {filter.startDate || 'Start'} - {filter.endDate || 'End'}
@@ -349,7 +349,7 @@ const Reports = () => {
       {/* Filter Section */}
       <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-          🔍 Filter Reports
+           Filter Reports
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={12} md={3}>
@@ -413,7 +413,7 @@ const Reports = () => {
       {/* Purchase & Sales Trend Graph */}
       <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-          📈 Purchase & Sales Trend (Daily Breakdown)
+           Purchase & Sales Trend (Daily)
         </Typography>
         {graphLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
@@ -448,7 +448,7 @@ const Reports = () => {
       {/* Product-wise Analysis */}
       <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-          🎯 Product-wise Analysis (Monthly Breakdown)
+           Product-wise Analysis (Monthly)
         </Typography>
         
         <FormControl fullWidth sx={{ mb: 4 }}>
@@ -555,7 +555,7 @@ const Reports = () => {
       {/* Product Status Report (RTO, RPU, Delivered) */}
       <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-          📊 Product Status Report (RTO, RPU, Delivered)
+          Product Status Report (RTO, RPU, Delivered)
         </Typography>
         
         <FormControl fullWidth sx={{ mb: 4 }}>
@@ -674,191 +674,200 @@ const Reports = () => {
       </Paper>
 
       {/* Purchases Report */}
-      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            🛒 Purchases Report
-          </Typography>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<FileDownloadIcon />}
-            onClick={() => exportToCSV(filteredPurchases, 'purchases_report')}
-            sx={{
-              textTransform: 'none',
-              borderColor: '#e0e0e0',
-              color: '#000',
-              '&:hover': { borderColor: '#000', bgcolor: 'rgba(0, 0, 0, 0.04)' }
+     <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+  <Paper 
+    sx={{ 
+      p: 4,
+      display: 'inline-block',
+      background: 'linear-gradient(135deg, #1A1A1A 0%, #2B262A 100%)',
+      color: '#F8F5F0', 
+      border: '2px solid #D4AF37',
+      boxShadow: '0 8px 32px rgba(212, 175, 55, 0.15)',
+      borderRadius: 3,
+      position: 'relative',
+      overflow: 'hidden',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '4px',
+      }
+    }}
+  >
+    <Typography 
+      variant="h4" 
+      sx={{ 
+        fontWeight: 700, 
+        textAlign: 'center', 
+        mb: 4,
+        color: '#D4AF37',
+        letterSpacing: '0.5px',
+        textTransform: 'uppercase',
+        fontSize: { xs: '1.5rem', md: '2rem' }
+      }}
+    >
+      Financial Summary
+    </Typography>
+    
+    <Grid container spacing={3}>
+      <Grid item xs={12} md={4}>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Box 
+            sx={{ 
+              textAlign: 'center',
+              p: 3,
+              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(201, 162, 39, 0.12) 100%)',
+              borderRadius: 2,
+              border: '1px solid rgba(212, 175, 55, 0.2)',
+              transition: 'all 0.3s ease',
+              display: 'inline-block',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 8px 24px rgba(212, 175, 55, 0.25)',
+                border: '1px solid rgba(212, 175, 55, 0.4)',
+              }
             }}
           >
-            Export
-          </Button>
-        </Stack>
-        
-        <TableContainer sx={{ 
-          border: '1px solid #e0e0e0',
-          '&::-webkit-scrollbar': {
-            width: '8px',
-            height: '8px'
-          },
-          '&::-webkit-scrollbar-track': {
-            background: '#f1f1f1',
-            borderRadius: '4px'
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: '#888',
-            borderRadius: '4px',
-            '&:hover': {
-              background: '#555'
-            }
-          }
-        }}>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: '#fafafa' }}>
-                <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Vendor</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Total</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredPurchases.slice(0, 10).map((purchase) => (
-                <TableRow 
-                  key={purchase._id}
-                  sx={{ '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}
-                >
-                  <TableCell><strong>{purchase.purchaseId}</strong></TableCell>
-                  <TableCell>{purchase.vendor?.name || 'N/A'}</TableCell>
-                  <TableCell>{new Date(purchase.purchaseDate).toLocaleDateString()}</TableCell>
-                  <TableCell>₹{purchase.totalAmount.toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        
-        <Card sx={{ mt: 3, bgcolor: '#000', color: '#fff', border: '1px solid #000' }}>
-          <CardContent sx={{ textAlign: 'center' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Total Purchases: ₹{calculateTotals(filteredPurchases).toFixed(2)}
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                mb: 2, 
+                color: '#F4E3B2',
+                fontWeight: 500,
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                fontSize: '0.85rem',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              Total Purchases
             </Typography>
-          </CardContent>
-        </Card>
-      </Paper>
-
-      {/* Sales Report */}
-      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            💰 Sales Report
-          </Typography>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<FileDownloadIcon />}
-            onClick={() => exportToCSV(filteredSales, 'sales_report')}
-            sx={{
-              textTransform: 'none',
-              borderColor: '#e0e0e0',
-              color: '#000',
-              '&:hover': { borderColor: '#000', bgcolor: 'rgba(0, 0, 0, 0.04)' }
+            <Typography 
+              variant="h3" 
+              sx={{ 
+                fontWeight: 800,
+                color: '#D4AF37',
+                fontSize: { xs: '2rem', md: '2.5rem' },
+                textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              ₹{calculateTotals(filteredPurchases).toFixed(2)}
+            </Typography>
+          </Box>
+        </Box>
+      </Grid>
+      
+      <Grid item xs={12} md={4}>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Box 
+            sx={{ 
+              textAlign: 'center',
+              p: 3,
+              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(201, 162, 39, 0.12) 100%)',
+              borderRadius: 2,
+              border: '1px solid rgba(212, 175, 55, 0.2)',
+              transition: 'all 0.3s ease',
+              display: 'inline-block',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 8px 24px rgba(212, 175, 55, 0.25)',
+                border: '1px solid rgba(212, 175, 55, 0.4)',
+              }
             }}
           >
-            Export
-          </Button>
-        </Stack>
-        
-        <TableContainer sx={{ 
-          border: '1px solid #e0e0e0',
-          '&::-webkit-scrollbar': {
-            width: '8px',
-            height: '8px'
-          },
-          '&::-webkit-scrollbar-track': {
-            background: '#f1f1f1',
-            borderRadius: '4px'
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: '#888',
-            borderRadius: '4px',
-            '&:hover': {
-              background: '#555'
-            }
-          }
-        }}>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: '#fafafa' }}>
-                <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Buyer</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Total</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredSales.slice(0, 10).map((sale) => (
-                <TableRow 
-                  key={sale._id}
-                  sx={{ '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}
-                >
-                  <TableCell><strong>{sale.saleId}</strong></TableCell>
-                  <TableCell>{sale.buyer?.name || 'N/A'}</TableCell>
-                  <TableCell>{new Date(sale.saleDate).toLocaleDateString()}</TableCell>
-                  <TableCell>₹{sale.totalAmount.toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        
-        <Card sx={{ mt: 3, bgcolor: '#000', color: '#fff', border: '1px solid #000' }}>
-          <CardContent sx={{ textAlign: 'center' }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Total Sales: ₹{calculateTotals(filteredSales).toFixed(2)}
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                mb: 2, 
+                color: '#F4E3B2',
+                fontWeight: 500,
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                fontSize: '0.85rem',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              Total Sales
             </Typography>
-          </CardContent>
-        </Card>
-      </Paper>
-
-      {/* Summary Section */}
-      <Paper sx={{ p: 3, bgcolor: '#2e7d32', color: '#fff', border: '1px solid #2e7d32', boxShadow: 'none' }}>
-        <Typography variant="h5" sx={{ fontWeight: 600, textAlign: 'center', mb: 3 }}>
-          Financial Summary
-        </Typography>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="subtitle1" sx={{ mb: 1 }}>Total Purchases</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                ₹{calculateTotals(filteredPurchases).toFixed(2)}
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="subtitle1" sx={{ mb: 1 }}>Total Sales</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                ₹{calculateTotals(filteredSales).toFixed(2)}
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="subtitle1" sx={{ mb: 1 }}>Net Profit</Typography>
-              <Typography 
-                variant="h4" 
-                sx={{ 
-                  fontWeight: 700,
-                  color: calculateProfit() >= 0 ? '#ffffff' : '#ffcdd2'
-                }}
-              >
-                ₹{calculateProfit().toFixed(2)}
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
+            <Typography 
+              variant="h3" 
+              sx={{ 
+                fontWeight: 800,
+                color: '#D4AF37',
+                fontSize: { xs: '2rem', md: '2.5rem' },
+                textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              ₹{calculateTotals(filteredSales).toFixed(2)}
+            </Typography>
+          </Box>
+        </Box>
+      </Grid>
+      
+      <Grid item xs={12} md={4}>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Box 
+            sx={{ 
+              textAlign: 'center',
+              p: 3,
+              background: calculateProfit() >= 0 
+                ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(201, 162, 39, 0.2) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 82, 82, 0.1) 0%, rgba(255, 107, 107, 0.15) 100%)',
+              borderRadius: 2,
+              border: calculateProfit() >= 0 
+                ? '1px solid rgba(212, 175, 55, 0.3)'
+                : '1px solid rgba(255, 82, 82, 0.3)',
+              transition: 'all 0.3s ease',
+              display: 'inline-block',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: calculateProfit() >= 0
+                  ? '0 8px 24px rgba(212, 175, 55, 0.35)'
+                  : '0 8px 24px rgba(255, 82, 82, 0.25)',
+                border: calculateProfit() >= 0
+                  ? '1px solid rgba(212, 175, 55, 0.5)'
+                  : '1px solid rgba(255, 82, 82, 0.5)',
+              }
+            }}
+          >
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                mb: 2, 
+                color: calculateProfit() >= 0 ? '#F4E3B2' : '#ffcdd2',
+                fontWeight: 500,
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                fontSize: '0.85rem',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              Net Profit
+            </Typography>
+            <Typography 
+              variant="h3" 
+              sx={{ 
+                fontWeight: 800,
+                color: calculateProfit() >= 0 ? '#D4AF37' : '#ff5252',
+                fontSize: { xs: '2rem', md: '2.5rem' },
+                textShadow: calculateProfit() >= 0 
+                  ? '0 2px 8px rgba(212, 175, 55, 0.3)'
+                  : '0 2px 8px rgba(255, 82, 82, 0.3)',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              ₹{calculateProfit().toFixed(2)}
+            </Typography>
+          </Box>
+        </Box>
+      </Grid>
+    </Grid>
+  </Paper>
+</Box>
     </Box>
   );
 };

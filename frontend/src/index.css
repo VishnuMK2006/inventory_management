@@ -379,13 +379,13 @@ textarea:focus {
 
 /* ===== SELECTION STYLES ===== */
 ::selection {
-  background: var(--accent-blue);
-  color: white;
+  background: var(--primary-gold);
+  color: var(--pure-black);
 }
 
 ::-moz-selection {
-  background: var(--accent-blue);
-  color: white;
+  background: var(--primary-gold);
+  color: var(--pure-black);
 }
 
 /* ===== LOADING STATES ===== */
