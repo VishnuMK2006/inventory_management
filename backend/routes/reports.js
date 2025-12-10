@@ -32,13 +32,13 @@ router.get('/purchase-sales', async (req, res) => {
           status: 'completed',
           ...(startDate || endDate
             ? {
-                purchaseDate: {
-                  ...(startDate && { $gte: new Date(startDate) }),
-                  ...(endDate && {
-                    $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
-                  }),
-                },
-              }
+              purchaseDate: {
+                ...(startDate && { $gte: new Date(startDate) }),
+                ...(endDate && {
+                  $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
+                }),
+              },
+            }
             : {}),
         },
       },
@@ -64,13 +64,13 @@ router.get('/purchase-sales', async (req, res) => {
           status: 'completed',
           ...(startDate || endDate
             ? {
-                saleDate: {
-                  ...(startDate && { $gte: new Date(startDate) }),
-                  ...(endDate && {
-                    $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
-                  }),
-                },
-              }
+              saleDate: {
+                ...(startDate && { $gte: new Date(startDate) }),
+                ...(endDate && {
+                  $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
+                }),
+              },
+            }
             : {}),
         },
       },
@@ -153,13 +153,13 @@ router.get('/product/:productId/monthly', async (req, res) => {
           status: 'completed',
           ...(startDate || endDate
             ? {
-                purchaseDate: {
-                  ...(startDate && { $gte: new Date(startDate) }),
-                  ...(endDate && {
-                    $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
-                  }),
-                },
-              }
+              purchaseDate: {
+                ...(startDate && { $gte: new Date(startDate) }),
+                ...(endDate && {
+                  $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
+                }),
+              },
+            }
             : {}),
         },
       },
@@ -191,13 +191,13 @@ router.get('/product/:productId/monthly', async (req, res) => {
           status: 'completed',
           ...(startDate || endDate
             ? {
-                saleDate: {
-                  ...(startDate && { $gte: new Date(startDate) }),
-                  ...(endDate && {
-                    $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
-                  }),
-                },
-              }
+              saleDate: {
+                ...(startDate && { $gte: new Date(startDate) }),
+                ...(endDate && {
+                  $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
+                }),
+              },
+            }
             : {}),
         },
       },
@@ -344,6 +344,65 @@ router.get('/product-status/:productId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching product status data:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// POST look up combos by list of SKUs (barcodes)
+router.post('/combos-lookup', async (req, res) => {
+  try {
+    const { skus } = req.body;
+
+    if (!skus || !Array.isArray(skus)) {
+      return res.status(400).json({ message: 'Invalid SKUs array' });
+    }
+
+    // Normalize input SKUs
+    const cleanInputSkus = [...new Set(skus.filter(s => s).map(s => String(s).trim()))];
+    console.log(`🔍 Lookup request for ${cleanInputSkus.length} SKUs.`);
+
+    // Optimization: Fetch ALL combo barcodes first (lightweight) to do smart matching in JS
+    // This avoids regex limitations and allows handling 0 vs O confusion
+    // We select barcode, name, and products.product to populate
+    const allCombos = await Combo.find({}).select('barcode name products').populate('products.product', 'name _id');
+
+    const comboMap = {};
+
+    // Normalization helper callback: uppercase, replace O with 0
+    // treating letter O and number 0 as identical for matching
+    const normalize = (str) => {
+      if (!str) return '';
+      return str.toUpperCase().replace(/O/g, '0').trim();
+    };
+
+    cleanInputSkus.forEach(inputSku => {
+      const normalizedInput = normalize(inputSku);
+
+      // Find match in allCombos
+      const match = allCombos.find(c => {
+        if (!c.barcode) return false;
+        return normalize(c.barcode) === normalizedInput;
+      });
+
+      if (match) {
+        // We found a match!
+        comboMap[inputSku] = {
+          name: match.name,
+          products: match.products.map(p => ({
+            productId: p.product?._id,
+            productName: p.product?.name || 'Unknown',
+            quantity: p.quantity
+          }))
+        };
+        // Also map the original barcode from DB in case client uses mixed keys
+        comboMap[match.barcode] = comboMap[inputSku];
+      }
+    });
+
+    console.log(`✅ Matched ${Object.keys(comboMap).length} SKUs using fuzzy logic (0/O handled).`);
+    res.json(comboMap);
+  } catch (error) {
+    console.error('Error looking up combos:', error);
     res.status(500).json({ message: error.message });
   }
 });

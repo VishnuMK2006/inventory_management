@@ -1,7 +1,8 @@
 import axios from 'axios';
 //base
-const API_BASE_URL = "https://inventory-management-yeso.onrender.com/api";
-//  const API_BASE_URL = "http://localhost:5000/api";
+// const API_BASE_URL = "https://inventory-management-yexl.onrender.com/api";
+// const API_BASE_URL="https://textile-fovl.onrender.com/api"
+const API_BASE_URL = "http://localhost:5000/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -54,7 +55,7 @@ export const productsAPI = {
         formData.append(key, data[key]);
       }
     });
-    
+
     return api.post('/products', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -71,7 +72,7 @@ export const productsAPI = {
         formData.append(key, data[key]);
       }
     });
-    
+
     return api.put(`/products/${id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -186,6 +187,7 @@ export const reportsAPI = {
   },
   getProductsList: () => api.get('/reports/products/list'),
   getProductStatusData: (productId) => api.get(`/reports/product-status/${productId}`),
+  lookupCombos: (skus) => api.post('/reports/combos-lookup', { skus }),
 };
 
 // Profit & Loss API
@@ -248,6 +250,13 @@ export const uploadedProfitSheetsAPI = {
   deleteRow: (sheetId, rowId) => api.delete(`/uploaded-profit-sheets/${sheetId}/rows/${rowId}`),
   addRow: (sheetId, data) => api.post(`/uploaded-profit-sheets/${sheetId}/rows`, data),
   getSummary: () => api.get('/uploaded-profit-sheets/stats/summary'),
+};
+
+// Global Deductions API
+export const globalDeductionsAPI = {
+  getAll: () => api.get('/global-deductions'),
+  create: (data) => api.post('/global-deductions', data),
+  delete: (id) => api.delete(`/global-deductions/${id}`),
 };
 
 export default api;
