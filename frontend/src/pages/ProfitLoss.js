@@ -1,7 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Alert, Form, Button, Row, Col, Card, Spinner, Modal } from 'react-bootstrap';
+import { 
+  Box, 
+  Paper, 
+  Typography, 
+  Grid, 
+  TextField,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Chip,
+  IconButton
+} from '@mui/material';
 import { profitLossAPI, uploadedProfitSheetsAPI, salesAPI } from '../services/api';
-import styled, { keyframes } from 'styled-components';
 import { FaUpload, FaDownload, FaChartLine, FaCheck, FaTimes, FaFileExcel, FaFilePdf } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import {
@@ -17,212 +41,18 @@ import {
   Line,
 } from 'recharts';
 
-// Animations
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
-
-const slideIn = keyframes`
-  from { transform: translateX(-30px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-`;
-
-const pulse = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-`;
-
-// Styled Components
-const Container = styled.div`
-  padding: 2rem;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 100vh;
-`;
-
-const AnimatedContainer = styled.div`
-  animation: ${fadeIn} 0.6s ease-out;
-`;
-
-const HeaderSection = styled.div`
-  background: white;
-  height: 100px;
-  padding: 2rem;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  animation: ${slideIn} 0.5s ease-out;
-`;
-
-const FilterCard = styled(Card)`
-  border: none;
-  border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  
-  .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 15px 15px 0 0;
-    border: none;
-    font-weight: 600;
-  }
-`;
-
-const GraphCard = styled(Card)`
-  border: none;
-  border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  
-  .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 15px 15px 0 0;
-    border: none;
-    font-weight: 600;
-  }
-`;
-
-const StyledTable = styled(Table)`
-  background: white;
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  
-  thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    
-    th {
-      border: none;
-      padding: 1.2rem;
-      font-weight: 500;
-    }
-  }
-  
-  tbody tr {
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background: rgba(102, 126, 234, 0.1);
-      transform: translateY(-2px);
-    }
-    
-    td {
-      padding: 1.2rem;
-      border-color: #e9ecef;
-    }
-  }
-`;
-
-const PrimaryButton = styled(Button)`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 25px;
-  padding: 0.8rem 2rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  border-radius: 20px;
-  padding: 0.5rem 1.2rem;
-  transition: all 0.3s ease;
-  border: 2px solid #667eea;
-  color: #667eea;
-  background: transparent;
-  
-  &:hover {
-    background: #667eea;
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  }
-`;
-
-const FormGroup = styled(Form.Group)`
-  margin-bottom: 1rem;
-  
-  .form-label {
-    font-weight: 600;
-    color: #4a5568;
-    margin-bottom: 0.5rem;
-  }
-  
-  .form-control {
-    border-radius: 10px;
-    border: 2px solid #e2e8f0;
-    padding: 0.8rem;
-    transition: all 0.3s ease;
-    
-    &:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    }
-  }
-`;
-
-const StatCard = styled(Card)`
-  border: none;
-  border-radius: 15px;
-  text-align: center;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-  }
-  
-  .card-title {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    color: #4a5568;
-  }
-  
-  .card-text {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #667eea;
-  }
-`;
-
-const StatsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-`;
-
-const LoadingSpinner = styled(Spinner)`
-  color: #667eea;
-  width: 3rem;
-  height: 3rem;
-`;
-
-const IconWrapper = styled.span`
-  margin-right: 0.5rem;
-`;
-
-const ProfitBadge = styled.span`
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: ${props => props.profit >= 0 ? '#fff' : '#fff'};
-  background: ${props => props.profit >= 0 ? '#48bb78' : '#e53e3e'};
-`;
+// Theme Colors - Premium Gold & Black
+const THEME = {
+  gold: '#D4AF37',
+  richGold: '#C9A227',
+  softGold: '#E2C878',
+  lightGold: '#F4E3B2',
+  black: '#000000',
+  charcoal: '#1A1A1A',
+  softCharcoal: '#2C2C2C',
+  white: '#FFFFFF',
+  offWhite: '#F8F5F0'
+};
 
 const ProfitLoss = () => {
   const formatCurrency = (value, showZero = true) => {
@@ -894,661 +724,1060 @@ const ProfitLoss = () => {
   };
 
   return (
-    <Container>
-      <AnimatedContainer>
-        <HeaderSection>
-          <Row>
-            <Col>
-              <h4 className="mb-0 d-flex align-items-center">
-                <IconWrapper style={{ fontSize: "1.3rem", marginRight: "0.6rem" }}>💹</IconWrapper>
-                Profit & Loss Analysis
-              </h4>
-            </Col>
-          </Row>
-        </HeaderSection>
+    <Box sx={{ 
+      minHeight: '100vh', 
+      background: `linear-gradient(135deg, ${THEME.offWhite} 0%, ${THEME.lightGold} 100%)`,
+      padding: 4
+    }}>
+      {/* Header */}
+      <Paper
+        elevation={3}
+        sx={{
+          padding: 3,
+          marginBottom: 3,
+          background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
+          borderRadius: 2,
+          border: `2px solid ${THEME.gold}`,
+        }}
+      >
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            color: THEME.gold,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}
+        >
+          💹 Profit & Loss Analysis
+        </Typography>
+      </Paper>
 
-        {error && (
-          <Alert variant="danger" dismissible onClose={() => setError('')}>
-            {error}
-          </Alert>
-        )}
+      {error && (
+        <Alert 
+          severity="error" 
+          onClose={() => setError('')}
+          sx={{ marginBottom: 3 }}
+        >
+          {error}
+        </Alert>
+      )}
 
-        {/* Simple Status Summary */}
-        {(summary || uploadResults.length > 0) && (
-          <StatsGrid>
-            <StatCard>
-              <Card.Title>✅ Delivered ({summary?.statusSummary?.delivered?.count ?? calculateUploadTotals(uploadResults)?.deliveredCount ?? 0})</Card.Title>
-              <Card.Text style={{ color: '#48bb78', fontSize: '1.8rem' }}>
+      {/* Status Summary Cards */}
+      {(summary || uploadResults.length > 0) && (
+        <Grid container spacing={3} sx={{ marginBottom: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper
+              elevation={4}
+              sx={{
+                padding: 3,
+                textAlign: 'center',
+                background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                borderRadius: 2,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 40px rgba(72, 187, 120, 0.4)',
+                }
+              }}
+            >
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginBottom: 1 }}>
+                ✅ Delivered ({summary?.statusSummary?.delivered?.count ?? calculateUploadTotals(uploadResults)?.deliveredCount ?? 0})
+              </Typography>
+              <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700 }}>
                 {formatCurrency(summary?.deliveredPayment || uploadTotals?.deliveredPayment || 0)}
-              </Card.Text>
-            </StatCard>
-            <StatCard>
-              <Card.Title>🔄 RPU ({summary?.statusSummary?.rpu?.count ?? calculateUploadTotals(uploadResults)?.rpuCount ?? 0})</Card.Title>
-              <Card.Text style={{ color: '#e53e3e', fontSize: '1.8rem' }}>
+              </Typography>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper
+              elevation={4}
+              sx={{
+                padding: 3,
+                textAlign: 'center',
+                background: 'linear-gradient(135deg, #e53e3e 0%, #c53030 100%)',
+                borderRadius: 2,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 40px rgba(229, 62, 62, 0.4)',
+                }
+              }}
+            >
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginBottom: 1 }}>
+                🔄 RPU ({summary?.statusSummary?.rpu?.count ?? calculateUploadTotals(uploadResults)?.rpuCount ?? 0})
+              </Typography>
+              <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700 }}>
                 {formatCurrency(summary?.rpuPayment || uploadTotals?.rpuPayment || 0)}
-              </Card.Text>
-            </StatCard>
-            <StatCard>
-              <Card.Title>📦 RTO ({summary?.statusSummary?.rto?.count ?? calculateUploadTotals(uploadResults)?.rtoCount ?? 0})</Card.Title>
-              <Card.Text style={{ color: '#ff6347', fontSize: '1.8rem' }}>
+              </Typography>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper
+              elevation={4}
+              sx={{
+                padding: 3,
+                textAlign: 'center',
+                background: 'linear-gradient(135deg, #ed8936 0%, #dd6b20 100%)',
+                borderRadius: 2,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 40px rgba(237, 137, 54, 0.4)',
+                }
+              }}
+            >
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginBottom: 1 }}>
+                📦 RTO ({summary?.statusSummary?.rto?.count ?? calculateUploadTotals(uploadResults)?.rtoCount ?? 0})
+              </Typography>
+              <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700 }}>
                 {formatCurrency(summary?.rtoPayment || uploadTotals?.rtoPayment || 0)}
-              </Card.Text>
-            </StatCard>
-            <StatCard>
-              <Card.Title>📦 Total Products</Card.Title>
-              <Card.Text style={{ color: '#667eea', fontSize: '1.8rem' }}>
+              </Typography>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper
+              elevation={4}
+              sx={{
+                padding: 3,
+                textAlign: 'center',
+                background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+                borderRadius: 2,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: `0 12px 40px rgba(212, 175, 55, 0.4)`,
+                }
+              }}
+            >
+              <Typography variant="body2" sx={{ color: THEME.charcoal, fontWeight: 600, marginBottom: 1 }}>
+                📦 Total Products
+              </Typography>
+              <Typography variant="h4" sx={{ color: THEME.charcoal, fontWeight: 700 }}>
                 {
-                  // Priority 1: Use backend computed totalProductCount if we have a summary object that contains it
                   summary?.totalProductCount ||
-                  // Priority 2: Use backend computed totalProductCount from the uploadedSheet if selected
                   (uploadedSheet && uploadedSheet.totalProductCount) ||
-                  // Priority 3: Fallback to simple record count if nothing else
                   (summary?.totalRecords || calculateUploadTotals(uploadResults)?.totalProducts || 0)
                 }
-              </Card.Text>
-            </StatCard>
-          </StatsGrid>
-        )}
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      )}
 
-        {/* Filter Section */}
-        <FilterCard>
-          <Card.Header>
-            <IconWrapper>🔍</IconWrapper>
-            Date Range Filter
-          </Card.Header>
-          <Card.Body>
-            <Form>
-              <Row>
-                <Col md={3}>
-                  <FormGroup>
-                    <Form.Label>Start Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      name="startDate"
-                      value={filter.startDate}
-                      onChange={handleFilterChange}
-                    />
-                  </FormGroup>
-                </Col>
-                <Col md={3}>
-                  <FormGroup>
-                    <Form.Label>End Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      name="endDate"
-                      value={filter.endDate}
-                      onChange={handleFilterChange}
-                    />
-                  </FormGroup>
-                </Col>
-                <Col md={3} className="d-flex align-items-end">
-                  <PrimaryButton onClick={fetchProfitLoss} className="w-100">
-                    <FaChartLine /> Fetch Data
-                  </PrimaryButton>
-                </Col>
-                <Col md={3} className="d-flex align-items-end">
-                  <SecondaryButton onClick={clearFilters} className="w-100">
-                    🗑️ Clear
-                  </SecondaryButton>
-                </Col>
-              </Row>
-            </Form>
-          </Card.Body>
-        </FilterCard>
+      {/* Filter Section */}
+      <Paper
+        elevation={3}
+        sx={{
+          padding: 3,
+          marginBottom: 3,
+          background: THEME.white,
+          borderRadius: 2,
+          border: `1px solid ${THEME.softGold}`,
+        }}
+      >
+        <Typography variant="h6" sx={{ marginBottom: 2, color: THEME.charcoal, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+          🔍 Date Range Filter
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              label="Start Date"
+              type="date"
+              name="startDate"
+              value={filter.startDate}
+              onChange={handleFilterChange}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': { borderColor: THEME.gold },
+                  '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                }
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              label="End Date"
+              type="date"
+              name="endDate"
+              value={filter.endDate}
+              onChange={handleFilterChange}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': { borderColor: THEME.gold },
+                  '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                }
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={fetchProfitLoss}
+              sx={{
+                height: '56px',
+                background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+                color: THEME.charcoal,
+                fontWeight: 600,
+                '&:hover': {
+                  background: `linear-gradient(135deg, ${THEME.richGold} 0%, ${THEME.gold} 100%)`,
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 25px rgba(212, 175, 55, 0.3)',
+                }
+              }}
+            >
+              <FaChartLine style={{ marginRight: '8px' }} /> Fetch Data
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={clearFilters}
+              sx={{
+                height: '56px',
+                borderColor: THEME.gold,
+                color: THEME.gold,
+                fontWeight: 600,
+                '&:hover': {
+                  borderColor: THEME.richGold,
+                  background: `rgba(212, 175, 55, 0.1)`,
+                }
+              }}
+            >
+              🗑️ Clear
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
 
-        {/* Excel Upload Section */}
-        <FilterCard>
-          <Card.Header>
-            <IconWrapper>📁</IconWrapper>
-            Upload Excel File
-          </Card.Header>
-          <Card.Body>
-            <Row>
-              <Col md={6}>
-                <FormGroup>
-                  <Form.Label>Choose Excel File</Form.Label>
-                  <Form.Control
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={handleFileUpload}
-                    disabled={loading}
-                  />
-                  <Form.Text className="text-muted">
-                    Columns: Month, S.No., Order Date, Order id, SKU, Quantity, Status, Payment, Payment Date, Payment Status, Purchase Price, Profit, Re-use/Claim, Reused Date, Status of Product, Remarks
-                  </Form.Text>
-                </FormGroup>
-              </Col>
-              <Col md={6} className="d-flex align-items-end">
-                <SecondaryButton onClick={downloadExcelTemplate} className="w-100">
-                  <FaDownload /> Download Template
-                </SecondaryButton>
-              </Col>
-            </Row>
-            <Row className="mt-3">
-              <Col md={8}>
-                <FormGroup>
-                  <Form.Label>Load Saved Uploads</Form.Label>
-                  <Form.Control as="select" value={selectedSheetId || ''} onChange={handleSelectSheet}>
-                    <option value="">-- Select saved upload --</option>
-                    <option value="ALL">All uploads</option>
-                    {(availableSheets || []).map(s => (
-                      <option key={s._id} value={s._id}>{s.fileName} ({s.uploadDate ? new Date(s.uploadDate).toLocaleString() : 'Unknown date'})</option>
-                    ))}
-                  </Form.Control>
-                </FormGroup>
-              </Col>
-              <Col md={4} className="d-flex align-items-end">
-                <SecondaryButton onClick={() => fetchUploadedData(filter.startDate, filter.endDate)} className="w-100">
-                  🔁 Refresh Uploads
-                </SecondaryButton>
-              </Col>
-            </Row>
-          </Card.Body>
-        </FilterCard>
+      {/* Excel Upload Section */}
+      <Paper
+        elevation={3}
+        sx={{
+          padding: 3,
+          marginBottom: 3,
+          background: THEME.white,
+          borderRadius: 2,
+          border: `1px solid ${THEME.softGold}`,
+        }}
+      >
+        <Typography variant="h6" sx={{ marginBottom: 2, color: THEME.charcoal, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+          📁 Upload Excel File
+        </Typography>
+        <Grid container spacing={2} sx={{ marginBottom: 2 }}>
+          <Grid item xs={12} md={6}>
+            <input
+              accept=".xlsx,.xls,.csv"
+              style={{ display: 'none' }}
+              id="excel-file-upload"
+              type="file"
+              onChange={handleFileUpload}
+              disabled={loading}
+            />
+            <label htmlFor="excel-file-upload" style={{ width: '100%' }}>
+              <Button
+                fullWidth
+                variant="outlined"
+                component="span"
+                disabled={loading}
+                sx={{
+                  height: '56px',
+                  borderColor: THEME.gold,
+                  color: THEME.gold,
+                  fontWeight: 600,
+                  '&:hover': {
+                    borderColor: THEME.richGold,
+                    background: `rgba(212, 175, 55, 0.1)`,
+                  }
+                }}
+              >
+                Choose Excel File
+              </Button>
+            </label>
+            <Typography variant="caption" sx={{ display: 'block', marginTop: 1, color: '#666' }}>
+              Columns: Month, S.No., Order Date, Order id, SKU, Quantity, Status, Payment, Payment Date, Payment Status, Purchase Price, Profit, Re-use/Claim, Reused Date, Status of Product, Remarks
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={downloadExcelTemplate}
+              sx={{
+                height: '56px',
+                borderColor: THEME.gold,
+                color: THEME.gold,
+                fontWeight: 600,
+                '&:hover': {
+                  borderColor: THEME.richGold,
+                  background: `rgba(212, 175, 55, 0.1)`,
+                }
+              }}
+            >
+              <FaDownload style={{ marginRight: '8px' }} /> Download Template
+            </Button>
+          </Grid>
+        </Grid>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={8}>
+            <FormControl fullWidth>
+              <InputLabel>Load Saved Uploads</InputLabel>
+              <Select
+                value={selectedSheetId || ''}
+                onChange={handleSelectSheet}
+                label="Load Saved Uploads"
+                sx={{
+                  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: THEME.gold },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: THEME.gold },
+                }}
+              >
+                <MenuItem value="">-- Select saved upload --</MenuItem>
+                <MenuItem value="ALL">All uploads</MenuItem>
+                {(availableSheets || []).map(s => (
+                  <MenuItem key={s._id} value={s._id}>
+                    {s.fileName} ({s.uploadDate ? new Date(s.uploadDate).toLocaleString() : 'Unknown date'})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={() => fetchUploadedData(filter.startDate, filter.endDate)}
+              sx={{
+                height: '56px',
+                borderColor: THEME.gold,
+                color: THEME.gold,
+                fontWeight: 600,
+                '&:hover': {
+                  borderColor: THEME.richGold,
+                  background: `rgba(212, 175, 55, 0.1)`,
+                }
+              }}
+            >
+              🔁 Refresh Uploads
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
 
-        {/* Monthly Profit Chart */}
-        {monthlyData.length > 0 && (
-          <GraphCard>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <span>
-                <IconWrapper>📈</IconWrapper>
-                Monthly Profit Trend
-              </span>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button
-                  size="sm"
-                  variant="outline-primary"
-                  onClick={() => exportToExcel(monthlyData, 'monthly_profit_report.xlsx')}
-                  title="Export to Excel"
-                >
-                  <FaFileExcel /> Excel
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline-danger"
-                  onClick={() => exportToPDF(monthlyData, 'monthly_profit_report.pdf')}
-                  title="Export to PDF"
-                >
-                  <FaFilePdf /> PDF
-                </Button>
-              </div>
-            </Card.Header>
-            <Card.Body>
-              {loading ? (
-                <div className="text-center py-5">
-                  <LoadingSpinner animation="border" />
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={monthlyData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value) => (value == null || Number.isNaN(Number(value)) ? '-' : `$${Number(value).toFixed(2)}`)}
-                      contentStyle={{
-                        backgroundColor: '#f5f7fa',
-                        border: '2px solid #667eea',
-                        borderRadius: '10px'
-                      }}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="totalProfit" stroke="#667eea" name="Total Profit" strokeWidth={2} />
-                    <Line type="monotone" dataKey="deliveredProfit" stroke="#48bb78" name="Delivered Profit" strokeWidth={2} />
-                    <Line type="monotone" dataKey="rpuProfit" stroke="#e53e3e" name="RPU Loss" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </Card.Body>
-          </GraphCard>
-        )}
+      {/* Monthly Profit Chart */}
+      {monthlyData.length > 0 && (
+        <Paper
+          elevation={3}
+          sx={{
+            padding: 3,
+            marginBottom: 3,
+            background: THEME.white,
+            borderRadius: 2,
+            border: `1px solid ${THEME.softGold}`,
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+            <Typography variant="h6" sx={{ color: THEME.charcoal, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+              📈 Monthly Profit Trend
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => exportToExcel(monthlyData, 'monthly_profit_report.xlsx')}
+                sx={{
+                  borderColor: '#48bb78',
+                  color: '#48bb78',
+                  '&:hover': { borderColor: '#38a169', background: 'rgba(72, 187, 120, 0.1)' }
+                }}
+              >
+                <FaFileExcel style={{ marginRight: '4px' }} /> Excel
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => exportToPDF(monthlyData, 'monthly_profit_report.pdf')}
+                sx={{
+                  borderColor: '#e53e3e',
+                  color: '#e53e3e',
+                  '&:hover': { borderColor: '#c53030', background: 'rgba(229, 62, 62, 0.1)' }
+                }}
+              >
+                <FaFilePdf style={{ marginRight: '4px' }} /> PDF
+              </Button>
+            </Box>
+          </Box>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', padding: 5 }}>
+              <CircularProgress sx={{ color: THEME.gold }} />
+            </Box>
+          ) : (
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={monthlyData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip
+                  formatter={(value) => (value == null || Number.isNaN(Number(value)) ? '-' : `$${Number(value).toFixed(2)}`)}
+                  contentStyle={{
+                    backgroundColor: THEME.offWhite,
+                    border: `2px solid ${THEME.gold}`,
+                    borderRadius: '10px'
+                  }}
+                />
+                <Legend />
+                <Line type="monotone" dataKey="totalProfit" stroke={THEME.gold} name="Total Profit" strokeWidth={2} />
+                <Line type="monotone" dataKey="deliveredProfit" stroke="#48bb78" name="Delivered Profit" strokeWidth={2} />
+                <Line type="monotone" dataKey="rpuProfit" stroke="#e53e3e" name="RPU Loss" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </Paper>
+      )}
 
-        {/* Profit/Loss Data Table */}
-        {profitData.length > 0 && (
-          <GraphCard>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <span>
-                <IconWrapper>📊</IconWrapper>
-                Profit/Loss Breakdown
-              </span>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button
-                  size="sm"
-                  variant="outline-primary"
-                  onClick={() => exportToExcel(profitData, 'profit_loss_database_report.xlsx')}
-                  title="Export to Excel"
-                >
-                  <FaFileExcel /> Excel
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline-danger"
-                  onClick={() => exportToPDF(profitData, 'profit_loss_database_report.pdf')}
-                  title="Export to PDF"
-                >
-                  <FaFilePdf /> PDF
-                </Button>
-              </div>
-            </Card.Header>
-            <Card.Body>
-              <div style={{ overflowX: 'auto' }}>
-                <StyledTable responsive>
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Product/Combo</th>
-                      <th>Cost Price</th>
-                      <th>Sold Price</th>
-                      <th>Quantity</th>
-                      <th>Profit/Loss</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {profitData.slice(0, 20).map((item, index) => (
-                      <tr key={index}>
-                        <td>{item.date ? new Date(item.date).toLocaleDateString() : '-'}</td>
-                        <td>{item.product}</td>
-                        <td>{formatCurrency(item.costPrice)}</td>
-                        <td>{formatCurrency(item.soldPrice)}</td>
-                        <td>{item.quantity}</td>
-                        <td>
-                          <ProfitBadge profit={Number(item.profitTotal ?? 0)}>
-                            {formatCurrency(item.profitTotal)}
-                          </ProfitBadge>
-                        </td>
-                        <td>
-                          {item.status === 'rpu' ? (
-                            <span style={{ color: '#e53e3e' }}>🔄 RPU</span>
-                          ) : (
-                            <span style={{ color: '#48bb78' }}>✅ Delivered</span>
-                          )}
-                        </td>
-                        <td>
-                          <Button size="sm" variant="outline-secondary" onClick={() => handleEditProfitRowClick(item)} style={{ marginRight: '0.4rem' }}>
-                            ✏️ Edit
-                          </Button>
-                          <Button size="sm" variant="outline-danger" onClick={() => deleteProfitRow(item)}>
-                            🗑️ Delete
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </StyledTable>
-              </div>
-              <div style={{ marginTop: '1rem', textAlign: 'center', color: '#666' }}>
-                Showing {profitData.slice(0, 20).length} of {profitData.length} records
-              </div>
-            </Card.Body>
-          </GraphCard>
-        )}
+      {/* Profit/Loss Data Table */}
+      {profitData.length > 0 && (
+        <Paper
+          elevation={3}
+          sx={{
+            padding: 3,
+            marginBottom: 3,
+            background: THEME.white,
+            borderRadius: 2,
+            border: `1px solid ${THEME.softGold}`,
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+            <Typography variant="h6" sx={{ color: THEME.charcoal, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+              📊 Profit/Loss Breakdown
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => exportToExcel(profitData, 'profit_loss_database_report.xlsx')}
+                sx={{
+                  borderColor: '#48bb78',
+                  color: '#48bb78',
+                  '&:hover': { borderColor: '#38a169', background: 'rgba(72, 187, 120, 0.1)' }
+                }}
+              >
+                <FaFileExcel style={{ marginRight: '4px' }} /> Excel
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => exportToPDF(profitData, 'profit_loss_database_report.pdf')}
+                sx={{
+                  borderColor: '#e53e3e',
+                  color: '#e53e3e',
+                  '&:hover': { borderColor: '#c53030', background: 'rgba(229, 62, 62, 0.1)' }
+                }}
+              >
+                <FaFilePdf style={{ marginRight: '4px' }} /> PDF
+              </Button>
+            </Box>
+          </Box>
+          <TableContainer sx={{ maxHeight: 600 }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Date</TableCell>
+                  <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Product/Combo</TableCell>
+                  <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Cost Price</TableCell>
+                  <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Sold Price</TableCell>
+                  <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Quantity</TableCell>
+                  <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Profit/Loss</TableCell>
+                  <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Status</TableCell>
+                  <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {profitData.slice(0, 20).map((item, index) => (
+                  <TableRow 
+                    key={index}
+                    sx={{
+                      '&:hover': {
+                        background: `rgba(212, 175, 55, 0.1)`,
+                      }
+                    }}
+                  >
+                    <TableCell>{item.date ? new Date(item.date).toLocaleDateString() : '-'}</TableCell>
+                    <TableCell>{item.product}</TableCell>
+                    <TableCell>{formatCurrency(item.costPrice)}</TableCell>
+                    <TableCell>{formatCurrency(item.soldPrice)}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={formatCurrency(item.profitTotal)}
+                        sx={{
+                          background: Number(item.profitTotal ?? 0) >= 0 ? '#48bb78' : '#e53e3e',
+                          color: THEME.white,
+                          fontWeight: 600
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {item.status === 'rpu' ? (
+                        <Typography sx={{ color: '#e53e3e', fontWeight: 600 }}>🔄 RPU</Typography>
+                      ) : (
+                        <Typography sx={{ color: '#48bb78', fontWeight: 600 }}>✅ Delivered</Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleEditProfitRowClick(item)}
+                          sx={{
+                            borderColor: THEME.gold,
+                            color: THEME.gold,
+                            minWidth: 'auto',
+                            '&:hover': { borderColor: THEME.richGold }
+                          }}
+                        >
+                          ✏️ Edit
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => deleteProfitRow(item)}
+                          sx={{
+                            borderColor: '#e53e3e',
+                            color: '#e53e3e',
+                            minWidth: 'auto',
+                            '&:hover': { borderColor: '#c53030' }
+                          }}
+                        >
+                          🗑️ Delete
+                        </Button>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <Typography variant="body2" sx={{ marginTop: 2, textAlign: 'center', color: '#666' }}>
+            Showing {profitData.slice(0, 20).length} of {profitData.length} records
+          </Typography>
+        </Paper>
+      )}
 
-        {/* Uploaded Data Table */}
-        {uploadResults.length > 0 && (
-          <GraphCard>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <span>
-                <IconWrapper>📊</IconWrapper>
-                Uploaded Profit/Loss Data ({uploadResults.length} records)
-              </span>
-              {(() => {
-                const totals = calculateUploadTotals(uploadResults);
-                return totals && (
-                    <div style={{ fontSize: '0.9rem', textAlign: 'right' }}>
-                      <div style={{ color: '#667eea', fontWeight: '600' }}>
-                        📦 {totals.totalProducts} products | 💰 {formatCurrency(totals.totalPayment)}
-                      </div>
-                    <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.2rem' }}>
-                      Payment: {formatCurrency(totals.totalPayment)}
-                    </div>
-                  </div>
-                );
-              })()
-              }
-            </Card.Header>
-            <Card.Body>
-              <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                <StyledTable responsive striped size="sm">
-                  <thead>
-                    <tr>
-                      <th>Month</th>
-                      <th>S.No.</th>
-                      <th>Order Date</th>
-                      <th>Order id</th>
-                      <th>SKU</th>
-                      <th>Quantity</th>
-                      <th>Status</th>
-                      <th>Payment</th>
-                      <th>Payment Date</th>
-                      <th>Payment Status</th>
-                      <th>Purchase Price</th>
-                      <th>Profit</th>
-                      <th>Re-use / Claim</th>
-                      <th>Reused Date</th>
-                      <th>Status of Product</th>
-                      <th>Remarks</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {uploadResults.map((result, index) => (
-                      <tr key={index}>
-                        <td>{result.Month || result.month || '-'}</td>
-                        <td>{result['S.No.'] || result.sno || '-'}</td>
-                        <td>{result['Order Date'] || result.orderDate || '-'}</td>
-                        <td>{result['Order id'] || result.orderId || '-'}</td>
-                        <td>{result.SKU || result.sku || '-'}</td>
-                        <td>{result.Quantity || result.quantity || '-'}</td>
-                        <td>
-                          {(() => {
-                            const status = (result.Status || result.status || '').toLowerCase().trim();
-                            if (status === 'delivered' || status === 'delivery') {
-                              return <span style={{ color: '#28a745', fontWeight: '600' }}>✅ Delivered</span>;
-                            } else if (status === 'rpu' || status === 'returned' || status === 'rpo') {
-                              return <span style={{ color: '#dc3545', fontWeight: '600' }}>🔄 RPU</span>;
-                            } else if (status === 'rto' || status === 'return to origin') {
-                              return <span style={{ color: '#ff6347', fontWeight: '600' }}>📦 RTO</span>;
-                            } else {
-                              return <span style={{ color: '#6c757d' }}>{result.Status || result.status || '-'}</span>;
-                            }
-                          })()
-                          }</td>
-                        <td>{result.Payment || result.payment || '-'}</td>
-                        <td>{result['Payment Date'] || result.paymentDate || '-'}</td>
-                        <td>{result['Payment Status'] || result.paymentStatus || '-'}</td>
-                        <td>{result['Purchase Price'] || result.purchasePrice || '-'}</td>
-                        <td>{result.Profit || result.profit || '-'}</td>
-                        <td>{result['Re-use / Claim'] || result.reuseOrClaim || '-'}</td>
-                        <td>{result['Reused Date'] || result.reusedDate || '-'}</td>
-                        <td>{result['Status of Product'] || result.statusOfProduct || '-'}</td>
-                        <td>{result.Remarks || result.remarks || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </StyledTable>
-              </div>
-            </Card.Body>
-          </GraphCard>
-        )}
-
-        {/* Upload Results Modal */}
-        <Modal show={showModal} onHide={() => setShowModal(false)} size="xl">
-          <Modal.Header closeButton>
-            <Modal.Title>
-              📊 Upload Results & Export
-              {(() => {
-                const totals = calculateUploadTotals(uploadResults);
-                return totals && (
-                  <span style={{ fontSize: '0.8rem', fontWeight: 'normal', marginLeft: '1rem', color: '#666' }}>
-                    ({totals.totalProducts} products, {formatCurrency(totals.totalPayment)} total)
-                  </span>
-                );
-              })()
-              }
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {/* Simple Upload Summary */}
+      {/* Uploaded Data Table */}
+      {uploadResults.length > 0 && (
+        <Paper
+          elevation={3}
+          sx={{
+            padding: 3,
+            marginBottom: 3,
+            background: THEME.white,
+            borderRadius: 2,
+            border: `1px solid ${THEME.softGold}`,
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+            <Typography variant="h6" sx={{ color: THEME.charcoal, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+              📊 Uploaded Profit/Loss Data ({uploadResults.length} records)
+            </Typography>
             {(() => {
               const totals = calculateUploadTotals(uploadResults);
               return totals && (
-                <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '10px' }}>
-                  <Row>
-                    <Col md={3}>
-                      <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Delivered Payment</p>
-                        <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: '#28a745' }}>
-                          {formatCurrency(totals.deliveredPayment)}
-                        </p>
-                    </Col>
-                    <Col md={3}>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>RPU Payment</p>
-                        <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: '#dc3545' }}>
-                          {formatCurrency(totals.rpuPayment)}
-                        </p>
-                    </Col>
-                    <Col md={3}>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>RTO Payment</p>
-                        <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: '#ff6347' }}>
-                          {formatCurrency(totals.rtoPayment)}
-                        </p>
-                    </Col>
-                    <Col md={3}>
-                      <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>Total Products</p>
-                      <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: '#667eea' }}>
-                        {totals.totalProducts}
-                      </p>
-                    </Col>
-                  </Row>
-                </div>
+                <Box sx={{ textAlign: 'right' }}>
+                  <Typography variant="body2" sx={{ color: THEME.gold, fontWeight: 600 }}>
+                    📦 {totals.totalProducts} products | 💰 {formatCurrency(totals.totalPayment)}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#666' }}>
+                    Payment: {formatCurrency(totals.totalPayment)}
+                  </Typography>
+                </Box>
               );
-            })()
-            }
-
-            <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-              <StyledTable responsive striped size="sm">
-                <thead>
-                  <tr>
-                    <th>Month</th>
-                    <th>S.No.</th>
-                    <th>Order Date</th>
-                    <th>Order id</th>
-                    <th>SKU</th>
-                    <th>Quantity</th>
-                    <th>Status</th>
-                    <th>Payment</th>
-                    <th>Payment Date</th>
-                    <th>Payment Status</th>
-                    <th>Purchase Price</th>
-                    <th>Profit</th>
-                    <th>Re-use / Claim</th>
-                    <th>Reused Date</th>
-                    <th>Status of Product</th>
-                    <th>Remarks</th>
-                    <th>Actions</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {uploadResults.map((result, index) => (
-                    <tr key={index}>
-                      <td>{result.Month || result.month || '-'}</td>
-                      <td>{result['S.No.'] || result.sno || result.serialNumber || '-'}</td>
-                      <td>{result['Order Date'] || result.orderDate || '-'}</td>
-                      <td>{result['Order id'] || result.orderId || result.orderid || '-'}</td>
-                      <td>{result.SKU || result.sku || '-'}</td>
-                      <td>{result.Quantity || result.quantity || '-'}</td>
-                      <td>
-                        {(() => {
-                          const status = (result.Status || result.status || '').toLowerCase().trim();
-                          if (status === 'delivered' || status === 'delivery') {
-                            return <span style={{ color: '#28a745', fontWeight: '600' }}>✅ Delivered</span>;
-                          } else if (status === 'rpu' || status === 'returned' || status === 'rpo') {
-                            return <span style={{ color: '#dc3545', fontWeight: '600' }}>🔄 RPU</span>;
-                          } else if (status === 'rto' || status === 'return to origin') {
-                            return <span style={{ color: '#ff6347', fontWeight: '600' }}>📦 RTO</span>;
-                          } else {
-                            return <span style={{ color: '#6c757d' }}>{result.Status || result.status || '-'}</span>;
-                          }
-                        })()
-                        }</td>
-                      <td>{result.Payment || result.payment || '-'}</td>
-                      <td>{result['Payment Date'] || result.paymentDate || '-'}</td>
-                      <td>{result['Payment Status'] || result.paymentStatus || '-'}</td>
-                      <td>{result['Purchase Price'] || result.purchasePrice || '-'}</td>
-                      <td>{result.Profit || result.profit || '-'}</td>
-                      <td>{result['Re-use / Claim'] || result.reuseOrClaim || '-'}</td>
-                      <td>{result['Reused Date'] || result.reusedDate || '-'}</td>
-                      <td>{result['Status of Product'] || result.statusOfProduct || '-'}</td>
-                      <td>{result.Remarks || result.remarks || '-'}</td>
-                      <td>
-                        <Button size="sm" variant="outline-secondary" onClick={() => handleEditClick(result)} style={{ marginRight: '0.4rem' }}>
-                          ✏️ Edit
-                        </Button>
-                        <Button size="sm" variant="outline-danger" onClick={() => deleteRow(result._id || result.id)}>
-                          🗑️ Delete
-                        </Button>
-                      </td>
-                      <td>
-                        <Button size="sm" variant="outline-secondary" onClick={() => handleEditClick(result)} style={{ marginRight: '0.4rem' }}>
-                          ✏️ Edit
-                        </Button>
-                        <Button size="sm" variant="outline-danger" onClick={() => deleteRow(result._id || result.id)}>
-                          🗑️ Delete
-                        </Button>
-                      </td>
-                    </tr>
+            })()}
+          </Box>
+          <TableContainer sx={{ maxHeight: 500 }}>
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  {['Month', 'S.No.', 'Order Date', 'Order id', 'SKU', 'Quantity', 'Status', 'Payment', 'Payment Date', 'Payment Status', 'Purchase Price', 'Profit', 'Re-use / Claim', 'Reused Date', 'Status of Product', 'Remarks'].map((header) => (
+                    <TableCell key={header} sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      {header}
+                    </TableCell>
                   ))}
-                </tbody>
-              </StyledTable>
-            </div>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              variant="outline-primary"
-              onClick={() => exportToExcel(uploadResults, 'profit_loss_upload_report.xlsx')}
-            >
-              <FaFileExcel /> Export to Excel
-            </Button>
-            <Button
-              variant="outline-danger"
-              onClick={() => exportToPDF(uploadResults, 'profit_loss_upload_report.pdf')}
-            >
-              <FaFilePdf /> Export to PDF
-            </Button>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Close
-            </Button>
-          </Modal.Footer>
-        </Modal>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {uploadResults.map((result, index) => {
+                  const status = (result.Status || result.status || '').toLowerCase().trim();
+                  let statusDisplay;
+                  if (status === 'delivered' || status === 'delivery') {
+                    statusDisplay = <Typography sx={{ color: '#28a745', fontWeight: 600, fontSize: '0.875rem' }}>✅ Delivered</Typography>;
+                  } else if (status === 'rpu' || status === 'returned' || status === 'rpo') {
+                    statusDisplay = <Typography sx={{ color: '#dc3545', fontWeight: 600, fontSize: '0.875rem' }}>🔄 RPU</Typography>;
+                  } else if (status === 'rto' || status === 'return to origin') {
+                    statusDisplay = <Typography sx={{ color: '#ff6347', fontWeight: 600, fontSize: '0.875rem' }}>📦 RTO</Typography>;
+                  } else {
+                    statusDisplay = <Typography sx={{ color: '#6c757d', fontSize: '0.875rem' }}>{result.Status || result.status || '-'}</Typography>;
+                  }
 
-        {/* Edit Row Modal */}
-        <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>✏️ Edit Row</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {editingRow && (
-              <Form>
-                <Row>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Order id</Form.Label>
-                      <Form.Control value={editingRow.orderId || editingRow['Order id'] || ''} onChange={(e) => handleEditChange('orderId', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Order Date</Form.Label>
-                      <Form.Control type="date" value={editingRow.orderDate || ''} onChange={(e) => handleEditChange('orderDate', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>SKU</Form.Label>
-                      <Form.Control value={editingRow.SKU || editingRow.sku || editingRow.sku || ''} onChange={(e) => handleEditChange('sku', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Quantity</Form.Label>
-                      <Form.Control value={editingRow.Quantity || editingRow.quantity || ''} onChange={(e) => handleEditChange('quantity', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Status</Form.Label>
-                      <Form.Control value={editingRow.Status || editingRow.status || ''} onChange={(e) => handleEditChange('status', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Payment</Form.Label>
-                      <Form.Control value={editingRow.Payment || editingRow.payment || ''} onChange={(e) => handleEditChange('payment', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Purchase Price</Form.Label>
-                      <Form.Control value={editingRow['Purchase Price'] || editingRow.purchasePrice || editingRow.purchasePrice || ''} onChange={(e) => handleEditChange('purchasePrice', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                  <Col md={6}>
-                    <FormGroup>
-                      <Form.Label>Profit</Form.Label>
-                      <Form.Control value={editingRow.Profit || editingRow.profit || ''} onChange={(e) => handleEditChange('profit', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col>
-                    <FormGroup>
-                      <Form.Label>Remarks</Form.Label>
-                      <Form.Control as="textarea" rows={3} value={editingRow.Remarks || editingRow.remarks || ''} onChange={(e) => handleEditChange('remarks', e.target.value)} />
-                    </FormGroup>
-                  </Col>
-                </Row>
-              </Form>
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            <PrimaryButton onClick={saveEditedRow} disabled={loading}>Save</PrimaryButton>
-            <SecondaryButton onClick={() => setShowEditModal(false)}>Cancel</SecondaryButton>
-          </Modal.Footer>
-        </Modal>
+                  return (
+                    <TableRow 
+                      key={index}
+                      sx={{
+                        '&:hover': {
+                          background: `rgba(212, 175, 55, 0.1)`,
+                        }
+                      }}
+                    >
+                      <TableCell>{result.Month || result.month || '-'}</TableCell>
+                      <TableCell>{result['S.No.'] || result.sno || '-'}</TableCell>
+                      <TableCell>{result['Order Date'] || result.orderDate || '-'}</TableCell>
+                      <TableCell>{result['Order id'] || result.orderId || '-'}</TableCell>
+                      <TableCell>{result.SKU || result.sku || '-'}</TableCell>
+                      <TableCell>{result.Quantity || result.quantity || '-'}</TableCell>
+                      <TableCell>{statusDisplay}</TableCell>
+                      <TableCell>{result.Payment || result.payment || '-'}</TableCell>
+                      <TableCell>{result['Payment Date'] || result.paymentDate || '-'}</TableCell>
+                      <TableCell>{result['Payment Status'] || result.paymentStatus || '-'}</TableCell>
+                      <TableCell>{result['Purchase Price'] || result.purchasePrice || '-'}</TableCell>
+                      <TableCell>{result.Profit || result.profit || '-'}</TableCell>
+                      <TableCell>{result['Re-use / Claim'] || result.reuseOrClaim || '-'}</TableCell>
+                      <TableCell>{result['Reused Date'] || result.reusedDate || '-'}</TableCell>
+                      <TableCell>{result['Status of Product'] || result.statusOfProduct || '-'}</TableCell>
+                      <TableCell>{result.Remarks || result.remarks || '-'}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
 
-        {/* Edit Profit Row Modal */}
-        <Modal show={showEditProfitModal} onHide={() => setShowEditProfitModal(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>✏️ Edit Profit Row</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {editingProfitRow && (
-              <Form>
-                <Row>
-                  <Col md={4}>
-                    <FormGroup>
-                      <Form.Label>SKU / Barcode</Form.Label>
-                      <Form.Control disabled value={editingProfitRow.item?.barcode || editingProfitRow.item?.productName || ''} />
-                    </FormGroup>
-                  </Col>
-                  <Col md={4}>
-                    <FormGroup>
-                      <Form.Label>Quantity</Form.Label>
-                      <Form.Control type="number" value={editingProfitRow.item?.quantity || 0} onChange={(e) => handleEditProfitRowChange('quantity', Number(e.target.value))} />
-                    </FormGroup>
-                  </Col>
-                  <Col md={4}>
-                    <FormGroup>
-                      <Form.Label>Unit Price</Form.Label>
-                      <Form.Control type="number" value={editingProfitRow.item?.unitPrice || 0} onChange={(e) => handleEditProfitRowChange('unitPrice', Number(e.target.value))} />
-                    </FormGroup>
-                  </Col>
-                </Row>
-              </Form>
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            <PrimaryButton onClick={saveEditedProfitRow} disabled={loading}>Save</PrimaryButton>
-            <SecondaryButton onClick={() => setShowEditProfitModal(false)}>Cancel</SecondaryButton>
-          </Modal.Footer>
-        </Modal>
+      {/* Upload Results Modal - Note: This modal is not being displayed but kept for potential use */}
+      <Dialog
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        maxWidth="xl"
+        fullWidth
+      >
+        <DialogTitle sx={{ background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`, color: THEME.gold }}>
+          <Typography variant="h6" component="div">
+            📊 Upload Results & Export
+            {(() => {
+              const totals = calculateUploadTotals(uploadResults);
+              return totals && (
+                <Typography variant="caption" component="span" sx={{ marginLeft: 2, color: '#999', fontWeight: 'normal' }}>
+                  ({totals.totalProducts} products, {formatCurrency(totals.totalPayment)} total)
+                </Typography>
+              );
+            })()}
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          {/* Upload Summary */}
+          {(() => {
+            const totals = calculateUploadTotals(uploadResults);
+            return totals && (
+              <Box sx={{ marginBottom: 3, marginTop: 2, padding: 2, backgroundColor: THEME.offWhite, borderRadius: 2, border: `1px solid ${THEME.softGold}` }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography variant="body2" sx={{ color: '#666' }}>Delivered Payment</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#28a745' }}>
+                      {formatCurrency(totals.deliveredPayment)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography variant="body2" sx={{ color: '#666' }}>RPU Payment</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#dc3545' }}>
+                      {formatCurrency(totals.rpuPayment)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography variant="body2" sx={{ color: '#666' }}>RTO Payment</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#ff6347' }}>
+                      {formatCurrency(totals.rtoPayment)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography variant="body2" sx={{ color: '#666' }}>Total Products</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: THEME.gold }}>
+                      {totals.totalProducts}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+            );
+          })()}
 
-        {/* Loading State */}
-        {loading && profitData.length === 0 && uploadResults.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <LoadingSpinner animation="border" />
-            <p>Processing...</p>
-          </div>
-        )}
-      </AnimatedContainer>
-    </Container>
+          <TableContainer sx={{ maxHeight: 500 }}>
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  {['Month', 'S.No.', 'Order Date', 'Order id', 'SKU', 'Quantity', 'Status', 'Payment', 'Payment Date', 'Payment Status', 'Purchase Price', 'Profit', 'Re-use / Claim', 'Reused Date', 'Status of Product', 'Remarks', 'Actions'].map((header) => (
+                    <TableCell key={header} sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>
+                      {header}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {uploadResults.map((result, index) => {
+                  const status = (result.Status || result.status || '').toLowerCase().trim();
+                  let statusDisplay;
+                  if (status === 'delivered' || status === 'delivery') {
+                    statusDisplay = <Typography sx={{ color: '#28a745', fontWeight: 600, fontSize: '0.875rem' }}>✅ Delivered</Typography>;
+                  } else if (status === 'rpu' || status === 'returned' || status === 'rpo') {
+                    statusDisplay = <Typography sx={{ color: '#dc3545', fontWeight: 600, fontSize: '0.875rem' }}>🔄 RPU</Typography>;
+                  } else if (status === 'rto' || status === 'return to origin') {
+                    statusDisplay = <Typography sx={{ color: '#ff6347', fontWeight: 600, fontSize: '0.875rem' }}>📦 RTO</Typography>;
+                  } else {
+                    statusDisplay = <Typography sx={{ color: '#6c757d', fontSize: '0.875rem' }}>{result.Status || result.status || '-'}</Typography>;
+                  }
+
+                  return (
+                    <TableRow key={index}>
+                      <TableCell>{result.Month || result.month || '-'}</TableCell>
+                      <TableCell>{result['S.No.'] || result.sno || result.serialNumber || '-'}</TableCell>
+                      <TableCell>{result['Order Date'] || result.orderDate || '-'}</TableCell>
+                      <TableCell>{result['Order id'] || result.orderId || result.orderid || '-'}</TableCell>
+                      <TableCell>{result.SKU || result.sku || '-'}</TableCell>
+                      <TableCell>{result.Quantity || result.quantity || '-'}</TableCell>
+                      <TableCell>{statusDisplay}</TableCell>
+                      <TableCell>{result.Payment || result.payment || '-'}</TableCell>
+                      <TableCell>{result['Payment Date'] || result.paymentDate || '-'}</TableCell>
+                      <TableCell>{result['Payment Status'] || result.paymentStatus || '-'}</TableCell>
+                      <TableCell>{result['Purchase Price'] || result.purchasePrice || '-'}</TableCell>
+                      <TableCell>{result.Profit || result.profit || '-'}</TableCell>
+                      <TableCell>{result['Re-use / Claim'] || result.reuseOrClaim || '-'}</TableCell>
+                      <TableCell>{result['Reused Date'] || result.reusedDate || '-'}</TableCell>
+                      <TableCell>{result['Status of Product'] || result.statusOfProduct || '-'}</TableCell>
+                      <TableCell>{result.Remarks || result.remarks || '-'}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => handleEditClick(result)}
+                            sx={{ borderColor: THEME.gold, color: THEME.gold, minWidth: 'auto' }}
+                          >
+                            ✏️
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => deleteRow(result._id || result.id)}
+                            sx={{ borderColor: '#e53e3e', color: '#e53e3e', minWidth: 'auto' }}
+                          >
+                            🗑️
+                          </Button>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions sx={{ padding: 2, background: THEME.offWhite }}>
+          <Button
+            variant="outlined"
+            onClick={() => exportToExcel(uploadResults, 'profit_loss_upload_report.xlsx')}
+            sx={{ borderColor: '#48bb78', color: '#48bb78' }}
+          >
+            <FaFileExcel style={{ marginRight: '4px' }} /> Export to Excel
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => exportToPDF(uploadResults, 'profit_loss_upload_report.pdf')}
+            sx={{ borderColor: '#e53e3e', color: '#e53e3e' }}
+          >
+            <FaFilePdf style={{ marginRight: '4px' }} /> Export to PDF
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => setShowModal(false)}
+            sx={{ background: THEME.gold, color: THEME.charcoal }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Row Modal */}
+      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`, color: THEME.gold }}>
+          ✏️ Edit Row
+        </DialogTitle>
+        <DialogContent sx={{ marginTop: 2 }}>
+          {editingRow && (
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Order id"
+                  value={editingRow.orderId || editingRow['Order id'] || ''}
+                  onChange={(e) => handleEditChange('orderId', e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&:hover fieldset': { borderColor: THEME.gold },
+                      '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Order Date"
+                  type="date"
+                  value={editingRow.orderDate || ''}
+                  onChange={(e) => handleEditChange('orderDate', e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&:hover fieldset': { borderColor: THEME.gold },
+                      '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="SKU"
+                  value={editingRow.SKU || editingRow.sku || ''}
+                  onChange={(e) => handleEditChange('sku', e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&:hover fieldset': { borderColor: THEME.gold },
+                      '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Quantity"
+                  value={editingRow.Quantity || editingRow.quantity || ''}
+                  onChange={(e) => handleEditChange('quantity', e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&:hover fieldset': { borderColor: THEME.gold },
+                      '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Status"
+                  value={editingRow.Status || editingRow.status || ''}
+                  onChange={(e) => handleEditChange('status', e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&:hover fieldset': { borderColor: THEME.gold },
+                      '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Payment"
+                  value={editingRow.Payment || editingRow.payment || ''}
+                  onChange={(e) => handleEditChange('payment', e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&:hover fieldset': { borderColor: THEME.gold },
+                      '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Purchase Price"
+                  value={editingRow['Purchase Price'] || editingRow.purchasePrice || ''}
+                  onChange={(e) => handleEditChange('purchasePrice', e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&:hover fieldset': { borderColor: THEME.gold },
+                      '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Profit"
+                  value={editingRow.Profit || editingRow.profit || ''}
+                  onChange={(e) => handleEditChange('profit', e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&:hover fieldset': { borderColor: THEME.gold },
+                      '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Remarks"
+                  multiline
+                  rows={3}
+                  value={editingRow.Remarks || editingRow.remarks || ''}
+                  onChange={(e) => handleEditChange('remarks', e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&:hover fieldset': { borderColor: THEME.gold },
+                      '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                    }
+                  }}
+                />
+              </Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ padding: 2, background: THEME.offWhite }}>
+          <Button
+            variant="contained"
+            onClick={saveEditedRow}
+            disabled={loading}
+            sx={{
+              background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+              color: THEME.charcoal,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${THEME.richGold} 0%, ${THEME.gold} 100%)`,
+              }
+            }}
+          >
+            Save
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => setShowEditModal(false)}
+            sx={{
+              borderColor: THEME.gold,
+              color: THEME.gold,
+              '&:hover': {
+                borderColor: THEME.richGold,
+                background: `rgba(212, 175, 55, 0.1)`,
+              }
+            }}
+          >
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Profit Row Modal */}
+      <Dialog open={showEditProfitModal} onClose={() => setShowEditProfitModal(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`, color: THEME.gold }}>
+          ✏️ Edit Profit Row
+        </DialogTitle>
+        <DialogContent sx={{ marginTop: 2 }}>
+          {editingProfitRow && (
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="SKU / Barcode"
+                  disabled
+                  value={editingProfitRow.item?.barcode || editingProfitRow.item?.productName || ''}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Quantity"
+                  type="number"
+                  value={editingProfitRow.item?.quantity || 0}
+                  onChange={(e) => handleEditProfitRowChange('quantity', Number(e.target.value))}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&:hover fieldset': { borderColor: THEME.gold },
+                      '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Unit Price"
+                  type="number"
+                  value={editingProfitRow.item?.unitPrice || 0}
+                  onChange={(e) => handleEditProfitRowChange('unitPrice', Number(e.target.value))}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&:hover fieldset': { borderColor: THEME.gold },
+                      '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                    }
+                  }}
+                />
+              </Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ padding: 2, background: THEME.offWhite }}>
+          <Button
+            variant="contained"
+            onClick={saveEditedProfitRow}
+            disabled={loading}
+            sx={{
+              background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+              color: THEME.charcoal,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${THEME.richGold} 0%, ${THEME.gold} 100%)`,
+              }
+            }}
+          >
+            Save
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => setShowEditProfitModal(false)}
+            sx={{
+              borderColor: THEME.gold,
+              color: THEME.gold,
+              '&:hover': {
+                borderColor: THEME.richGold,
+                background: `rgba(212, 175, 55, 0.1)`,
+              }
+            }}
+          >
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Loading State */}
+      {loading && profitData.length === 0 && uploadResults.length === 0 && (
+        <Box sx={{ textAlign: 'center', padding: 4 }}>
+          <CircularProgress sx={{ color: THEME.gold }} size={60} />
+          <Typography variant="h6" sx={{ marginTop: 2, color: THEME.charcoal }}>
+            Processing...
+          </Typography>
+        </Box>
+      )}
+    </Box>
   );
 };
 

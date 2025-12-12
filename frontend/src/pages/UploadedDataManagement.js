@@ -1,120 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Alert, Form, Button, Row, Col, Card, Spinner, Modal, Badge } from 'react-bootstrap';
+import {
+  Box,
+  Paper,
+  Typography,
+  Grid,
+  TextField,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  CircularProgress,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Chip,
+  IconButton,
+  Card,
+  CardContent
+} from '@mui/material';
 import { uploadedProfitSheetsAPI } from '../services/api';
-import styled from 'styled-components';
 import { FaEye, FaTrash, FaSearch, FaSync, FaDownload } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 
-const Container = styled.div`
-  padding: 2rem;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 100vh;
-`;
-
-const HeaderSection = styled.div`
-  background: white;
-  padding: 2rem;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-`;
-
-const FilterCard = styled(Card)`
-  border: none;
-  border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
-  
-  .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 15px 15px 0 0;
-    border: none;
-    font-weight: 600;
-  }
-`;
-
-const StyledTable = styled(Table)`
-  background: white;
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  
-  thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    
-    th {
-      border: none;
-      padding: 1.2rem;
-      font-weight: 600;
-    }
-  }
-  
-  tbody tr {
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background: #f8f9fa;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    td {
-      padding: 1rem;
-      vertical-align: middle;
-      border: none;
-    }
-  }
-`;
-
-const SummaryCard = styled(Card)`
-  border: none;
-  border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-  background: linear-gradient(135deg, ${props => props.color1} 0%, ${props => props.color2} 100%);
-  color: white;
-  
-  .card-body {
-    padding: 1.5rem;
-  }
-  
-  .summary-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
-  
-  .summary-label {
-    font-size: 0.9rem;
-    opacity: 0.9;
-  }
-`;
-
-const ActionButtonGroup = styled.div`
-    display: flex;
-    gap: 0.5rem;
-    
-    button {
-      padding: 0.4rem 0.8rem;
-      font-size: 0.85rem;
-      border-radius: 5px;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      }
-    }
-  `;
-
-// Add Deductions API Helper (temporary here or moving to services/api.js would be better but keeping here for single file edit constraint if possible, but actually we should use the services)
-// Since we can't edit api.js in this single call easily without a plan change, I'll rely on the fact that I can add the call in the component or assume api.js is updated. 
-// Wait, I should probably just make the request directly or use `uploadedProfitSheetsAPI` if I can extend it. 
-// Let's modify api.js first or just use fetch/axios directly here? 
-// I'll assume I can add functions to `UploadedDataManagement` component for now.
-
+// Theme Colors - Premium Gold & Black
+const THEME = {
+  gold: '#D4AF37',
+  richGold: '#C9A227',
+  softGold: '#E2C878',
+  lightGold: '#F4E3B2',
+  black: '#000000',
+  charcoal: '#1A1A1A',
+  softCharcoal: '#2C2C2C',
+  white: '#FFFFFF',
+  offWhite: '#F8F5F0'
+};
 
 const UploadedDataManagement = () => {
   const [uploads, setUploads] = useState([]);
@@ -382,423 +306,601 @@ const UploadedDataManagement = () => {
   };
 
   return (
-    <Container>
-      <HeaderSection>
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            <h2 style={{ color: '#333', marginBottom: '0.5rem' }}>📊 Uploaded Data Management</h2>
-            <p style={{ color: '#666', marginBottom: 0 }}>View and manage all previously uploaded profit sheets</p>
-          </div>
-          <Button
-            variant="primary"
-            onClick={() => {
-              fetchUploads();
-              fetchSummary();
-            }}
-            className="d-flex align-items-center gap-2"
-          >
-            <FaSync /> Refresh
-          </Button>
-        </div>
-      </HeaderSection>
+    <Box sx={{ 
+      minHeight: '100vh', 
+      background: `linear-gradient(135deg, ${THEME.offWhite} 0%, ${THEME.lightGold} 100%)`,
+      padding: 4
+    }}>
+      {/* Header */}
+      <Paper
+        elevation={3}
+        sx={{
+          padding: 3,
+          marginBottom: 3,
+          background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
+          borderRadius: 2,
+          border: `2px solid ${THEME.gold}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}
+      >
+        <Box>
+          <Typography variant="h4" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 0.5 }}>
+            📊 Uploaded Data Management
+          </Typography>
+          <Typography variant="body2" sx={{ color: THEME.lightGold }}>
+            View and manage all previously uploaded profit sheets
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          onClick={() => {
+            fetchUploads();
+            fetchSummary();
+          }}
+          sx={{
+            background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+            color: THEME.charcoal,
+            fontWeight: 600,
+            '&:hover': {
+              background: `linear-gradient(135deg, ${THEME.richGold} 0%, ${THEME.gold} 100%)`,
+            }
+          }}
+        >
+          <FaSync style={{ marginRight: '8px' }} /> Refresh
+        </Button>
+      </Paper>
 
-      {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
-      {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
+      {error && <Alert severity="error" onClose={() => setError('')} sx={{ marginBottom: 2 }}>{error}</Alert>}
+      {success && <Alert severity="success" onClose={() => setSuccess('')} sx={{ marginBottom: 2 }}>{success}</Alert>}
 
-      {/* Simple Summary Cards */}
+      {/* Summary Cards */}
       {(summary || uploads.length > 0) && (
         <>
-          <Row className="mb-4">
-            <Col md={3}>
-              <SummaryCard color1="#4facfe" color2="#00f2fe">
-                <Card.Body>
-                  <div className="summary-value">
-                    {formatCurrency(
-                      // prefer payment sums from backend summary if provided, otherwise compute from uploads
-                      summary?.paymentSummary?.deliveredPayment ||
-                      calculateAllUploadTotals()?.deliveredPayment || 0
-                    )}
-                  </div>
-                  <div className="summary-label">✅ Delivered Payment</div>
-                </Card.Body>
-              </SummaryCard>
-            </Col>
-            <Col md={3}>
-              <SummaryCard color1="#fa709a" color2="#fee140">
-                <Card.Body>
-                  <div className="summary-value">
-                    {formatCurrency(
-                      summary?.paymentSummary?.rpuPayment ||
-                      calculateAllUploadTotals()?.rpuPayment || 0
-                    )}
-                  </div>
-                  <div className="summary-label">🔄 RPU Payment</div>
-                </Card.Body>
-              </SummaryCard>
-            </Col>
-            <Col md={3}>
-              <SummaryCard color1="#ffa500" color2="#ff6347">
-                <Card.Body onClick={() => setShowGlobalDeductionModal(true)} style={{ cursor: 'pointer', position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: 5, right: 10, fontSize: '1.2rem', color: '#fff' }}>+</div>
-                  <div className="d-flex justify-content-between align-items-start">
-                    <div>
-                      <div className="summary-value">
-                        {formatCurrency(
-                          // Profit = Delivered - RPU - Global Deductions
-                          ((summary?.paymentSummary?.deliveredPayment || calculateAllUploadTotals()?.deliveredPayment || 0) -
-                            (summary?.paymentSummary?.rpuPayment || calculateAllUploadTotals()?.rpuPayment || 0)) -
-                          (globalDeductionsList.reduce((acc, curr) => acc + (curr.amount || 0), 0))
-                        )}
-                      </div>
-                      <div className="summary-label">💰 Net Profit</div>
-                    </div>
-                  </div>
-                </Card.Body>
-              </SummaryCard>
-            </Col>
-            <Col md={3}>
-              <SummaryCard color1="#667eea" color2="#764ba2">
-                <Card.Body>
-                  <div className="summary-value">
-                    {((summary?.statusSummary?.delivered?.count || 0) +
-                      (summary?.statusSummary?.rpu?.count || 0) +
-                      (summary?.statusSummary?.rto?.count || 0)) ||
-                      calculateAllUploadTotals()?.totalProducts || 0}
-                  </div>
-                  <div className="summary-label">📦 Total Products</div>
-                </Card.Body>
-              </SummaryCard>
-            </Col>
-          </Row>
+          <Grid container spacing={3} sx={{ marginBottom: 4 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper
+                elevation={4}
+                sx={{
+                  padding: 3,
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                  borderRadius: 2,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 12px 40px rgba(72, 187, 120, 0.4)',
+                  }
+                }}
+              >
+                <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700, marginBottom: 1 }}>
+                  {formatCurrency(
+                    summary?.paymentSummary?.deliveredPayment ||
+                    calculateAllUploadTotals()?.deliveredPayment || 0
+                  )}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
+                  ✅ Delivered Payment
+                </Typography>
+              </Paper>
+            </Grid>
 
-          <Row className="mb-4">
-            <Col md={6}>
-              <SummaryCard color1="#28a745" color2="#20c997">
-                <Card.Body>
-                  <div className="summary-value">{summary?.totalUploads || 0}</div>
-                  <div className="summary-label">📄 Total Uploaded Spreadsheets</div>
-                </Card.Body>
-              </SummaryCard>
-            </Col>
-            <Col md={6}>
-              <SummaryCard color1="#667eea" color2="#764ba2">
-                <Card.Body>
-                  <div className="summary-value">{formatCurrency(summary?.paymentSummary?.totalPayment || calculateAllUploadTotals()?.totalPayment || 0)}</div>
-                  <div className="summary-label">💰 Total Payment (All Uploads)</div>
-                </Card.Body>
-              </SummaryCard>
-            </Col>
-          </Row>
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper
+                elevation={4}
+                sx={{
+                  padding: 3,
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #e53e3e 0%, #c53030 100%)',
+                  borderRadius: 2,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 12px 40px rgba(229, 62, 62, 0.4)',
+                  }
+                }}
+              >
+                <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700, marginBottom: 1 }}>
+                  {formatCurrency(
+                    summary?.paymentSummary?.rpuPayment ||
+                    calculateAllUploadTotals()?.rpuPayment || 0
+                  )}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
+                  🔄 RPU Payment
+                </Typography>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper
+                elevation={4}
+                onClick={() => setShowGlobalDeductionModal(true)}
+                sx={{
+                  padding: 3,
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #ed8936 0%, #dd6b20 100%)',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 12px 40px rgba(237, 137, 54, 0.4)',
+                  }
+                }}
+              >
+                <Typography sx={{ position: 'absolute', top: 10, right: 15, fontSize: '1.2rem', color: THEME.white }}>+</Typography>
+                <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700, marginBottom: 1 }}>
+                  {formatCurrency(
+                    ((summary?.paymentSummary?.deliveredPayment || calculateAllUploadTotals()?.deliveredPayment || 0) -
+                      (summary?.paymentSummary?.rpuPayment || calculateAllUploadTotals()?.rpuPayment || 0)) -
+                    (globalDeductionsList.reduce((acc, curr) => acc + (curr.amount || 0), 0))
+                  )}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
+                  💰 Net Profit
+                </Typography>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper
+                elevation={4}
+                sx={{
+                  padding: 3,
+                  textAlign: 'center',
+                  background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+                  borderRadius: 2,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: `0 12px 40px rgba(212, 175, 55, 0.4)`,
+                  }
+                }}
+              >
+                <Typography variant="h4" sx={{ color: THEME.charcoal, fontWeight: 700, marginBottom: 1 }}>
+                  {((summary?.statusSummary?.delivered?.count || 0) +
+                    (summary?.statusSummary?.rpu?.count || 0) +
+                    (summary?.statusSummary?.rto?.count || 0)) ||
+                    calculateAllUploadTotals()?.totalProducts || 0}
+                </Typography>
+                <Typography variant="body2" sx={{ color: THEME.charcoal, fontWeight: 600 }}>
+                  📦 Total Products
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+
+          <Grid container spacing={3} sx={{ marginBottom: 4 }}>
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={4}
+                sx={{
+                  padding: 3,
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                  borderRadius: 2,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 12px 40px rgba(40, 167, 69, 0.4)',
+                  }
+                }}
+              >
+                <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700, marginBottom: 1 }}>
+                  {summary?.totalUploads || 0}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
+                  📄 Total Uploaded Spreadsheets
+                </Typography>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={4}
+                sx={{
+                  padding: 3,
+                  textAlign: 'center',
+                  background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+                  borderRadius: 2,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: `0 12px 40px rgba(212, 175, 55, 0.4)`,
+                  }
+                }}
+              >
+                <Typography variant="h4" sx={{ color: THEME.charcoal, fontWeight: 700, marginBottom: 1 }}>
+                  {formatCurrency(summary?.paymentSummary?.totalPayment || calculateAllUploadTotals()?.totalPayment || 0)}
+                </Typography>
+                <Typography variant="body2" sx={{ color: THEME.charcoal, fontWeight: 600 }}>
+                  💰 Total Payment (All Uploads)
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
 
           {/* Global Deductions Table */}
-          <h6 className="mt-4 mb-3 d-flex justify-content-between align-items-center">
-            <span>📉 Global Deductions</span>
-            <Button size="sm" variant="outline-primary" onClick={() => setShowGlobalDeductionModal(true)}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, marginBottom: 2 }}>
+            <Typography variant="h6" sx={{ color: THEME.charcoal, fontWeight: 600 }}>
+              📉 Global Deductions
+            </Typography>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => setShowGlobalDeductionModal(true)}
+              sx={{
+                borderColor: THEME.gold,
+                color: THEME.gold,
+                '&:hover': { borderColor: THEME.richGold, background: `rgba(212, 175, 55, 0.1)` }
+              }}
+            >
               + Add Deduction
             </Button>
-          </h6>
+          </Box>
           {globalDeductionsList.length > 0 ? (
-            <div className="mb-4">
-              <Table striped bordered hover size="sm">
-                <thead>
-                  <tr>
-                    <th>Reason</th>
-                    <th>Amount</th>
-                    <th>Date</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <TableContainer component={Paper} sx={{ marginBottom: 4, borderRadius: 2, border: `1px solid ${THEME.softGold}` }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Reason</TableCell>
+                    <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Amount</TableCell>
+                    <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Date</TableCell>
+                    <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {globalDeductionsList.map((deduction, idx) => (
-                    <tr key={idx}>
-                      <td>{deduction.reason}</td>
-                      <td>{formatCurrency(deduction.amount)}</td>
-                      <td>{new Date(deduction.date).toLocaleDateString()}</td>
-                      <td>
-                        <Button
-                          variant="danger"
-                          size="sm"
+                    <TableRow key={idx} sx={{ '&:hover': { background: `rgba(212, 175, 55, 0.1)` } }}>
+                      <TableCell>{deduction.reason}</TableCell>
+                      <TableCell>{formatCurrency(deduction.amount)}</TableCell>
+                      <TableCell>{new Date(deduction.date).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <IconButton
+                          size="small"
                           onClick={() => handleDeleteGlobalDeduction(deduction._id)}
+                          sx={{ color: '#e53e3e' }}
                         >
                           <FaTrash />
-                        </Button>
-                      </td>
-                    </tr>
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
+                </TableBody>
               </Table>
-            </div>
+            </TableContainer>
           ) : (
-            <p className="text-muted mb-4">No global deductions added.</p>
+            <Typography variant="body2" sx={{ color: '#999', marginBottom: 4 }}>No global deductions added.</Typography>
           )}
 
         </>
       )}
 
       {/* Filter Card */}
-      <FilterCard>
-        <Card.Header>🔍 Search & Filter</Card.Header>
-        <Card.Body>
-          <Row className="g-3">
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label>Search File Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Search by filename..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="rounded-3"
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label>Date Range</Form.Label>
-                <div className="d-flex gap-2">
-                  <Form.Control
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="rounded-3"
-                  />
-                  <Form.Control
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="rounded-3"
-                  />
-                </div>
-              </Form.Group>
-            </Col>
-          </Row>
-        </Card.Body>
-      </FilterCard>
+      <Paper
+        elevation={3}
+        sx={{
+          padding: 3,
+          marginBottom: 3,
+          background: THEME.white,
+          borderRadius: 2,
+          border: `1px solid ${THEME.softGold}`,
+        }}
+      >
+        <Typography variant="h6" sx={{ marginBottom: 2, color: THEME.charcoal, fontWeight: 600 }}>
+          🔍 Search & Filter
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Search File Name"
+              placeholder="Search by filename..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': { borderColor: THEME.gold },
+                  '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                }
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography variant="body2" sx={{ marginBottom: 1, color: THEME.charcoal, fontWeight: 600 }}>Date Range</Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                fullWidth
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&:hover fieldset': { borderColor: THEME.gold },
+                    '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                  }
+                }}
+              />
+              <TextField
+                fullWidth
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&:hover fieldset': { borderColor: THEME.gold },
+                    '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                  }
+                }}
+              />
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
 
       {/* Uploads Table */}
       {loading ? (
-        <div className="text-center py-5">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3">Loading uploads...</p>
-        </div>
+        <Box sx={{ textAlign: 'center', padding: 5 }}>
+          <CircularProgress sx={{ color: THEME.gold }} size={60} />
+          <Typography variant="h6" sx={{ marginTop: 2, color: THEME.charcoal }}>Loading uploads...</Typography>
+        </Box>
       ) : filteredUploads.length === 0 ? (
-        <Alert variant="info">No upload records found</Alert>
+        <Alert severity="info">No upload records found</Alert>
       ) : (
-        <StyledTable responsive>
-          <thead>
-            <tr>
-              <th>File Name</th>
-              <th>Upload Date</th>
-              <th>Products</th>
-              <th>Delivered</th>
-              <th>RPU</th>
-              <th>RTO</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUploads.map(upload => (
-              <tr key={upload._id}>
-                <td>
-                  <strong>{upload.fileName}</strong>
-                </td>
-                <td>{upload.uploadDate ? new Date(upload.uploadDate).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }) : '-'}</td>
-                <td>{((upload?.statusSummary?.delivered?.count || 0) + (upload?.statusSummary?.rpu?.count || 0) + (upload?.statusSummary?.rto?.count || 0))}</td>
-                <td style={{ color: '#28a745', fontWeight: '600' }}>{formatCurrency(upload?.paymentSummary?.deliveredPayment || calculateUploadPaymentTotals(upload).deliveredPayment)}</td>
-                <td style={{ color: '#dc3545', fontWeight: '600' }}>{formatCurrency(upload?.paymentSummary?.rpuPayment || calculateUploadPaymentTotals(upload).rpuPayment || 0)}</td>
-                <td style={{ color: '#ff6347', fontWeight: '600' }}>{formatCurrency(upload?.paymentSummary?.rtoPayment || calculateUploadPaymentTotals(upload).rtoPayment || 0)}</td>
-                <td>
-                  <Badge bg="success">{upload.status || 'Unknown'}</Badge>
-                </td>
-                <td>
-                  <ActionButtonGroup>
-                    <Button
-                      size="sm"
-                      variant="info"
-                      onClick={() => handleViewDetails(upload)}
-                      title="View Details"
-                    >
-                      <FaEye />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="success"
-                      onClick={() => downloadAsExcel(upload)}
-                      title="Download as Excel"
-                    >
-                      <FaDownload />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() => handleDelete(upload._id)}
-                      title="Delete"
-                    >
-                      <FaTrash />
-                    </Button>
-                  </ActionButtonGroup>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </StyledTable>
+        <TableContainer component={Paper} sx={{ borderRadius: 2, border: `1px solid ${THEME.softGold}` }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>File Name</TableCell>
+                <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Upload Date</TableCell>
+                <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Products</TableCell>
+                <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Delivered</TableCell>
+                <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>RPU</TableCell>
+                <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>RTO</TableCell>
+                <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Status</TableCell>
+                <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredUploads.map(upload => (
+                <TableRow key={upload._id} sx={{ '&:hover': { background: `rgba(212, 175, 55, 0.1)` } }}>
+                  <TableCell>
+                    <Typography sx={{ fontWeight: 600 }}>{upload.fileName}</Typography>
+                  </TableCell>
+                  <TableCell>{upload.uploadDate ? new Date(upload.uploadDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) : '-'}</TableCell>
+                  <TableCell>{((upload?.statusSummary?.delivered?.count || 0) + (upload?.statusSummary?.rpu?.count || 0) + (upload?.statusSummary?.rto?.count || 0))}</TableCell>
+                  <TableCell sx={{ color: '#28a745', fontWeight: 600 }}>{formatCurrency(upload?.paymentSummary?.deliveredPayment || calculateUploadPaymentTotals(upload).deliveredPayment)}</TableCell>
+                  <TableCell sx={{ color: '#dc3545', fontWeight: 600 }}>{formatCurrency(upload?.paymentSummary?.rpuPayment || calculateUploadPaymentTotals(upload).rpuPayment || 0)}</TableCell>
+                  <TableCell sx={{ color: '#ff6347', fontWeight: 600 }}>{formatCurrency(upload?.paymentSummary?.rtoPayment || calculateUploadPaymentTotals(upload).rtoPayment || 0)}</TableCell>
+                  <TableCell>
+                    <Chip label={upload.status || 'Unknown'} color="success" size="small" />
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleViewDetails(upload)}
+                        title="View Details"
+                        sx={{ color: '#17a2b8' }}
+                      >
+                        <FaEye />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => downloadAsExcel(upload)}
+                        title="Download as Excel"
+                        sx={{ color: '#28a745' }}
+                      >
+                        <FaDownload />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(upload._id)}
+                        title="Delete"
+                        sx={{ color: '#e53e3e' }}
+                      >
+                        <FaTrash />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
       {/* Details Modal */}
-      <Modal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} size="lg" centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Upload Details - {selectedUpload?.fileName}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
+      <Dialog
+        open={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle sx={{ background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`, color: THEME.gold }}>
+          Upload Details - {selectedUpload?.fileName}
+        </DialogTitle>
+        <DialogContent sx={{ marginTop: 2 }}>
           {selectedUpload && (
             <>
-              <Row className="mb-3">
-                <Col md={6}>
-                  <strong>Upload Date:</strong>
-                  <p>{new Date(selectedUpload.uploadDate).toLocaleString()}</p>
-                </Col>
-                <Col md={6}>
-                  <strong>Total Records:</strong>
-                  <p>{selectedUpload?.successRecords || 0} successful / {selectedUpload?.totalRecords || 0} total</p>
-                </Col>
-              </Row>
+              <Grid container spacing={2} sx={{ marginBottom: 3 }}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: THEME.charcoal }}>Upload Date:</Typography>
+                  <Typography variant="body2">{new Date(selectedUpload.uploadDate).toLocaleString()}</Typography>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: THEME.charcoal }}>Total Records:</Typography>
+                  <Typography variant="body2">{selectedUpload?.successRecords || 0} successful / {selectedUpload?.totalRecords || 0} total</Typography>
+                </Grid>
+              </Grid>
 
-              <Row className="mb-3">
-                <Col md={3}>
-                  <Card className="text-center">
-                    <Card.Body>
-                      <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#28a745' }}>
-                        {formatCurrency(selectedUpload?.paymentSummary?.deliveredPayment || calculateUploadPaymentTotals(selectedUpload).deliveredPayment)}
-                      </div>
-                      <small>✅ Delivered Payment</small>
-                    </Card.Body>
-                  </Card>
-                </Col>
-                <Col md={3}>
-                  <Card className="text-center">
-                    <Card.Body>
-                      <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#ff8c00' }}>
-                        {formatCurrency(selectedUpload?.paymentSummary?.rtoPayment || calculateUploadPaymentTotals(selectedUpload).rtoPayment || 0)}
-                      </div>
-                      <small>📦 RTO Payment</small>
-                    </Card.Body>
-                  </Card>
-                </Col>
-                <Col md={3}>
-                  <Card className="text-center">
-                    <Card.Body>
-                      <div style={{
-                        fontSize: '1.5rem',
-                        fontWeight: '700',
-                        color: '#007bff'
-                      }}>
-                        {formatCurrency(selectedUpload?.paymentSummary?.totalPayment || calculateUploadPaymentTotals(selectedUpload).totalPayment)}
-                      </div>
-                      <small>💰 Total Payment</small>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              </Row>
+              <Grid container spacing={2} sx={{ marginBottom: 3 }}>
+                <Grid item xs={12} md={4}>
+                  <Paper sx={{ padding: 2, textAlign: 'center', background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)' }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: THEME.white }}>
+                      {formatCurrency(selectedUpload?.paymentSummary?.deliveredPayment || calculateUploadPaymentTotals(selectedUpload).deliveredPayment)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: THEME.white }}>✅ Delivered Payment</Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Paper sx={{ padding: 2, textAlign: 'center', background: 'linear-gradient(135deg, #ed8936 0%, #dd6b20 100%)' }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: THEME.white }}>
+                      {formatCurrency(selectedUpload?.paymentSummary?.rtoPayment || calculateUploadPaymentTotals(selectedUpload).rtoPayment || 0)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: THEME.white }}>📦 RTO Payment</Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Paper sx={{ padding: 2, textAlign: 'center', background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)` }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: THEME.charcoal }}>
+                      {formatCurrency(selectedUpload?.paymentSummary?.totalPayment || calculateUploadPaymentTotals(selectedUpload).totalPayment)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: THEME.charcoal }}>💰 Total Payment</Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
 
-
-
-              <h6 className="mt-4 mb-3">📋 Detailed Records</h6>
-              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                <Table striped bordered hover size="sm">
-                  <thead>
-                    <tr>
-                      <th>Combo ID</th>
-                      <th>Quantity</th>
-                      <th>Cost Price</th>
-                      <th>Sold Price</th>
-                      <th>Profit</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <Typography variant="h6" sx={{ marginTop: 4, marginBottom: 2, color: THEME.charcoal, fontWeight: 600 }}>📋 Detailed Records</Typography>
+              <TableContainer sx={{ maxHeight: 400 }}>
+                <Table size="small" stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Combo ID</TableCell>
+                      <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Quantity</TableCell>
+                      <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Cost Price</TableCell>
+                      <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Sold Price</TableCell>
+                      <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Profit</TableCell>
+                      <TableCell sx={{ background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`, color: THEME.charcoal, fontWeight: 600 }}>Status</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
                     {(selectedUpload.uploadedData || []).map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{item.comboId}</td>
-                        <td>{item.quantity}</td>
-                        <td>{formatCurrency(item.costPrice)}</td>
-                        <td>{formatCurrency(item.soldPrice)}</td>
-                        <td style={{ color: item.profitTotal >= 0 ? '#28a745' : '#dc3545', fontWeight: '600' }}>
+                      <TableRow key={idx}>
+                        <TableCell>{item.comboId}</TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>{formatCurrency(item.costPrice)}</TableCell>
+                        <TableCell>{formatCurrency(item.soldPrice)}</TableCell>
+                        <TableCell sx={{ color: item.profitTotal >= 0 ? '#28a745' : '#dc3545', fontWeight: 600 }}>
                           {formatCurrency(item.profitTotal)}
-                        </td>
-                        <td>
-                          <Badge bg={
-                            item.status === 'delivered' ? 'success' :
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={item.status === 'rtu' ? '📦 RTO' : item.status === 'rpu' ? '🔄 RPU' : '✅ Delivered'}
+                            color={
+                              item.status === 'delivered' ? 'success' :
                               item.status === 'rtu' ? 'warning' :
-                                item.status === 'rpu' ? 'danger' : 'secondary'
-                          }>
-                            {item.status === 'rtu' ? '📦 RTO' : item.status === 'rpu' ? '🔄 RPU' : '✅ Delivered'}
-                          </Badge>
-                        </td>
-                      </tr>
+                              item.status === 'rpu' ? 'error' : 'default'
+                            }
+                            size="small"
+                          />
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
+                  </TableBody>
                 </Table>
-              </div>
+              </TableContainer>
             </>
           )}
-        </Modal.Body>
-        <Modal.Footer>
+        </DialogContent>
+        <DialogActions sx={{ padding: 2, background: THEME.offWhite }}>
           {selectedUpload && (
             <Button
-              variant="success"
+              variant="contained"
               onClick={() => downloadAsExcel(selectedUpload)}
-              className="d-flex align-items-center gap-2"
+              sx={{
+                background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                color: THEME.white
+              }}
             >
-              <FaDownload /> Download as Excel
+              <FaDownload style={{ marginRight: '8px' }} /> Download as Excel
             </Button>
           )}
-          <Button variant="secondary" onClick={() => setShowDetailsModal(false)}>
+          <Button
+            variant="contained"
+            onClick={() => setShowDetailsModal(false)}
+            sx={{
+              background: THEME.gold,
+              color: THEME.charcoal
+            }}
+          >
             Close
           </Button>
-        </Modal.Footer>
-      </Modal>
+        </DialogActions>
+      </Dialog>
 
       {/* Add Global Deduction Modal */}
-      <Modal show={showGlobalDeductionModal} onHide={() => setShowGlobalDeductionModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Add Global Deduction</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleAddGlobalDeduction}>
-            <Form.Group className="mb-3">
-              <Form.Label>Reason</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="e.g., Office Rent, Salaries"
-                value={globalDeduction.reason}
-                onChange={(e) => setGlobalDeduction({ ...globalDeduction, reason: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Amount (₹)</Form.Label>
-              <Form.Control
-                type="number"
-                placeholder="0.00"
-                value={globalDeduction.amount}
-                onChange={(e) => setGlobalDeduction({ ...globalDeduction, amount: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Button variant="primary" type="submit" className="w-100">
+      <Dialog
+        open={showGlobalDeductionModal}
+        onClose={() => setShowGlobalDeductionModal(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`, color: THEME.gold }}>
+          Add Global Deduction
+        </DialogTitle>
+        <DialogContent sx={{ marginTop: 2 }}>
+          <Box component="form" onSubmit={handleAddGlobalDeduction} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              fullWidth
+              label="Reason"
+              placeholder="e.g., Office Rent, Salaries"
+              value={globalDeduction.reason}
+              onChange={(e) => setGlobalDeduction({ ...globalDeduction, reason: e.target.value })}
+              required
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': { borderColor: THEME.gold },
+                  '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                }
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Amount (₹)"
+              type="number"
+              placeholder="0.00"
+              value={globalDeduction.amount}
+              onChange={(e) => setGlobalDeduction({ ...globalDeduction, amount: e.target.value })}
+              required
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': { borderColor: THEME.gold },
+                  '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                }
+              }}
+            />
+            <Button
+              fullWidth
+              variant="contained"
+              type="submit"
+              sx={{
+                background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+                color: THEME.charcoal,
+                fontWeight: 600,
+                marginTop: 2,
+                '&:hover': {
+                  background: `linear-gradient(135deg, ${THEME.richGold} 0%, ${THEME.gold} 100%)`,
+                }
+              }}
+            >
               Add Global Deduction
             </Button>
-          </Form>
-        </Modal.Body>
-      </Modal>
-    </Container >
+          </Box>
+        </DialogContent>
+      </Dialog>
+    </Box>
   );
 };
 
