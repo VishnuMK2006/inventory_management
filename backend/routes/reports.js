@@ -365,6 +365,7 @@ router.post('/combos-lookup', async (req, res) => {
     // This avoids regex limitations and allows handling 0 vs O confusion
     // We select barcode, name, and products.product to populate
     const allCombos = await Combo.find({}).select('barcode name products').populate('products.product', 'name _id');
+    const allProducts = await Product.find({}).select('barcode name _id');
 
     const comboMap = {};
 
@@ -378,14 +379,14 @@ router.post('/combos-lookup', async (req, res) => {
     cleanInputSkus.forEach(inputSku => {
       const normalizedInput = normalize(inputSku);
 
-      // Find match in allCombos
+      // 1. Find match in allCombos
       const match = allCombos.find(c => {
         if (!c.barcode) return false;
         return normalize(c.barcode) === normalizedInput;
       });
 
       if (match) {
-        // We found a match!
+        // We found a Combo match!
         comboMap[inputSku] = {
           name: match.name,
           products: match.products.map(p => ({
@@ -396,6 +397,24 @@ router.post('/combos-lookup', async (req, res) => {
         };
         // Also map the original barcode from DB in case client uses mixed keys
         comboMap[match.barcode] = comboMap[inputSku];
+      } else {
+        // 2. Find match in allProducts
+        const productMatch = allProducts.find(p => {
+          if (!p.barcode) return false;
+          return normalize(p.barcode) === normalizedInput;
+        });
+
+        if (productMatch) {
+          comboMap[inputSku] = {
+            name: productMatch.name,
+            products: [{
+              productId: productMatch._id,
+              productName: productMatch.name,
+              quantity: 1
+            }]
+          };
+          comboMap[productMatch.barcode] = comboMap[inputSku];
+        }
       }
     });
 

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Paper, 
-  Typography, 
-  Grid, 
+import {
+  Box,
+  Paper,
+  Typography,
+  Grid,
   TextField,
   Button,
   Table,
@@ -724,8 +724,8 @@ const ProfitLoss = () => {
   };
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
+    <Box sx={{
+      minHeight: '100vh',
       background: `linear-gradient(135deg, ${THEME.offWhite} 0%, ${THEME.lightGold} 100%)`,
       padding: 4
     }}>
@@ -740,9 +740,9 @@ const ProfitLoss = () => {
           border: `2px solid ${THEME.gold}`,
         }}
       >
-        <Typography 
-          variant="h4" 
-          sx={{ 
+        <Typography
+          variant="h4"
+          sx={{
             color: THEME.gold,
             fontWeight: 700,
             display: 'flex',
@@ -750,13 +750,13 @@ const ProfitLoss = () => {
             gap: 1
           }}
         >
-          💹 Profit & Loss Analysis
+          Profit & Loss Analysis
         </Typography>
       </Paper>
 
       {error && (
-        <Alert 
-          severity="error" 
+        <Alert
+          severity="error"
           onClose={() => setError('')}
           sx={{ marginBottom: 3 }}
         >
@@ -773,19 +773,21 @@ const ProfitLoss = () => {
               sx={{
                 padding: 3,
                 textAlign: 'center',
-                background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
                 borderRadius: 2,
+                border: `1px solid ${THEME.gold}`,
                 transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-4px)',
-                  boxShadow: '0 12px 40px rgba(72, 187, 120, 0.4)',
+                  boxShadow: '0 12px 40px rgba(212, 175, 55, 0.2)',
+                  border: `1px solid ${THEME.richGold}`,
                 }
               }}
             >
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginBottom: 1 }}>
-                ✅ Delivered ({summary?.statusSummary?.delivered?.count ?? calculateUploadTotals(uploadResults)?.deliveredCount ?? 0})
+              <Typography variant="body2" sx={{ color: THEME.lightGold, fontWeight: 600, marginBottom: 1 }}>
+                Delivered ({summary?.statusSummary?.delivered?.count ?? calculateUploadTotals(uploadResults)?.deliveredCount ?? 0})
               </Typography>
-              <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700 }}>
+              <Typography variant="h4" sx={{ color: THEME.gold, fontWeight: 700 }}>
                 {formatCurrency(summary?.deliveredPayment || uploadTotals?.deliveredPayment || 0)}
               </Typography>
             </Paper>
@@ -797,19 +799,21 @@ const ProfitLoss = () => {
               sx={{
                 padding: 3,
                 textAlign: 'center',
-                background: 'linear-gradient(135deg, #e53e3e 0%, #c53030 100%)',
+                background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
                 borderRadius: 2,
+                border: `1px solid ${THEME.gold}`,
                 transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-4px)',
-                  boxShadow: '0 12px 40px rgba(229, 62, 62, 0.4)',
+                  boxShadow: '0 12px 40px rgba(212, 175, 55, 0.2)',
+                  border: `1px solid ${THEME.richGold}`,
                 }
               }}
             >
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginBottom: 1 }}>
-                🔄 RPU ({summary?.statusSummary?.rpu?.count ?? calculateUploadTotals(uploadResults)?.rpuCount ?? 0})
+              <Typography variant="body2" sx={{ color: THEME.lightGold, fontWeight: 600, marginBottom: 1 }}>
+                RPU ({summary?.statusSummary?.rpu?.count ?? calculateUploadTotals(uploadResults)?.rpuCount ?? 0})
               </Typography>
-              <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700 }}>
+              <Typography variant="h4" sx={{ color: THEME.gold, fontWeight: 700 }}>
                 {formatCurrency(summary?.rpuPayment || uploadTotals?.rpuPayment || 0)}
               </Typography>
             </Paper>
@@ -821,19 +825,21 @@ const ProfitLoss = () => {
               sx={{
                 padding: 3,
                 textAlign: 'center',
-                background: 'linear-gradient(135deg, #ed8936 0%, #dd6b20 100%)',
+                background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
                 borderRadius: 2,
+                border: `1px solid ${THEME.gold}`,
                 transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-4px)',
-                  boxShadow: '0 12px 40px rgba(237, 137, 54, 0.4)',
+                  boxShadow: '0 12px 40px rgba(212, 175, 55, 0.2)',
+                  border: `1px solid ${THEME.richGold}`,
                 }
               }}
             >
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginBottom: 1 }}>
-                📦 RTO ({summary?.statusSummary?.rto?.count ?? calculateUploadTotals(uploadResults)?.rtoCount ?? 0})
+              <Typography variant="body2" sx={{ color: THEME.lightGold, fontWeight: 600, marginBottom: 1 }}>
+                RTO ({summary?.statusSummary?.rto?.count ?? calculateUploadTotals(uploadResults)?.rtoCount ?? 0})
               </Typography>
-              <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700 }}>
+              <Typography variant="h4" sx={{ color: THEME.gold, fontWeight: 700 }}>
                 {formatCurrency(summary?.rtoPayment || uploadTotals?.rtoPayment || 0)}
               </Typography>
             </Paper>
@@ -845,19 +851,21 @@ const ProfitLoss = () => {
               sx={{
                 padding: 3,
                 textAlign: 'center',
-                background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+                background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
                 borderRadius: 2,
+                border: `1px solid ${THEME.gold}`,
                 transition: 'all 0.3s ease',
                 '&:hover': {
                   transform: 'translateY(-4px)',
-                  boxShadow: `0 12px 40px rgba(212, 175, 55, 0.4)`,
+                  boxShadow: `0 12px 40px rgba(212, 175, 55, 0.2)`,
+                  border: `1px solid ${THEME.richGold}`,
                 }
               }}
             >
-              <Typography variant="body2" sx={{ color: THEME.charcoal, fontWeight: 600, marginBottom: 1 }}>
-                📦 Total Products
+              <Typography variant="body2" sx={{ color: THEME.lightGold, fontWeight: 600, marginBottom: 1 }}>
+                Total Products
               </Typography>
-              <Typography variant="h4" sx={{ color: THEME.charcoal, fontWeight: 700 }}>
+              <Typography variant="h4" sx={{ color: THEME.gold, fontWeight: 700 }}>
                 {
                   summary?.totalProductCount ||
                   (uploadedSheet && uploadedSheet.totalProductCount) ||
@@ -1203,7 +1211,7 @@ const ProfitLoss = () => {
               </TableHead>
               <TableBody>
                 {profitData.slice(0, 20).map((item, index) => (
-                  <TableRow 
+                  <TableRow
                     key={index}
                     sx={{
                       '&:hover': {
@@ -1228,9 +1236,9 @@ const ProfitLoss = () => {
                     </TableCell>
                     <TableCell>
                       {item.status === 'rpu' ? (
-                        <Typography sx={{ color: '#e53e3e', fontWeight: 600 }}>🔄 RPU</Typography>
+                        <Typography sx={{ color: '#e53e3e', fontWeight: 600 }}> RPU</Typography>
                       ) : (
-                        <Typography sx={{ color: '#48bb78', fontWeight: 600 }}>✅ Delivered</Typography>
+                        <Typography sx={{ color: '#48bb78', fontWeight: 600 }}> Delivered</Typography>
                       )}
                     </TableCell>
                     <TableCell>
@@ -1330,7 +1338,7 @@ const ProfitLoss = () => {
                   }
 
                   return (
-                    <TableRow 
+                    <TableRow
                       key={index}
                       sx={{
                         '&:hover': {
@@ -1435,11 +1443,11 @@ const ProfitLoss = () => {
                   const status = (result.Status || result.status || '').toLowerCase().trim();
                   let statusDisplay;
                   if (status === 'delivered' || status === 'delivery') {
-                    statusDisplay = <Typography sx={{ color: '#28a745', fontWeight: 600, fontSize: '0.875rem' }}>✅ Delivered</Typography>;
+                    statusDisplay = <Typography sx={{ color: '#28a745', fontWeight: 600, fontSize: '0.875rem' }}> Delivered</Typography>;
                   } else if (status === 'rpu' || status === 'returned' || status === 'rpo') {
-                    statusDisplay = <Typography sx={{ color: '#dc3545', fontWeight: 600, fontSize: '0.875rem' }}>🔄 RPU</Typography>;
+                    statusDisplay = <Typography sx={{ color: '#dc3545', fontWeight: 600, fontSize: '0.875rem' }}> RPU</Typography>;
                   } else if (status === 'rto' || status === 'return to origin') {
-                    statusDisplay = <Typography sx={{ color: '#ff6347', fontWeight: 600, fontSize: '0.875rem' }}>📦 RTO</Typography>;
+                    statusDisplay = <Typography sx={{ color: '#ff6347', fontWeight: 600, fontSize: '0.875rem' }}> RTO</Typography>;
                   } else {
                     statusDisplay = <Typography sx={{ color: '#6c757d', fontSize: '0.875rem' }}>{result.Status || result.status || '-'}</Typography>;
                   }

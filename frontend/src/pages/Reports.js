@@ -1,20 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Paper, 
-  Typography, 
-  Grid, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem,
-  CircularProgress,
-  Alert
-} from '@mui/material';
-import { purchasesAPI, salesAPI, reportsAPI, returnsAPI, profitLossAPI, uploadedProfitSheetsAPI } from '../services/api';
 import {
-  LineChart,
-  Line,
+  Box,
+  Paper,
+  Typography,
+  Grid,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  Alert,
+  IconButton
+} from '@mui/material';
+import { FaUpload, FaSync, FaBoxOpen } from 'react-icons/fa';
+import * as XLSX from 'xlsx';
+import {
   BarChart,
   Bar,
   XAxis,
@@ -22,10 +28,9 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
-  ComposedChart,
-  Cell,
+  ResponsiveContainer
 } from 'recharts';
+import { reportsAPI, uploadedProfitSheetsAPI } from '../services/api';
 
 // Theme Colors - Premium Gold & Black
 const THEME = {
@@ -40,541 +45,454 @@ const THEME = {
   offWhite: '#F8F5F0'
 };
 
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+  }).format(amount);
+};
+
 const Reports = () => {
-  const [purchases, setPurchases] = useState([]);
-  const [sales, setSales] = useState([]);
-  const [filter, setFilter] = useState({
-    startDate: '',
-    endDate: ''
-  });
-  const [chartData, setChartData] = useState([]);
-  const [productData, setProductData] = useState([]);
+  // State for Spreadsheet Status Report
   const [products, setProducts] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [graphLoading, setGraphLoading] = useState(false);
-  const [reportSummary, setReportSummary] = useState(null);
-  const [productSummary, setProductSummary] = useState(null);
-  const [statusData, setStatusData] = useState([]);
-  const [statusSummary, setStatusSummary] = useState(null);
-  const [selectedSheetId, setSelectedSheetId] = useState('all');
+  const [selectedStatusProduct, setSelectedStatusProduct] = useState('');
   const [uploadedSheets, setUploadedSheets] = useState([]);
+  const [selectedSheetId, setSelectedSheetId] = useState('all');
+  const [uploadedSheet, setUploadedSheet] = useState(null);
   const [uploadResults, setUploadResults] = useState([]);
   const [comboDetails, setComboDetails] = useState({});
+  const [showBreakdown, setShowBreakdown] = useState(false);
+
+  const [statusData, setStatusData] = useState([]);
+  const [statusSummary, setStatusSummary] = useState({
+    delivered: 0,
+    rto: 0,
+    rpu: 0,
+    netProfit: 0,
+    totalOrders: 0
+  });
+
+  // UI States
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchData();
-    fetchProducts();
-    fetchUploadedSheets();
+    fetchInitialData();
   }, []);
 
+  // Re-run status processing if upload results change
   useEffect(() => {
-    fetchChartData();
-  }, [filter]);
-
-  useEffect(() => {
-    if (selectedProduct) {
-      fetchProductMonthlyData();
+    if (uploadResults && uploadResults.length > 0) {
+      processUploadedStatusData();
+    } else {
+      // Reset summary if no data
+      setStatusSummary({
+        delivered: 0,
+        rto: 0,
+        rpu: 0,
+        netProfit: 0,
+        totalOrders: 0
+      });
+      setStatusData([]);
     }
-  }, [selectedProduct, filter]);
+  }, [uploadResults, selectedStatusProduct, comboDetails]);
 
+  // Handle Sheet Selection
   useEffect(() => {
-    fetchSheetStatusData();
+    const loadSheetData = async () => {
+      let rowsToProcess = [];
+      if (selectedSheetId === 'all') {
+        const allRows = uploadedSheets.flatMap(sheet => sheet.uploadedData || []);
+        rowsToProcess = allRows;
+        setUploadResults(allRows);
+      } else if (selectedSheetId) {
+        const sheet = uploadedSheets.find(s => s._id === selectedSheetId);
+        if (sheet) {
+          rowsToProcess = sheet.uploadedData || [];
+          setUploadResults(rowsToProcess);
+          setUploadedSheet(sheet);
+        }
+      } else {
+        if (!uploadedSheet) setUploadResults([]);
+      }
+
+      // Trigger combo lookup for the loaded rows
+      if (rowsToProcess.length > 0) {
+        fetchComboDetailsForRows(rowsToProcess);
+      }
+    };
+
+    if (uploadedSheets.length > 0) {
+      loadSheetData();
+    }
   }, [selectedSheetId, uploadedSheets]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchInitialData = async () => {
     try {
-      const [purchasesRes, salesRes] = await Promise.all([
-        purchasesAPI.getAll(),
-        salesAPI.getAll()
+      setLoading(true);
+      const [productsRes, sheetsRes] = await Promise.all([
+        reportsAPI.getProductsList(),
+        uploadedProfitSheetsAPI.getAll()
       ]);
-      setPurchases(purchasesRes.data);
-      setSales(salesRes.data);
-    } catch (error) {
-      setError('Failed to fetch reports data');
+      setProducts(productsRes.data);
+      setUploadedSheets(sheetsRes.data);
+    } catch (err) {
+      console.error('Error fetching initial data:', err);
+      setError('Failed to load initial data');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchProducts = async () => {
-    try {
-      const res = await reportsAPI.getProductsList();
-      setProducts(res.data || []);
-      if (res.data && res.data.length > 0) {
-        setSelectedProduct(res.data[0]._id);
+  const fetchComboDetailsForRows = async (rows) => {
+    if (!rows || rows.length === 0) return;
+    const skus = rows
+      .map(r => r.sku || r.SKU)
+      .filter(s => s && typeof s === 'string')
+      .map(s => s.trim());
+
+    // De-duplicate SKUs locally before sending
+    const uniqueSkus = [...new Set(skus)];
+
+    if (uniqueSkus.length > 0) {
+      try {
+        const comboRes = await reportsAPI.lookupCombos(uniqueSkus);
+        setComboDetails(prev => ({ ...prev, ...comboRes.data }));
+      } catch (err) {
+        console.error('Failed to lookup combos:', err);
       }
-    } catch (error) {
-      console.error('Failed to fetch products:', error);
     }
   };
 
-  const fetchUploadedSheets = async () => {
-    try {
-      const res = await uploadedProfitSheetsAPI.getAll();
-      setUploadedSheets(res.data || []);
-    } catch (error) {
-      console.error('Failed to fetch sheets:', error);
-    }
+  const handleReportFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsName = wb.SheetNames[0];
+        const ws = wb.Sheets[wsName];
+        let data = XLSX.utils.sheet_to_json(ws);
+
+        // Normalize keys
+        data = data.map(row => {
+          const newRow = {};
+          Object.keys(row).forEach(key => {
+            newRow[key.toLowerCase()] = row[key]; // Access via lowercase for consistency
+            newRow[key] = row[key]; // Keep original too just in case
+          });
+          return newRow;
+        });
+
+        setUploadResults(data);
+        setUploadedSheet(null); // Not a server-saved sheet yet
+        setSelectedSheetId('');
+
+        // Trigger lookup
+        fetchComboDetailsForRows(data);
+      } catch (err) {
+        console.error('Error parsing file:', err);
+        setError('Failed to parse Excel file');
+      }
+    };
+    reader.readAsBinaryString(file);
   };
 
-  const fetchChartData = async () => {
-    setGraphLoading(true);
-    try {
-      const response = await reportsAPI.getPurchaseSalesData(filter.startDate, filter.endDate);
-      setChartData(response.data.chartData || []);
-      setReportSummary(response.data.summary || null);
-    } catch (error) {
-      console.error('Failed to fetch chart data:', error);
-    } finally {
-      setGraphLoading(false);
-    }
-  };
-
-  const fetchProductMonthlyData = async () => {
-    try {
-      const response = await reportsAPI.getProductMonthlyData(
-        selectedProduct,
-        filter.startDate,
-        filter.endDate
-      );
-      setProductData(response.data.chartData || []);
-      setProductSummary(response.data.summary || null);
-    } catch (error) {
-      console.error('Failed to fetch product data:', error);
-    }
-  };
-
-  const fetchSheetStatusData = () => {
+  const processUploadedStatusData = () => {
+    let deliveredCount = 0;
     let rtoCount = 0;
     let rpuCount = 0;
-    let deliveredCount = 0;
+    let netProfit = 0;
+    let totalOrders = 0;
 
-    let targetSheets = [];
+    const targetRows = uploadResults;
 
-    if (selectedSheetId === 'all') {
-      targetSheets = uploadedSheets;
-    } else {
-      targetSheets = uploadedSheets.filter(sheet => sheet._id === selectedSheetId);
-    }
+    targetRows.forEach(row => {
+      const sku = (row.sku || row.SKU || '').trim();
+      if (!sku) return;
 
-    targetSheets.forEach(sheet => {
-      if (sheet.statusSummary) {
-        rtoCount += (sheet.statusSummary.rto?.count || 0);
-        rpuCount += (sheet.statusSummary.rpu?.count || 0);
-        deliveredCount += (sheet.statusSummary.delivered?.count || 0);
+      let includeRow = true;
+
+      // If filtering by product
+      if (selectedStatusProduct) {
+        const combo = comboDetails[sku];
+        if (!combo) {
+          includeRow = false;
+        } else {
+          const hasProduct = combo.products.some(p => {
+            const pId = p.productId || p.product?._id || p.product;
+            return String(pId) === String(selectedStatusProduct);
+          });
+          if (!hasProduct) includeRow = false;
+        }
+      }
+
+      if (includeRow) {
+        totalOrders++;
+        const status = (row.status || row.Status || '').toLowerCase().trim();
+        const quantity = Number(row.quantity || row.Quantity || 1);
+
+        let profitVal = 0;
+        const profitRaw = row.profit || row.Profit || row['Net Profit'];
+        if (profitRaw) {
+          const cleaned = String(profitRaw).replace(/[^0-9.-]/g, '');
+          profitVal = parseFloat(cleaned) || 0;
+        }
+
+        netProfit += profitVal;
+
+        if (status === 'delivered' || status === 'delivery') {
+          deliveredCount += quantity;
+        } else if (status === 'rpu' || status === 'returned' || status === 'rpo') {
+          rpuCount += quantity;
+        } else if (status === 'rto' || status === 'return to origin') {
+          rtoCount += quantity;
+        }
       }
     });
 
-    const statusCounts = {
-      RTO: rtoCount,
-      RPU: rpuCount,
-      Delivered: deliveredCount
-    };
-
-    const chartData = Object.entries(statusCounts).map(([status, count]) => ({
-      status,
-      count
-    }));
-
     const summary = {
-      totalRTO: statusCounts.RTO,
-      totalRPU: statusCounts.RPU,
-      totalDelivered: statusCounts.Delivered,
-      total: statusCounts.RTO + statusCounts.RPU + statusCounts.Delivered
+      delivered: deliveredCount,
+      rto: rtoCount,
+      rpu: rpuCount,
+      netProfit: netProfit,
+      totalOrders
     };
+
+    const chartData = [
+      { name: 'Delivered', value: deliveredCount, fill: '#48bb78' },
+      { name: 'RTO', value: rtoCount, fill: '#f56565' },
+      { name: 'RPU', value: rpuCount, fill: '#ed8936' }
+    ];
 
     setStatusData(chartData);
     setStatusSummary(summary);
   };
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilter(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleProductChange = (e) => {
-    setSelectedProduct(e.target.value);
-  };
-
-  const handleStatusProductChange = (e) => {
-    setSelectedStatusProduct(e.target.value);
-  };
-
-  const clearFilters = () => {
-    setFilter({
-      startDate: '',
-      endDate: ''
-    });
-  };
-
-  const filteredPurchases = purchases.filter(p => {
-    const date = new Date(p.purchaseDate);
-    const start = filter.startDate ? new Date(filter.startDate) : null;
-    const end = filter.endDate ? new Date(filter.endDate) : null;
-    return (!start || date >= start) && (!end || date <= end);
-  });
-
-  const filteredSales = sales.filter(s => {
-    const date = new Date(s.saleDate);
-    const start = filter.startDate ? new Date(filter.startDate) : null;
-    const end = filter.endDate ? new Date(filter.endDate) : null;
-    return (!start || date >= start) && (!end || date <= end);
-  });
-
-  const calculateTotals = (items) => {
-    return items.reduce((sum, item) => sum + item.totalAmount, 0);
-  };
-
-  const calculateProfit = () => {
-    const totalSales = calculateTotals(filteredSales);
-    const totalPurchases = calculateTotals(filteredPurchases);
-    return totalSales - totalPurchases;
-  };
-
-  const exportToCSV = (data, filename) => {
-    const headers = Object.keys(data[0] || {}).join(',');
-    const rows = data.map(item => Object.values(item).join(','));
-    const csv = [headers, ...rows].join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${filename}.csv`;
-    link.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  /* Removed handleReportFileUpload logic */
-
-  if (loading && purchases.length === 0 && sales.length === 0) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: '#fff' }}>
-        <CircularProgress sx={{ color: THEME.gold }} />
-      </Box>
-    );
-  }
-
-  const selectedProductName = products.find(p => p._id === selectedProduct)?.name || 'Product';
-
   return (
-    <Box sx={{ p: 3, bgcolor: '#fff', minHeight: '100vh' }}>
-      {/* Header */}
-      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', mb: 1 }}>
-          <span style={{ fontSize: '2rem', marginRight: '1rem' }}>📊</span>
-          Financial Reports & Analytics
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Comprehensive reports and analytics dashboard
-        </Typography>
+    <Box sx={{
+      minHeight: '100vh',
+      background: `linear-gradient(135deg, ${THEME.offWhite} 0%, ${THEME.lightGold} 100%)`,
+      padding: 4
+    }}>
+      {/* Page Header */}
+      <Paper
+        elevation={3}
+        sx={{
+          padding: 3,
+          marginBottom: 3,
+          background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
+          borderRadius: 2,
+          border: `2px solid ${THEME.gold}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}
+      >
+        <Box>
+          <Typography variant="h4" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 0.5 }}>
+            📈 Business Reports
+          </Typography>
+          <Typography variant="body2" sx={{ color: THEME.lightGold }}>
+            Comprehensive analytics and status reports
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          onClick={() => { fetchInitialData(); }}
+          sx={{
+            background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+            color: THEME.charcoal,
+            fontWeight: 600,
+            '&:hover': {
+              background: `linear-gradient(135deg, ${THEME.richGold} 0%, ${THEME.gold} 100%)`,
+            }
+          }}
+        >
+          <FaSync style={{ marginRight: '8px' }} /> Refresh Data
+        </Button>
       </Paper>
 
-      {error && (
-        <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
+      {error && <Alert severity="error" onClose={() => setError('')} sx={{ marginBottom: 2 }}>{error}</Alert>}
 
-      {/* Spreadsheet Status Report (RTO, RPU, Delivered) */}
-      <Paper sx={{ p: 3, mb: 3, border: `1px solid ${THEME.softGold}`, boxShadow: 'none' }}>
-        <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: THEME.black, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <span>📊</span>
-          Spreadsheet Status Report (RTO, RPU, Delivered)
-        </Typography>
+      {/* Spreadsheet Status Report Section */}
+      <Paper
+        elevation={3}
+        sx={{
+          padding: 3,
+          background: THEME.white,
+          borderRadius: 2,
+          border: `1px solid ${THEME.softGold}`,
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+          <Typography variant="h6" sx={{ color: THEME.charcoal, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FaBoxOpen /> Spreadsheet Status Report (RTO/RPU/Delivered)
+          </Typography>
+        </Box>
 
-        <FormControl fullWidth sx={{ mb: 4 }}>
-          <InputLabel>Select Spreadsheet</InputLabel>
-          <Select
-            value={selectedSheetId}
-            onChange={(e) => setSelectedSheetId(e.target.value)}
-            label="Select Spreadsheet"
-          >
-            <MenuItem value="all">All Spreadsheets</MenuItem>
-            {uploadedSheets.map(sheet => (
-              <MenuItem key={sheet._id} value={sheet._id}>
-                {sheet.fileName} ({new Date(sheet.uploadDate).toLocaleDateString()})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        {/* 1. INPUTS ROW: 3 Stacked Rows (Full Width) */}
+        {/* User requested: "3 next next straight rows" (from image which shows stack). Vertical Stack. */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 4 }}>
 
-        {/* Status Summary */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-          <Paper 
-            sx={{ 
-              p: 4,
-              display: 'inline-block',
-              background: 'linear-gradient(135deg, #1A1A1A 0%, #2B262A 100%)',
-              color: '#F8F5F0', 
-              border: `2px solid ${THEME.gold}`,
-              boxShadow: '0 8px 32px rgba(212, 175, 55, 0.15)',
-              borderRadius: 3,
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-              }
-            }}
-          >
-            <Typography 
-              variant="h4" 
-              sx={{ 
-                fontWeight: 700, 
-                textAlign: 'center', 
-                mb: 4,
-                color: THEME.gold,
-                letterSpacing: '0.5px',
-                textTransform: 'uppercase',
-                fontSize: { xs: '1.5rem', md: '2rem' }
-              }}
+          {/* ROW 1: Data Source */}
+          <FormControl fullWidth size="small">
+            <InputLabel>Select Data Source</InputLabel>
+            <Select
+              value={selectedSheetId}
+              label="Select Data Source"
+              onChange={(e) => setSelectedSheetId(e.target.value)}
             >
-              Status Summary for {selectedSheetId === 'all' ? 'All Spreadsheets' : uploadedSheets.find(s => s._id === selectedSheetId)?.fileName || 'Selected Sheet'}
-            </Typography>
-            
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={3}>
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Box 
-                    sx={{ 
-                      textAlign: 'center',
-                      p: 3,
-                      background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(201, 162, 39, 0.12) 100%)',
-                      borderRadius: 2,
-                      border: '1px solid rgba(212, 175, 55, 0.2)',
-                      transition: 'all 0.3s ease',
-                      display: 'inline-block',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 8px 24px rgba(212, 175, 55, 0.25)',
-                        border: '1px solid rgba(212, 175, 55, 0.4)',
-                      }
-                    }}
-                  >
-                    <Typography 
-                      variant="subtitle1" 
-                      sx={{ 
-                        mb: 2, 
-                        color: THEME.lightGold,
-                        fontWeight: 500,
-                        letterSpacing: '1px',
-                        textTransform: 'uppercase',
-                        fontSize: '0.85rem',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      📦 Delivered
-                    </Typography>
-                    <Typography 
-                      variant="h3" 
-                      sx={{ 
-                        fontWeight: 800,
-                        color: '#48bb78',
-                        fontSize: { xs: '2rem', md: '2.5rem' },
-                        textShadow: '0 2px 8px rgba(72, 187, 120, 0.3)',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {statusSummary?.totalDelivered || 0}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
-              
-              <Grid item xs={12} md={3}>
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Box 
-                    sx={{ 
-                      textAlign: 'center',
-                      p: 3,
-                      background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(201, 162, 39, 0.12) 100%)',
-                      borderRadius: 2,
-                      border: '1px solid rgba(212, 175, 55, 0.2)',
-                      transition: 'all 0.3s ease',
-                      display: 'inline-block',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 8px 24px rgba(212, 175, 55, 0.25)',
-                        border: '1px solid rgba(212, 175, 55, 0.4)',
-                      }
-                    }}
-                  >
-                    <Typography 
-                      variant="subtitle1" 
-                      sx={{ 
-                        mb: 2, 
-                        color: THEME.lightGold,
-                        fontWeight: 500,
-                        letterSpacing: '1px',
-                        textTransform: 'uppercase',
-                        fontSize: '0.85rem',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      ↩️ RTO
-                    </Typography>
-                    <Typography 
-                      variant="h3" 
-                      sx={{ 
-                        fontWeight: 800,
-                        color: '#e53e3e',
-                        fontSize: { xs: '2rem', md: '2.5rem' },
-                        textShadow: '0 2px 8px rgba(229, 62, 62, 0.3)',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {statusSummary?.totalRTO || 0}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
-              
-              <Grid item xs={12} md={3}>
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Box 
-                    sx={{ 
-                      textAlign: 'center',
-                      p: 3,
-                      background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(201, 162, 39, 0.12) 100%)',
-                      borderRadius: 2,
-                      border: '1px solid rgba(212, 175, 55, 0.2)',
-                      transition: 'all 0.3s ease',
-                      display: 'inline-block',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 8px 24px rgba(212, 175, 55, 0.25)',
-                        border: '1px solid rgba(212, 175, 55, 0.4)',
-                      }
-                    }}
-                  >
-                    <Typography 
-                      variant="subtitle1" 
-                      sx={{ 
-                        mb: 2, 
-                        color: THEME.lightGold,
-                        fontWeight: 500,
-                        letterSpacing: '1px',
-                        textTransform: 'uppercase',
-                        fontSize: '0.85rem',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      🔄 RPU
-                    </Typography>
-                    <Typography 
-                      variant="h3" 
-                      sx={{ 
-                        fontWeight: 800,
-                        color: '#ed8936',
-                        fontSize: { xs: '2rem', md: '2.5rem' },
-                        textShadow: '0 2px 8px rgba(237, 137, 54, 0.3)',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {statusSummary?.totalRPU || 0}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
-              
-              <Grid item xs={12} md={3}>
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                  <Box 
-                    sx={{ 
-                      textAlign: 'center',
-                      p: 3,
-                      background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(201, 162, 39, 0.2) 100%)',
-                      borderRadius: 2,
-                      border: `1px solid rgba(212, 175, 55, 0.3)`,
-                      transition: 'all 0.3s ease',
-                      display: 'inline-block',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 8px 24px rgba(212, 175, 55, 0.35)',
-                        border: `1px solid rgba(212, 175, 55, 0.5)`,
-                      }
-                    }}
-                  >
-                    <Typography 
-                      variant="subtitle1" 
-                      sx={{ 
-                        mb: 2, 
-                        color: THEME.lightGold,
-                        fontWeight: 500,
-                        letterSpacing: '1px',
-                        textTransform: 'uppercase',
-                        fontSize: '0.85rem',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      📊 Total
-                    </Typography>
-                    <Typography 
-                      variant="h3" 
-                      sx={{ 
-                        fontWeight: 800,
-                        color: THEME.gold,
-                        fontSize: { xs: '2rem', md: '2.5rem' },
-                        textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {statusSummary?.total || 0}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
-            </Grid>
+              <MenuItem value="all">All Uploaded Sheets (Aggregate)</MenuItem>
+              {uploadedSheets.map(sheet => (
+                <MenuItem key={sheet._id} value={sheet._id}>
+                  {sheet.fileName} ({new Date(sheet.uploadDate).toLocaleDateString()})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* ROW 2: Upload Button */}
+          <Box sx={{ border: '1px dashed #ccc', p: 2, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <input
+              accept=".xlsx, .xls"
+              style={{ display: 'none' }}
+              id="raised-button-file"
+              type="file"
+              onChange={handleReportFileUpload}
+            />
+            <label htmlFor="raised-button-file" style={{ flexGrow: 1 }}>
+              <Button variant="outlined" component="span" startIcon={<FaUpload />} fullWidth>
+                {uploadResults.length > 0 ? 'File Uploaded (Change)' : 'Upload Excel File'}
+              </Button>
+            </label>
+            {uploadResults.length > 0 && (
+              <Button
+                size="small"
+                color="error"
+                onClick={() => { setUploadResults([]); setUploadedSheet(null); setComboDetails({}); }}
+              >
+                Clear
+              </Button>
+            )}
+          </Box>
+
+          {/* ROW 3: Product Filter */}
+          <FormControl fullWidth size="small">
+            <InputLabel>Filter by Product</InputLabel>
+            <Select
+              value={selectedStatusProduct}
+              label="Filter by Product"
+              onChange={(e) => setSelectedStatusProduct(e.target.value)}
+            >
+              <MenuItem value=""><em>All Products</em></MenuItem>
+              {products.map(p => (
+                <MenuItem key={p._id} value={p._id}>{p.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Breakdown Toggle (Below Row 3) */}
+          {uploadResults.length > 0 && (
+            <Box>
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => setShowBreakdown(!showBreakdown)}
+              >
+                {showBreakdown ? 'Hide' : 'Show'} Detailed Combo Breakdown
+              </Button>
+            </Box>
+          )}
+        </Box>
+
+        {/* 2. STATS ROW: 3 Items side-by-side (Straight Row) - Net Profit Removed */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 4, width: '100%' }}>
+          <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#f0fdf4', border: '1px solid #48bb78', flex: 1, display: 'flex', flexDirection: 'column', justifyItems: 'center' }}>
+            <Typography variant="h5" fontWeight="bold" color="#48bb78">{statusSummary.delivered}</Typography>
+            <Typography variant="caption">Delivered</Typography>
+          </Paper>
+
+          <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fef2f2', border: '1px solid #f56565', flex: 1, display: 'flex', flexDirection: 'column', justifyItems: 'center' }}>
+            <Typography variant="h5" fontWeight="bold" color="#f56565">{statusSummary.rto}</Typography>
+            <Typography variant="caption">RTO</Typography>
+          </Paper>
+
+          <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff7ed', border: '1px solid #ed8936', flex: 1, display: 'flex', flexDirection: 'column', justifyItems: 'center' }}>
+            <Typography variant="h5" fontWeight="bold" color="#ed8936">{statusSummary.rpu}</Typography>
+            <Typography variant="caption">RPU</Typography>
           </Paper>
         </Box>
 
-        {/* Chart */}
-        {statusData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={statusData} margin={{ top: 40, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="status" />
+        {/* 3. BAR GRAPH (Restored) */}
+        <Box sx={{ height: 400, mt: 4, mb: 4 }}>
+          <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Status Distribution</Typography>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={statusData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#f8f9fa',
-                  border: `2px solid ${THEME.gold}`,
-                  borderRadius: '10px'
-                }}
-                labelFormatter={(label) => `Status: ${label}`}
-                formatter={(value) => [value, 'Count']}
-              />
+              <Tooltip />
               <Legend />
-              <Bar
-                dataKey="count"
-                name="Count"
-                label={{ position: 'top', fontSize: 14, fontWeight: 'bold' }}
-              >
-                {statusData.map((entry, index) => {
-                  const colors = { 'Delivered': '#48bb78', 'RTO': '#e53e3e', 'RPU': '#ed8936' };
-                  return (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={colors[entry.status] || THEME.gold}
-                    />
-                  );
-                })}
-              </Bar>
+              <Bar dataKey="value" fill="#8884d8" name="Count" label={{ position: 'top' }} />
             </BarChart>
           </ResponsiveContainer>
-        ) : (
-          <Box sx={{ textAlign: 'center', py: 5, color: 'text.secondary' }}>
-            <Typography>No status data available for the selected selection.</Typography>
-          </Box>
+        </Box>
+
+        {/* 4. BREAKDOWN TABLE */}
+        {showBreakdown && uploadResults.length > 0 && (
+          <TableContainer component={Paper} sx={{ maxHeight: 300, mt: 4 }}>
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>SKU</TableCell>
+                  <TableCell>Combo/Product</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Qty</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {uploadResults.map((row, idx) => {
+                  const sku = (row.sku || row.SKU || '').trim();
+                  const details = comboDetails[sku];
+                  const status = (row.status || row.Status || '').toString();
+
+                  return (
+                    <TableRow key={idx}>
+                      <TableCell>{sku}</TableCell>
+                      <TableCell>
+                        {details ? (
+                          <Box>
+                            <Typography variant="subtitle2">{details.name}</Typography>
+                            <ul style={{ margin: 0, paddingLeft: 15, fontSize: '0.8rem' }}>
+                              {details.products.map((p, i) => (
+                                <li key={i}>{p.productName} ({p.quantity})</li>
+                              ))}
+                            </ul>
+                          </Box>
+                        ) : <span style={{ color: 'red' }}>No Match</span>}
+                      </TableCell>
+                      <TableCell>
+                        <Alert
+                          icon={false}
+                          severity={status.toLowerCase().includes('delivered') ? 'success' : status.toLowerCase().includes('rto') ? 'error' : 'warning'}
+                          sx={{ py: 0, px: 1, '& .MuiAlert-message': { p: 0 } }}
+                        >
+                          {status}
+                        </Alert>
+                      </TableCell>
+                      <TableCell>{row.quantity || row.Quantity}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
+
       </Paper>
     </Box>
   );

@@ -306,8 +306,8 @@ const UploadedDataManagement = () => {
   };
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
+    <Box sx={{
+      minHeight: '100vh',
       background: `linear-gradient(135deg, ${THEME.offWhite} 0%, ${THEME.lightGold} 100%)`,
       padding: 4
     }}>
@@ -327,7 +327,7 @@ const UploadedDataManagement = () => {
       >
         <Box>
           <Typography variant="h4" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 0.5 }}>
-            📊 Uploaded Data Management
+           Uploaded Data Management
           </Typography>
           <Typography variant="body2" sx={{ color: THEME.lightGold }}>
             View and manage all previously uploaded profit sheets
@@ -358,166 +358,200 @@ const UploadedDataManagement = () => {
       {/* Summary Cards */}
       {(summary || uploads.length > 0) && (
         <>
-          <Grid container spacing={3} sx={{ marginBottom: 4 }}>
-            <Grid item xs={12} sm={6} md={3}>
+          <Grid container spacing={2} sx={{ marginBottom: 4 }}>
+            <Grid item xs={12} sm={4} md={2}>
               <Paper
                 elevation={4}
                 sx={{
                   padding: 3,
                   textAlign: 'center',
-                  background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                  background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
                   borderRadius: 2,
+                  border: `1px solid ${THEME.gold}`,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: '0 12px 40px rgba(72, 187, 120, 0.4)',
+                    boxShadow: '0 12px 40px rgba(212, 175, 55, 0.2)',
+                    border: `1px solid ${THEME.richGold}`,
                   }
                 }}
               >
-                <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700, marginBottom: 1 }}>
+                <Typography variant="h5" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 1 }}>
                   {formatCurrency(
                     summary?.paymentSummary?.deliveredPayment ||
                     calculateAllUploadTotals()?.deliveredPayment || 0
                   )}
                 </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
-                  ✅ Delivered Payment
+                <Typography variant="caption" sx={{ color: THEME.lightGold, fontWeight: 600 }}>
+                  Delivered
                 </Typography>
               </Paper>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={4} md={2}>
               <Paper
                 elevation={4}
                 sx={{
                   padding: 3,
                   textAlign: 'center',
-                  background: 'linear-gradient(135deg, #e53e3e 0%, #c53030 100%)',
+                  background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
                   borderRadius: 2,
+                  border: `1px solid ${THEME.gold}`,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: '0 12px 40px rgba(229, 62, 62, 0.4)',
+                    boxShadow: '0 12px 40px rgba(212, 175, 55, 0.2)',
+                    border: `1px solid ${THEME.richGold}`,
                   }
                 }}
               >
-                <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700, marginBottom: 1 }}>
+                <Typography variant="h5" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 1 }}>
                   {formatCurrency(
                     summary?.paymentSummary?.rpuPayment ||
                     calculateAllUploadTotals()?.rpuPayment || 0
                   )}
                 </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
-                  🔄 RPU Payment
+                <Typography variant="caption" sx={{ color: THEME.lightGold, fontWeight: 600 }}>
+                  RPU
                 </Typography>
               </Paper>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={4} md={2}>
               <Paper
                 elevation={4}
                 onClick={() => setShowGlobalDeductionModal(true)}
                 sx={{
                   padding: 3,
                   textAlign: 'center',
-                  background: 'linear-gradient(135deg, #ed8936 0%, #dd6b20 100%)',
+                  background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
                   borderRadius: 2,
+                  border: `1px solid ${THEME.gold}`,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
                   cursor: 'pointer',
                   position: 'relative',
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: '0 12px 40px rgba(237, 137, 54, 0.4)',
+                    boxShadow: '0 12px 40px rgba(212, 175, 55, 0.2)',
+                    border: `1px solid ${THEME.richGold}`,
                   }
                 }}
               >
-                <Typography sx={{ position: 'absolute', top: 10, right: 15, fontSize: '1.2rem', color: THEME.white }}>+</Typography>
-                <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700, marginBottom: 1 }}>
+                <Typography sx={{ position: 'absolute', top: 5, right: 10, fontSize: '1rem', color: THEME.gold }}>+</Typography>
+                <Typography variant="h5" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 1 }}>
                   {formatCurrency(
                     ((summary?.paymentSummary?.deliveredPayment || calculateAllUploadTotals()?.deliveredPayment || 0) -
                       (summary?.paymentSummary?.rpuPayment || calculateAllUploadTotals()?.rpuPayment || 0)) -
                     (globalDeductionsList.reduce((acc, curr) => acc + (curr.amount || 0), 0))
                   )}
                 </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
-                  💰 Net Profit
+                <Typography variant="caption" sx={{ color: THEME.lightGold, fontWeight: 600 }}>
+                  Net Profit
                 </Typography>
               </Paper>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={4} md={2}>
               <Paper
                 elevation={4}
                 sx={{
                   padding: 3,
                   textAlign: 'center',
-                  background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+                  background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
                   borderRadius: 2,
+                  border: `1px solid ${THEME.gold}`,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: `0 12px 40px rgba(212, 175, 55, 0.4)`,
+                    boxShadow: `0 12px 40px rgba(212, 175, 55, 0.2)`,
+                    border: `1px solid ${THEME.richGold}`,
                   }
                 }}
               >
-                <Typography variant="h4" sx={{ color: THEME.charcoal, fontWeight: 700, marginBottom: 1 }}>
+                <Typography variant="h5" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 1 }}>
                   {((summary?.statusSummary?.delivered?.count || 0) +
                     (summary?.statusSummary?.rpu?.count || 0) +
                     (summary?.statusSummary?.rto?.count || 0)) ||
                     calculateAllUploadTotals()?.totalProducts || 0}
                 </Typography>
-                <Typography variant="body2" sx={{ color: THEME.charcoal, fontWeight: 600 }}>
-                  📦 Total Products
+                <Typography variant="caption" sx={{ color: THEME.lightGold, fontWeight: 600 }}>
+                  Total Products
                 </Typography>
               </Paper>
             </Grid>
-          </Grid>
 
-          <Grid container spacing={3} sx={{ marginBottom: 4 }}>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} sm={4} md={2}>
               <Paper
                 elevation={4}
                 sx={{
                   padding: 3,
                   textAlign: 'center',
-                  background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                  background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
                   borderRadius: 2,
+                  border: `1px solid ${THEME.gold}`,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: '0 12px 40px rgba(40, 167, 69, 0.4)',
+                    boxShadow: '0 12px 40px rgba(212, 175, 55, 0.2)',
+                    border: `1px solid ${THEME.richGold}`,
                   }
                 }}
               >
-                <Typography variant="h4" sx={{ color: THEME.white, fontWeight: 700, marginBottom: 1 }}>
+                <Typography variant="h5" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 1 }}>
                   {summary?.totalUploads || 0}
                 </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
-                  📄 Total Uploaded Spreadsheets
+                <Typography variant="caption" sx={{ color: THEME.lightGold, fontWeight: 600 }}>
+                  Total Sheets
                 </Typography>
               </Paper>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} sm={4} md={2}>
               <Paper
                 elevation={4}
                 sx={{
-                  padding: 3,
+                  padding: 2,
                   textAlign: 'center',
-                  background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+                  background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
                   borderRadius: 2,
+                  border: `1px solid ${THEME.gold}`,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: `0 12px 40px rgba(212, 175, 55, 0.4)`,
+                    boxShadow: `0 12px 40px rgba(212, 175, 55, 0.2)`,
+                    border: `1px solid ${THEME.richGold}`,
                   }
                 }}
               >
-                <Typography variant="h4" sx={{ color: THEME.charcoal, fontWeight: 700, marginBottom: 1 }}>
+                <Typography variant="h5" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 0.5 }}>
                   {formatCurrency(summary?.paymentSummary?.totalPayment || calculateAllUploadTotals()?.totalPayment || 0)}
                 </Typography>
-                <Typography variant="body2" sx={{ color: THEME.charcoal, fontWeight: 600 }}>
-                  💰 Total Payment (All Uploads)
+                <Typography variant="caption" sx={{ color: THEME.lightGold, fontWeight: 600 }}>
+                  Total Payment
                 </Typography>
               </Paper>
             </Grid>
@@ -526,7 +560,7 @@ const UploadedDataManagement = () => {
           {/* Global Deductions Table */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, marginBottom: 2 }}>
             <Typography variant="h6" sx={{ color: THEME.charcoal, fontWeight: 600 }}>
-              📉 Global Deductions
+              Global Deductions
             </Typography>
             <Button
               size="small"
@@ -593,8 +627,8 @@ const UploadedDataManagement = () => {
         <Typography variant="h6" sx={{ marginBottom: 2, color: THEME.charcoal, fontWeight: 600 }}>
           🔍 Search & Filter
         </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={4}>
             <TextField
               fullWidth
               label="Search File Name"
@@ -609,36 +643,37 @@ const UploadedDataManagement = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" sx={{ marginBottom: 1, color: THEME.charcoal, fontWeight: 600 }}>Date Range</Typography>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                fullWidth
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '&:hover fieldset': { borderColor: THEME.gold },
-                    '&.Mui-focused fieldset': { borderColor: THEME.gold },
-                  }
-                }}
-              />
-              <TextField
-                fullWidth
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '&:hover fieldset': { borderColor: THEME.gold },
-                    '&.Mui-focused fieldset': { borderColor: THEME.gold },
-                  }
-                }}
-              />
-            </Box>
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              type="date"
+              label="Start Date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': { borderColor: THEME.gold },
+                  '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                }
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              type="date"
+              label="End Date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': { borderColor: THEME.gold },
+                  '&.Mui-focused fieldset': { borderColor: THEME.gold },
+                }
+              }}
+            />
           </Grid>
         </Grid>
       </Paper>
@@ -751,7 +786,7 @@ const UploadedDataManagement = () => {
                     <Typography variant="h5" sx={{ fontWeight: 700, color: THEME.white }}>
                       {formatCurrency(selectedUpload?.paymentSummary?.deliveredPayment || calculateUploadPaymentTotals(selectedUpload).deliveredPayment)}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: THEME.white }}>✅ Delivered Payment</Typography>
+                    <Typography variant="caption" sx={{ color: THEME.white }}> Delivered Payment</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={12} md={4}>
@@ -797,11 +832,11 @@ const UploadedDataManagement = () => {
                         </TableCell>
                         <TableCell>
                           <Chip
-                            label={item.status === 'rtu' ? '📦 RTO' : item.status === 'rpu' ? '🔄 RPU' : '✅ Delivered'}
+                            label={item.status === 'rtu' ? ' RTO' : item.status === 'rpu' ? ' RPU' : ' Delivered'}
                             color={
                               item.status === 'delivered' ? 'success' :
-                              item.status === 'rtu' ? 'warning' :
-                              item.status === 'rpu' ? 'error' : 'default'
+                                item.status === 'rtu' ? 'warning' :
+                                  item.status === 'rpu' ? 'error' : 'default'
                             }
                             size="small"
                           />
