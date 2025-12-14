@@ -14,7 +14,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ["https://textile-ayjb.vercel.app", "http://localhost:3000", "http://localhost:5173"],
+  origin: ["https://inventory-management-tau-lac.vercel.app", "https://textile-ayjb.vercel.app", "http://localhost:3000", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
