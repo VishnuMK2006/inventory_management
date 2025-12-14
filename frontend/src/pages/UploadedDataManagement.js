@@ -65,8 +65,7 @@ const UploadedDataManagement = () => {
 
   const fetchGlobalDeductions = async () => {
     try {
-      const API_BASE_URL = "https://inventory-management-yeso.onrender.com/api";
-      const response = await fetch(`${API_BASE_URL}/global-deductions`);
+      const response = await fetch('http://localhost:5000/api/global-deductions');
       if (response.ok) {
         const data = await response.json();
         setGlobalDeductionsList(data);
@@ -79,8 +78,7 @@ const UploadedDataManagement = () => {
   const handleAddGlobalDeduction = async (e) => {
     e.preventDefault();
     try {
-      const API_BASE_URL = "https://inventory-management-yeso.onrender.com/api";
-      const response = await fetch(`${API_BASE_URL}/global-deductions`, {
+      const response = await fetch('http://localhost:5000/api/global-deductions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(globalDeduction)
@@ -100,8 +98,7 @@ const UploadedDataManagement = () => {
   const handleDeleteGlobalDeduction = async (id) => {
     if (!window.confirm('Delete this deduction?')) return;
     try {
-      const API_BASE_URL = "https://inventory-management-yeso.onrender.com/api";
-      const response = await fetch(`${API_BASE_URL}/global-deductions/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/global-deductions/${id}`, {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to delete deduction');
@@ -270,6 +267,32 @@ const UploadedDataManagement = () => {
     };
   };
 
+  // Calculate total purchase price for all delivered items across all uploads
+  const calculateDeliveredPurchaseTotal = () => {
+    if (!uploads || uploads.length === 0) return 0;
+
+    let totalPurchase = 0;
+
+    uploads.forEach(upload => {
+      if (upload.uploadedData && upload.uploadedData.length > 0) {
+        upload.uploadedData.forEach(item => {
+          const status = (item.Status || item.status || '').toLowerCase().trim();
+          if (status === 'delivered' || status === 'delivery') {
+            const qty = Number(item.Quantity || item.quantity || 1) || 0;
+
+            const rawCost = item.CostPrice || item.costPrice || item['Cost Price'] || item.PurchasePrice || item.purchasePrice || item.Purchase || item.purchase || item.Cost || item.cost || 0;
+            const costStr = String(rawCost).replace(/[^0-9.-]/g, '');
+            const cost = Math.abs(parseFloat(costStr) || 0);
+
+            totalPurchase += cost * qty;
+          }
+        });
+      }
+    });
+
+    return totalPurchase;
+  };
+
   // Calculate payment totals for a single upload object
   const calculateUploadPaymentTotals = (upload) => {
     if (!upload || !upload.uploadedData || upload.uploadedData.length === 0) return {
@@ -330,7 +353,7 @@ const UploadedDataManagement = () => {
       >
         <Box>
           <Typography variant="h4" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 0.5 }}>
-           Uploaded Data Management
+            📊 Uploaded Data Management
           </Typography>
           <Typography variant="body2" sx={{ color: THEME.lightGold }}>
             View and manage all previously uploaded profit sheets
@@ -362,6 +385,38 @@ const UploadedDataManagement = () => {
       {(summary || uploads.length > 0) && (
         <>
           <Grid container spacing={2} sx={{ marginBottom: 4 }}>
+            {/* 1. Delivered Purchase Total */}
+            <Grid item xs={12} sm={4} md={2}>
+              <Paper
+                elevation={4}
+                sx={{
+                  padding: 2,
+                  textAlign: 'center',
+                  background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
+                  borderRadius: 2,
+                  border: `1px solid ${THEME.gold}`,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: `0 12px 40px rgba(212, 175, 55, 0.2)`,
+                    border: `1px solid ${THEME.richGold}`,
+                  }
+                }}
+              >
+                <Typography variant="h5" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 0.5 }}>
+                  {formatCurrency(calculateDeliveredPurchaseTotal())}
+                </Typography>
+                <Typography variant="caption" sx={{ color: THEME.lightGold, fontWeight: 600 }}>
+                  Delivered Purchase Total
+                </Typography>
+              </Paper>
+            </Grid>
+
+            {/* 2. Delivered */}
             <Grid item xs={12} sm={4} md={2}>
               <Paper
                 elevation={4}
@@ -395,6 +450,7 @@ const UploadedDataManagement = () => {
               </Paper>
             </Grid>
 
+            {/* 3. RPU */}
             <Grid item xs={12} sm={4} md={2}>
               <Paper
                 elevation={4}
@@ -428,12 +484,12 @@ const UploadedDataManagement = () => {
               </Paper>
             </Grid>
 
+            {/* 4. Total Payment */}
             <Grid item xs={12} sm={4} md={2}>
               <Paper
                 elevation={4}
-                onClick={() => setShowGlobalDeductionModal(true)}
                 sx={{
-                  padding: 3,
+                  padding: 2,
                   textAlign: 'center',
                   background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
                   borderRadius: 2,
@@ -442,30 +498,24 @@ const UploadedDataManagement = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
-                  cursor: 'pointer',
-                  position: 'relative',
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: '0 12px 40px rgba(212, 175, 55, 0.2)',
+                    boxShadow: `0 12px 40px rgba(212, 175, 55, 0.2)`,
                     border: `1px solid ${THEME.richGold}`,
                   }
                 }}
               >
-                <Typography sx={{ position: 'absolute', top: 5, right: 10, fontSize: '1rem', color: THEME.gold }}>+</Typography>
-                <Typography variant="h5" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 1 }}>
-                  {formatCurrency(
-                    ((summary?.paymentSummary?.deliveredPayment || calculateAllUploadTotals()?.deliveredPayment || 0) -
-                      (summary?.paymentSummary?.rpuPayment || calculateAllUploadTotals()?.rpuPayment || 0)) -
-                    (globalDeductionsList.reduce((acc, curr) => acc + (curr.amount || 0), 0))
-                  )}
+                <Typography variant="h5" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 0.5 }}>
+                  {formatCurrency(summary?.paymentSummary?.totalPayment || calculateAllUploadTotals()?.totalPayment || 0)}
                 </Typography>
                 <Typography variant="caption" sx={{ color: THEME.lightGold, fontWeight: 600 }}>
-                  Net Profit
+                  Total Payment
                 </Typography>
               </Paper>
             </Grid>
 
+            {/* 5. Total Products */}
             <Grid item xs={12} sm={4} md={2}>
               <Paper
                 elevation={4}
@@ -499,6 +549,7 @@ const UploadedDataManagement = () => {
               </Paper>
             </Grid>
 
+            {/* 6. Total Sheets */}
             <Grid item xs={12} sm={4} md={2}>
               <Paper
                 elevation={4}
@@ -515,7 +566,7 @@ const UploadedDataManagement = () => {
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: '0 12px 40px rgba(212, 175, 55, 0.2)',
+                    boxShadow: `0 12px 40px rgba(212, 175, 55, 0.2)`,
                     border: `1px solid ${THEME.richGold}`,
                   }
                 }}
@@ -529,11 +580,13 @@ const UploadedDataManagement = () => {
               </Paper>
             </Grid>
 
+            {/* 7. Net Profit */}
             <Grid item xs={12} sm={4} md={2}>
               <Paper
                 elevation={4}
+                onClick={() => setShowGlobalDeductionModal(true)}
                 sx={{
-                  padding: 2,
+                  padding: 3,
                   textAlign: 'center',
                   background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
                   borderRadius: 2,
@@ -542,19 +595,27 @@ const UploadedDataManagement = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
+                  cursor: 'pointer',
+                  position: 'relative',
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: `0 12px 40px rgba(212, 175, 55, 0.2)`,
+                    boxShadow: '0 12px 40px rgba(212, 175, 55, 0.2)',
                     border: `1px solid ${THEME.richGold}`,
                   }
                 }}
               >
-                <Typography variant="h5" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 0.5 }}>
-                  {formatCurrency(summary?.paymentSummary?.totalPayment || calculateAllUploadTotals()?.totalPayment || 0)}
+                <Typography sx={{ position: 'absolute', top: 5, right: 10, fontSize: '1rem', color: THEME.gold }}>+</Typography>
+                <Typography variant="h5" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 1 }}>
+                  {formatCurrency(
+                    ((summary?.paymentSummary?.deliveredPayment || calculateAllUploadTotals()?.deliveredPayment || 0) -
+                      (summary?.paymentSummary?.rpuPayment || calculateAllUploadTotals()?.rpuPayment || 0)) -
+                    (globalDeductionsList.reduce((acc, curr) => acc + (curr.amount || 0), 0)) -
+                    (calculateDeliveredPurchaseTotal() || 0)
+                  )}
                 </Typography>
                 <Typography variant="caption" sx={{ color: THEME.lightGold, fontWeight: 600 }}>
-                  Total Payment
+                  Net Profit
                 </Typography>
               </Paper>
             </Grid>

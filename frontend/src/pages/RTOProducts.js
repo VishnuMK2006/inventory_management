@@ -39,14 +39,15 @@ const THEME = {
 const RTOProducts = () => {
   const [products, setProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
-  const [rtoItems, setRtoItems] = useState([]);
+  const [inventoryItems, setInventoryItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('RTO');
 
   useEffect(() => {
     fetchProducts();
-    fetchRTOItems();
+    fetchInventory();
   }, [activeTab]);
 
   const fetchProducts = async () => {
@@ -86,14 +87,44 @@ const RTOProducts = () => {
     }
   };
 
-  const fetchRTOItems = async () => {
+  const fetchInventory = async () => {
+    setInventoryLoading(true);
     try {
-      const resp = await rtoProductsAPI.getAll({ category: 'RTO' });
+      const resp = await rtoProductsAPI.getAll({ category: activeTab });
       const items = resp.data || [];
-      setRtoItems(items);
+      // If no persistent inventory exists for RPU, fall back to returns data
+      if ((items.length === 0 || !items) && activeTab === 'RPU') {
+        try {
+          const returnsResp = await returnsAPI.getAll();
+          const returns = returnsResp.data || [];
+          const rpuFromReturns = returns
+            .filter(r => r.category === 'RPU')
+            .flatMap(ret => (ret.items || []).map(item => ({
+              _id: `${ret._id}-${item.product || item.productId}`,
+              dateAdded: ret.returnDate || ret.createdAt,
+              rtoId: ret.returnId,
+              addedBy: ret.customerName,
+              product: item.product || item.productId,
+              barcode: item.barcode || item.barcode,
+              productName: item.productName,
+              initialQuantity: item.quantity,
+              quantity: item.quantity,
+              price: item.unitPrice || item.unitPrice,
+            })));
+
+          setInventoryItems(rpuFromReturns);
+        } catch (err2) {
+          console.error('Failed to fetch fallback RPU from returns:', err2);
+          setInventoryItems([]);
+        }
+      } else {
+        setInventoryItems(items);
+      }
     } catch (err) {
-      console.error('Failed to fetch RTO items:', err);
-      setError('Failed to fetch RTO items: ' + (err.message || err));
+      console.error('Failed to fetch inventory items:', err);
+      setError('Failed to fetch inventory items: ' + (err.message || err));
+    } finally {
+      setInventoryLoading(false);
     }
   };
 
@@ -111,10 +142,9 @@ const RTOProducts = () => {
               Return To Origin and Returned Product Under Process inventory
             </Typography>
           </Box>
-          <Button
+            <Button
             variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={() => fetchRTOItems()}
+            onClick={() => fetchInventory()}
             sx={{
               borderColor: THEME.gold,
               color: THEME.gold,
@@ -123,7 +153,12 @@ const RTOProducts = () => {
               fontWeight: 600
             }}
           >
-            Refresh RTO Inventory
+            {inventoryLoading ? (
+              <CircularProgress size={18} sx={{ color: THEME.gold, mr: 1 }} />
+            ) : (
+              <RefreshIcon sx={{ mr: 1 }} />
+            )}
+            {`Refresh ${activeTab} Inventory`}
           </Button>
         </Box>
       </Paper>
@@ -268,10 +303,10 @@ const RTOProducts = () => {
       <Box sx={{ mt: 4 }}>
         <Typography variant="h5" sx={{ fontWeight: 600, color: THEME.charcoal, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
           <InventoryIcon sx={{ color: THEME.gold }} />
-          RTO Inventory
+          {activeTab === 'RTO' ? 'RTO Inventory' : 'RPU Inventory'}
         </Typography>
-        {rtoItems.length === 0 ? (
-          <Alert severity="info">No RTO persistent inventory available.</Alert>
+        {inventoryItems.length === 0 ? (
+          <Alert severity="info">No {activeTab} persistent inventory available.</Alert>
         ) : (
           <TableContainer component={Paper} sx={{ boxShadow: '0 2px 10px rgba(212, 175, 55, 0.15)', borderRadius: 2 }}>
             <Table>
@@ -289,7 +324,7 @@ const RTOProducts = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rtoItems.map((r, idx) => (
+                {inventoryItems.map((r, idx) => (
                   <TableRow key={r._id} hover sx={{ '&:hover': { bgcolor: THEME.lightGold } }}>
                     <TableCell>{idx + 1}</TableCell>
                     <TableCell>
@@ -303,7 +338,7 @@ const RTOProducts = () => {
                       />
                     </TableCell>
                     <TableCell>{r.addedBy || r.customerName || '-'}</TableCell>
-                    <TableCell>{r.product?._id || r.product || '-'}</TableCell>
+                    <TableCell>{r.product?.barcode || r.barcode || '-'}</TableCell>
                     <TableCell>{r.productName || r.product?.name || '-'}</TableCell>
                     <TableCell>{(r.initialQuantity ?? r.quantity) || 0}</TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>{r.quantity || 0}</TableCell>
