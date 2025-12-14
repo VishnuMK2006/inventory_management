@@ -65,7 +65,8 @@ const UploadedDataManagement = () => {
 
   const fetchGlobalDeductions = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/global-deductions');
+      const API_BASE_URL = "https://inventory-management-yeso.onrender.com/api";
+      const response = await fetch(`${API_BASE_URL}/global-deductions`);
       if (response.ok) {
         const data = await response.json();
         setGlobalDeductionsList(data);
@@ -78,7 +79,8 @@ const UploadedDataManagement = () => {
   const handleAddGlobalDeduction = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/global-deductions', {
+      const API_BASE_URL = "https://inventory-management-yeso.onrender.com/api";
+      const response = await fetch(`${API_BASE_URL}/global-deductions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(globalDeduction)
@@ -98,7 +100,8 @@ const UploadedDataManagement = () => {
   const handleDeleteGlobalDeduction = async (id) => {
     if (!window.confirm('Delete this deduction?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/global-deductions/${id}`, {
+      const API_BASE_URL = "https://inventory-management-yeso.onrender.com/api";
+      const response = await fetch(`${API_BASE_URL}/global-deductions/${id}`, {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to delete deduction');
