@@ -178,8 +178,9 @@ const SaleForm = ({ initialData, buyers, products, onSubmit, onCancel, loading }
         </Grid>
       </Grid>
       <Typography variant="h6" sx={{ fontWeight: 600, color: THEME.charcoal, marginBottom: '1rem' }}>Items</Typography>
-      <TableContainer component={Paper} sx={{ marginBottom: '2rem', border: `1px solid ${THEME.softGold}`, borderRadius: '8px' }}>
-        <Table>
+      <Box sx={{ width: '100%', overflowX: 'auto', marginBottom: '2rem', WebkitOverflowScrolling: 'touch' }}>
+        <TableContainer component={Paper} sx={{ border: `1px solid ${THEME.softGold}`, borderRadius: '8px' }}>
+          <Table sx={{ minWidth: { xs: 700, md: 'auto' } }}>
           <TableHead sx={{ backgroundColor: '#D4AF37' }}>
             <TableRow>
               <TableCell sx={{ fontWeight: 600, color: '#000' }}>Product</TableCell>
@@ -274,6 +275,7 @@ const SaleForm = ({ initialData, buyers, products, onSubmit, onCancel, loading }
           </TableBody>
         </Table>
       </TableContainer>
+      </Box>
       <Button 
         variant="outlined" 
         onClick={handleAddItem} 
@@ -287,7 +289,7 @@ const SaleForm = ({ initialData, buyers, products, onSubmit, onCancel, loading }
         + Add Item
       </Button>
       <Grid container spacing={2} sx={{ marginBottom: '2rem' }}>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <TextField
             fullWidth
             type="number"
@@ -297,7 +299,7 @@ const SaleForm = ({ initialData, buyers, products, onSubmit, onCancel, loading }
             onChange={e => handleInputChange('discount', Number(e.target.value))}
           />
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <TextField
             fullWidth
             type="number"
@@ -307,7 +309,7 @@ const SaleForm = ({ initialData, buyers, products, onSubmit, onCancel, loading }
             onChange={e => handleInputChange('tax', Number(e.target.value))}
           />
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <TextField
             fullWidth
             type="number"
@@ -317,7 +319,7 @@ const SaleForm = ({ initialData, buyers, products, onSubmit, onCancel, loading }
             onChange={e => handleInputChange('shipping', Number(e.target.value))}
           />
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <TextField
             fullWidth
             type="number"
@@ -2028,8 +2030,10 @@ const Sales = () => {
         {/* Header */}
         <Box sx={{ 
         display: 'flex', 
+        flexDirection: { xs: 'column', md: 'row' },
         justifyContent: 'space-between', 
-        alignItems: 'center', 
+        alignItems: { xs: 'flex-start', md: 'center' },
+        gap: { xs: 2, md: 0 },
         marginBottom: '2.5rem'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -2038,7 +2042,7 @@ const Sales = () => {
             Sales Management
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, width: { xs: '100%', md: 'auto' } }}>
           <TextField
             type="date"
             label="From Date"
@@ -2046,7 +2050,7 @@ const Sales = () => {
             onChange={(e) => setDateFrom(e.target.value)}
             InputLabelProps={{ shrink: true }}
             size="small"
-            sx={{ width: 160 }}
+            sx={{ width: { xs: '100%', sm: 160 } }}
           />
           <TextField
             type="date"
@@ -2055,12 +2059,13 @@ const Sales = () => {
             onChange={(e) => setDateTo(e.target.value)}
             InputLabelProps={{ shrink: true }}
             size="small"
-            sx={{ width: 160 }}
+            sx={{ width: { xs: '100%', sm: 160 } }}
           />
           <Button
             variant="outlined"
             startIcon={<FileDownloadIcon />}
             onClick={handleExcelDownload}
+            fullWidth={window.innerWidth < 600}
             sx={{
               color: THEME.gold,
               borderColor: THEME.gold,
@@ -2076,6 +2081,7 @@ const Sales = () => {
             variant="contained"
             startIcon={<AddIcon />}
           onClick={handleShowModal}
+          fullWidth={window.innerWidth < 600}
           sx={{
             backgroundColor: THEME.gold,
             color: THEME.black,
@@ -2114,13 +2120,13 @@ const Sales = () => {
         </Snackbar>
       ))}
 
-      <TableContainer component={Paper} sx={{ 
-        borderRadius: '12px', 
-        border: `1px solid ${THEME.softGold}`,
-        boxShadow: '0px 1px 2px rgba(212, 175, 55, 0.15)',
-        overflow: 'hidden'
-      }}>
-        <Table>
+      <Box sx={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <TableContainer component={Paper} sx={{ 
+          borderRadius: '12px', 
+          border: `1px solid ${THEME.softGold}`,
+          boxShadow: '0px 1px 2px rgba(212, 175, 55, 0.15)'
+        }}>
+          <Table sx={{ minWidth: { xs: 800, md: 'auto' } }}>
           <TableHead sx={{ backgroundColor: '#D4AF37' }}>
             <TableRow>
               <TableCell sx={{ fontWeight: 600, color: '#000', padding: '16px' }}>ID</TableCell>
@@ -2259,6 +2265,7 @@ const Sales = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      </Box>
 
       {/* Edit Sale Password Confirmation Modal */}
       <Dialog 

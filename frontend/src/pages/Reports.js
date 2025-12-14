@@ -1,40 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Typography,
-  Button,
   Paper,
+  Typography,
+  Grid,
+  Button,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
-  Grid,
-  Card,
-  CardContent,
-  CircularProgress,
-  Stack,
-  Snackbar,
-  Alert,
-  Select,
   MenuItem,
+  Select,
   FormControl,
   InputLabel,
+  Alert,
+  IconButton
 } from '@mui/material';
+import { FaUpload, FaSync, FaBoxOpen } from 'react-icons/fa';
+import * as XLSX from 'xlsx';
 import {
-  FileDownload as FileDownloadIcon,
-  Clear as ClearIcon,
-  Assessment as AssessmentIcon,
-  ShoppingCart as ShoppingCartIcon,
-  AttachMoney as AttachMoneyIcon,
-  TrendingUp as TrendingUpIcon,
-} from '@mui/icons-material';
-import { purchasesAPI, salesAPI, reportsAPI, returnsAPI } from '../services/api';
-import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   XAxis,
@@ -42,832 +28,472 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
-  ComposedChart,
-  Cell,
+  ResponsiveContainer
 } from 'recharts';
+import { reportsAPI, uploadedProfitSheetsAPI } from '../services/api';
+
+// Theme Colors - Premium Gold & Black
+const THEME = {
+  gold: '#D4AF37',
+  richGold: '#C9A227',
+  softGold: '#E2C878',
+  lightGold: '#F4E3B2',
+  black: '#000000',
+  charcoal: '#1A1A1A',
+  softCharcoal: '#2C2C2C',
+  white: '#FFFFFF',
+  offWhite: '#F8F5F0'
+};
+
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+  }).format(amount);
+};
 
 const Reports = () => {
-  const [purchases, setPurchases] = useState([]);
-  const [sales, setSales] = useState([]);
-  const [filter, setFilter] = useState({
-    startDate: '',
-    endDate: ''
-  });
-  const [chartData, setChartData] = useState([]);
-  const [productData, setProductData] = useState([]);
+  // State for Spreadsheet Status Report
   const [products, setProducts] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [graphLoading, setGraphLoading] = useState(false);
-  const [reportSummary, setReportSummary] = useState(null);
-  const [productSummary, setProductSummary] = useState(null);
-  const [statusData, setStatusData] = useState([]);
-  const [statusSummary, setStatusSummary] = useState(null);
   const [selectedStatusProduct, setSelectedStatusProduct] = useState('');
+  const [uploadedSheets, setUploadedSheets] = useState([]);
+  const [selectedSheetId, setSelectedSheetId] = useState('all');
+  const [uploadedSheet, setUploadedSheet] = useState(null);
+  const [uploadResults, setUploadResults] = useState([]);
+  const [comboDetails, setComboDetails] = useState({});
+  const [showBreakdown, setShowBreakdown] = useState(false);
+
+  const [statusData, setStatusData] = useState([]);
+  const [statusSummary, setStatusSummary] = useState({
+    delivered: 0,
+    rto: 0,
+    rpu: 0,
+    netProfit: 0,
+    totalOrders: 0
+  });
+
+  // UI States
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchData();
-    fetchProducts();
+    fetchInitialData();
   }, []);
 
+  // Re-run status processing if upload results change
   useEffect(() => {
-    fetchChartData();
-  }, [filter]);
-
-  useEffect(() => {
-    if (selectedProduct) {
-      fetchProductMonthlyData();
+    if (uploadResults && uploadResults.length > 0) {
+      processUploadedStatusData();
+    } else {
+      // Reset summary if no data
+      setStatusSummary({
+        delivered: 0,
+        rto: 0,
+        rpu: 0,
+        netProfit: 0,
+        totalOrders: 0
+      });
+      setStatusData([]);
     }
-  }, [selectedProduct, filter]);
+  }, [uploadResults, selectedStatusProduct, comboDetails]);
 
+  // Handle Sheet Selection
   useEffect(() => {
-    if (selectedStatusProduct) {
-      console.log('Fetching status data for product:', selectedStatusProduct);
-      fetchProductStatusData();
-    }
-  }, [selectedStatusProduct]);
+    const loadSheetData = async () => {
+      let rowsToProcess = [];
+      if (selectedSheetId === 'all') {
+        const allRows = uploadedSheets.flatMap(sheet => sheet.uploadedData || []);
+        rowsToProcess = allRows;
+        setUploadResults(allRows);
+      } else if (selectedSheetId) {
+        const sheet = uploadedSheets.find(s => s._id === selectedSheetId);
+        if (sheet) {
+          rowsToProcess = sheet.uploadedData || [];
+          setUploadResults(rowsToProcess);
+          setUploadedSheet(sheet);
+        }
+      } else {
+        if (!uploadedSheet) setUploadResults([]);
+      }
 
-  const fetchData = async () => {
-    setLoading(true);
+      // Trigger combo lookup for the loaded rows
+      if (rowsToProcess.length > 0) {
+        fetchComboDetailsForRows(rowsToProcess);
+      }
+    };
+
+    if (uploadedSheets.length > 0) {
+      loadSheetData();
+    }
+  }, [selectedSheetId, uploadedSheets]);
+
+  const fetchInitialData = async () => {
     try {
-      const [purchasesRes, salesRes] = await Promise.all([
-        purchasesAPI.getAll(),
-        salesAPI.getAll()
+      setLoading(true);
+      const [productsRes, sheetsRes] = await Promise.all([
+        reportsAPI.getProductsList(),
+        uploadedProfitSheetsAPI.getAll()
       ]);
-      setPurchases(purchasesRes.data);
-      setSales(salesRes.data);
-    } catch (error) {
-      setError('Failed to fetch reports data');
+      setProducts(productsRes.data);
+      setUploadedSheets(sheetsRes.data);
+    } catch (err) {
+      console.error('Error fetching initial data:', err);
+      setError('Failed to load initial data');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchProducts = async () => {
-    try {
-      const res = await reportsAPI.getProductsList();
-      setProducts(res.data || []);
-      if (res.data && res.data.length > 0) {
-        setSelectedProduct(res.data[0]._id);
-        setSelectedStatusProduct(res.data[0]._id);
+  const fetchComboDetailsForRows = async (rows) => {
+    if (!rows || rows.length === 0) return;
+    const skus = rows
+      .map(r => r.sku || r.SKU)
+      .filter(s => s && typeof s === 'string')
+      .map(s => s.trim());
+
+    // De-duplicate SKUs locally before sending
+    const uniqueSkus = [...new Set(skus)];
+
+    if (uniqueSkus.length > 0) {
+      try {
+        const comboRes = await reportsAPI.lookupCombos(uniqueSkus);
+        setComboDetails(prev => ({ ...prev, ...comboRes.data }));
+      } catch (err) {
+        console.error('Failed to lookup combos:', err);
       }
-    } catch (error) {
-      console.error('Failed to fetch products:', error);
     }
   };
 
-  const fetchChartData = async () => {
-    setGraphLoading(true);
-    try {
-      const response = await reportsAPI.getPurchaseSalesData(filter.startDate, filter.endDate);
-      setChartData(response.data.chartData || []);
-      setReportSummary(response.data.summary || null);
-    } catch (error) {
-      console.error('Failed to fetch chart data:', error);
-    } finally {
-      setGraphLoading(false);
-    }
+  const handleReportFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsName = wb.SheetNames[0];
+        const ws = wb.Sheets[wsName];
+        let data = XLSX.utils.sheet_to_json(ws);
+
+        // Normalize keys
+        data = data.map(row => {
+          const newRow = {};
+          Object.keys(row).forEach(key => {
+            newRow[key.toLowerCase()] = row[key]; // Access via lowercase for consistency
+            newRow[key] = row[key]; // Keep original too just in case
+          });
+          return newRow;
+        });
+
+        setUploadResults(data);
+        setUploadedSheet(null); // Not a server-saved sheet yet
+        setSelectedSheetId('');
+
+        // Trigger lookup
+        fetchComboDetailsForRows(data);
+      } catch (err) {
+        console.error('Error parsing file:', err);
+        setError('Failed to parse Excel file');
+      }
+    };
+    reader.readAsBinaryString(file);
   };
 
-  const fetchProductMonthlyData = async () => {
-    try {
-      const response = await reportsAPI.getProductMonthlyData(
-        selectedProduct,
-        filter.startDate,
-        filter.endDate
-      );
-      setProductData(response.data.chartData || []);
-      setProductSummary(response.data.summary || null);
-    } catch (error) {
-      console.error('Failed to fetch product data:', error);
-    }
-  };
+  const processUploadedStatusData = () => {
+    let deliveredCount = 0;
+    let rtoCount = 0;
+    let rpuCount = 0;
+    let netProfit = 0;
+    let totalOrders = 0;
 
-  const fetchProductStatusData = async () => {
-    try {
-      const returnsResponse = await returnsAPI.getAll();
-      const returns = returnsResponse.data || [];
-      
-      // Get selected product name
-      const selectedProductName = products.find(p => p._id === selectedStatusProduct)?.name;
-      
-      // Filter returns for selected product and calculate quantities
-      const productReturns = returns.filter(returnItem => 
-        returnItem.items?.some(item => 
-          item.product === selectedStatusProduct || 
-          item.productName === selectedProductName
-        )
-      );
-      
-      // Calculate status counts by quantity
-      let rtoCount = 0;
-      let rpuCount = 0;
-      
-      productReturns.forEach(returnItem => {
-        const productItems = returnItem.items?.filter(item => 
-          item.product === selectedStatusProduct || 
-          item.productName === selectedProductName
-        ) || [];
-        const totalQuantity = productItems.reduce((sum, item) => sum + item.quantity, 0);
-        
-        if (returnItem.category === 'RTO') {
-          rtoCount += totalQuantity;
-        } else if (returnItem.category === 'RPU') {
-          rpuCount += totalQuantity;
+    const targetRows = uploadResults;
+
+    targetRows.forEach(row => {
+      const sku = (row.sku || row.SKU || '').trim();
+      if (!sku) return;
+
+      let includeRow = true;
+
+      // If filtering by product
+      if (selectedStatusProduct) {
+        const combo = comboDetails[sku];
+        if (!combo) {
+          includeRow = false;
+        } else {
+          const hasProduct = combo.products.some(p => {
+            const pId = p.productId || p.product?._id || p.product;
+            return String(pId) === String(selectedStatusProduct);
+          });
+          if (!hasProduct) includeRow = false;
         }
-      });
-      
-      const statusCounts = {
-        RTO: rtoCount,
-        RPU: rpuCount,
-        Delivered: 0 // This would need to come from sales data
-      };
-      
-      const chartData = Object.entries(statusCounts).map(([status, count]) => ({
-        status,
-        count
-      }));
-      
-      const summary = {
-        totalRTO: statusCounts.RTO,
-        totalRPU: statusCounts.RPU,
-        totalDelivered: statusCounts.Delivered,
-        total: statusCounts.RTO + statusCounts.RPU + statusCounts.Delivered
-      };
-      
-      setStatusData(chartData);
-      setStatusSummary(summary);
-    } catch (error) {
-      console.error('Failed to fetch product status data:', error);
-    }
-  };
+      }
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilter(prev => ({ ...prev, [name]: value }));
-  };
+      if (includeRow) {
+        totalOrders++;
+        const status = (row.status || row.Status || '').toLowerCase().trim();
+        const quantity = Number(row.quantity || row.Quantity || 1);
 
-  const handleProductChange = (e) => {
-    setSelectedProduct(e.target.value);
-  };
+        let profitVal = 0;
+        const profitRaw = row.profit || row.Profit || row['Net Profit'];
+        if (profitRaw) {
+          const cleaned = String(profitRaw).replace(/[^0-9.-]/g, '');
+          profitVal = parseFloat(cleaned) || 0;
+        }
 
-  const handleStatusProductChange = (e) => {
-    setSelectedStatusProduct(e.target.value);
-  };
+        netProfit += profitVal;
 
-  const clearFilters = () => {
-    setFilter({
-      startDate: '',
-      endDate: ''
+        if (status === 'delivered' || status === 'delivery') {
+          deliveredCount += quantity;
+        } else if (status === 'rpu' || status === 'returned' || status === 'rpo') {
+          rpuCount += quantity;
+        } else if (status === 'rto' || status === 'return to origin') {
+          rtoCount += quantity;
+        }
+      }
     });
+
+    const summary = {
+      delivered: deliveredCount,
+      rto: rtoCount,
+      rpu: rpuCount,
+      netProfit: netProfit,
+      totalOrders
+    };
+
+    const chartData = [
+      { name: 'Delivered', value: deliveredCount, fill: '#48bb78' },
+      { name: 'RTO', value: rtoCount, fill: '#f56565' },
+      { name: 'RPU', value: rpuCount, fill: '#ed8936' }
+    ];
+
+    setStatusData(chartData);
+    setStatusSummary(summary);
   };
-
-  const filteredPurchases = purchases.filter(p => {
-    const date = new Date(p.purchaseDate);
-    const start = filter.startDate ? new Date(filter.startDate) : null;
-    const end = filter.endDate ? new Date(filter.endDate) : null;
-    return (!start || date >= start) && (!end || date <= end);
-  });
-
-  const filteredSales = sales.filter(s => {
-    const date = new Date(s.saleDate);
-    const start = filter.startDate ? new Date(filter.startDate) : null;
-    const end = filter.endDate ? new Date(filter.endDate) : null;
-    return (!start || date >= start) && (!end || date <= end);
-  });
-
-  const calculateTotals = (items) => {
-    return items.reduce((sum, item) => sum + item.totalAmount, 0);
-  };
-
-  const calculateProfit = () => {
-    const totalSales = calculateTotals(filteredSales);
-    const totalPurchases = calculateTotals(filteredPurchases);
-    return totalSales - totalPurchases;
-  };
-
-  const exportToCSV = (data, filename) => {
-    const headers = Object.keys(data[0] || {}).join(',');
-    const rows = data.map(item => Object.values(item).join(','));
-    const csv = [headers, ...rows].join('\n');
-    
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${filename}.csv`;
-    link.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  if (loading && purchases.length === 0 && sales.length === 0) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: '#fafafa' }}>
-        <CircularProgress sx={{ color: '#000' }} />
-      </Box>
-    );
-  }
-
-  const selectedProductName = products.find(p => p._id === selectedProduct)?.name || 'Product';
 
   return (
-    <Box sx={{ backgroundColor: 'rgba(248, 245, 240, 0.85)', minHeight: '100vh', p: 3 }}>
-      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
-        <Alert onClose={() => setError('')} severity="error" sx={{ width: '100%' }}>
-          {error}
-        </Alert>
-      </Snackbar>
+    <Box sx={{
+      minHeight: '100vh',
+      background: `linear-gradient(135deg, ${THEME.offWhite} 0%, ${THEME.lightGold} 100%)`,
+      padding: 4
+    }}>
+      {/* Page Header */}
+      <Paper
+        elevation={3}
+        sx={{
+          padding: 3,
+          marginBottom: 3,
+          background: `linear-gradient(135deg, ${THEME.charcoal} 0%, ${THEME.softCharcoal} 100%)`,
+          borderRadius: 2,
+          border: `2px solid ${THEME.gold}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}
+      >
+        <Box>
+          <Typography variant="h4" sx={{ color: THEME.gold, fontWeight: 700, marginBottom: 0.5 }}>
+            📈 Business Reports
+          </Typography>
+          <Typography variant="body2" sx={{ color: THEME.lightGold }}>
+            Comprehensive analytics and status reports
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          onClick={() => { fetchInitialData(); }}
+          sx={{
+            background: `linear-gradient(135deg, ${THEME.gold} 0%, ${THEME.richGold} 100%)`,
+            color: THEME.charcoal,
+            fontWeight: 600,
+            '&:hover': {
+              background: `linear-gradient(135deg, ${THEME.richGold} 0%, ${THEME.gold} 100%)`,
+            }
+          }}
+        >
+          <FaSync style={{ marginRight: '8px' }} /> Refresh Data
+        </Button>
+      </Paper>
 
-      {/* Header */}
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-        <AssessmentIcon sx={{ fontSize: 32 }} />
-        <Typography variant="h4" sx={{ fontWeight: 600 }}>
-          Financial Reports & Analytics
-        </Typography>
-      </Stack>
+      {error && <Alert severity="error" onClose={() => setError('')} sx={{ marginBottom: 2 }}>{error}</Alert>}
 
-      {/* Statistics Overview */}
-      <Grid container  spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sx={{ minWidth: "150px" }} sm={6} md={3}>
-          <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-            <CardContent>
-              <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                 Total Sales
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: '#000' }}>
-                ₹{reportSummary?.totalSales.toFixed(2) || calculateTotals(filteredSales).toFixed(2)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item sx={{ minWidth: "150px" }} xs={12} sm={6} md={3}>
-          <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-            <CardContent>
-              <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                Total Purchases
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: '#000' }}>
-                ₹{reportSummary?.totalPurchase.toFixed(2) || calculateTotals(filteredPurchases).toFixed(2)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item sx={{ minWidth: "150px" }} xs={12} sm={6} md={3}>
-          <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-            <CardContent>
-              <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                 Net Profit
-              </Typography>
-              <Typography 
-                variant="h5" 
-                sx={{ 
-                  fontWeight: 700, 
-                  color: (reportSummary?.profit || calculateProfit()) >= 0 ? '#2e7d32' : '#d32f2f' 
-                }}
+      {/* Spreadsheet Status Report Section */}
+      <Paper
+        elevation={3}
+        sx={{
+          padding: 3,
+          background: THEME.white,
+          borderRadius: 2,
+          border: `1px solid ${THEME.softGold}`,
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+          <Typography variant="h6" sx={{ color: THEME.charcoal, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FaBoxOpen /> Spreadsheet Status Report (RTO/RPU/Delivered)
+          </Typography>
+        </Box>
+
+        {/* 1. INPUTS ROW: 3 Stacked Rows (Full Width) */}
+        {/* User requested: "3 next next straight rows" (from image which shows stack). Vertical Stack. */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 4 }}>
+
+          {/* ROW 1: Data Source */}
+          <FormControl fullWidth size="small">
+            <InputLabel>Select Data Source</InputLabel>
+            <Select
+              value={selectedSheetId}
+              label="Select Data Source"
+              onChange={(e) => setSelectedSheetId(e.target.value)}
+            >
+              <MenuItem value="all">All Uploaded Sheets (Aggregate)</MenuItem>
+              {uploadedSheets.map(sheet => (
+                <MenuItem key={sheet._id} value={sheet._id}>
+                  {sheet.fileName} ({new Date(sheet.uploadDate).toLocaleDateString()})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* ROW 2: Upload Button */}
+          <Box sx={{ border: '1px dashed #ccc', p: 2, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <input
+              accept=".xlsx, .xls"
+              style={{ display: 'none' }}
+              id="raised-button-file"
+              type="file"
+              onChange={handleReportFileUpload}
+            />
+            <label htmlFor="raised-button-file" style={{ flexGrow: 1 }}>
+              <Button variant="outlined" component="span" startIcon={<FaUpload />} fullWidth>
+                {uploadResults.length > 0 ? 'File Uploaded (Change)' : 'Upload Excel File'}
+              </Button>
+            </label>
+            {uploadResults.length > 0 && (
+              <Button
+                size="small"
+                color="error"
+                onClick={() => { setUploadResults([]); setUploadedSheet(null); setComboDetails({}); }}
               >
-                ₹{(reportSummary?.profit || calculateProfit()).toFixed(2)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-            <CardContent>
-              <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                 Date
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#000' }}>
-                {filter.startDate || 'Start'} - {filter.endDate || 'End'}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Filter Section */}
-      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-           Filter Reports
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              label="Start Date"
-              type="date"
-              name="startDate"
-              value={filter.startDate}
-              onChange={handleFilterChange}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              label="End Date"
-              type="date"
-              name="endDate"
-              value={filter.endDate}
-              onChange={handleFilterChange}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<ClearIcon />}
-              onClick={clearFilters}
-              sx={{
-                height: '56px',
-                textTransform: 'none',
-                borderColor: '#e0e0e0',
-                color: '#000',
-                '&:hover': { borderColor: '#000', bgcolor: 'rgba(0, 0, 0, 0.04)' }
-              }}
-            >
-              Clear Filters
-            </Button>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Button
-              fullWidth
-              variant="contained"
-              startIcon={<FileDownloadIcon />}
-              onClick={() => exportToCSV([...filteredPurchases, ...filteredSales], 'financial_report')}
-              sx={{
-                height: '56px',
-                bgcolor: '#000',
-                textTransform: 'none',
-                '&:hover': { bgcolor: '#333' }
-              }}
-            >
-              Export CSV
-            </Button>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* Purchase & Sales Trend Graph */}
-      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-           Purchase & Sales Trend (Daily)
-        </Typography>
-        {graphLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
-            <CircularProgress sx={{ color: '#000' }} />
+                Clear
+              </Button>
+            )}
           </Box>
-        ) : chartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={400}>
-            <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
+
+          {/* ROW 3: Product Filter */}
+          <FormControl fullWidth size="small">
+            <InputLabel>Filter by Product</InputLabel>
+            <Select
+              value={selectedStatusProduct}
+              label="Filter by Product"
+              onChange={(e) => setSelectedStatusProduct(e.target.value)}
+            >
+              <MenuItem value=""><em>All Products</em></MenuItem>
+              {products.map(p => (
+                <MenuItem key={p._id} value={p._id}>{p.name}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Breakdown Toggle (Below Row 3) */}
+          {uploadResults.length > 0 && (
+            <Box>
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => setShowBreakdown(!showBreakdown)}
+              >
+                {showBreakdown ? 'Hide' : 'Show'} Detailed Combo Breakdown
+              </Button>
+            </Box>
+          )}
+        </Box>
+
+        {/* 2. STATS ROW: 3 Items side-by-side (Straight Row) - Net Profit Removed */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 4, width: '100%' }}>
+          <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#f0fdf4', border: '1px solid #48bb78', flex: 1, display: 'flex', flexDirection: 'column', justifyItems: 'center' }}>
+            <Typography variant="h5" fontWeight="bold" color="#48bb78">{statusSummary.delivered}</Typography>
+            <Typography variant="caption">Delivered</Typography>
+          </Paper>
+
+          <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fef2f2', border: '1px solid #f56565', flex: 1, display: 'flex', flexDirection: 'column', justifyItems: 'center' }}>
+            <Typography variant="h5" fontWeight="bold" color="#f56565">{statusSummary.rto}</Typography>
+            <Typography variant="caption">RTO</Typography>
+          </Paper>
+
+          <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff7ed', border: '1px solid #ed8936', flex: 1, display: 'flex', flexDirection: 'column', justifyItems: 'center' }}>
+            <Typography variant="h5" fontWeight="bold" color="#ed8936">{statusSummary.rpu}</Typography>
+            <Typography variant="caption">RPU</Typography>
+          </Paper>
+        </Box>
+
+        {/* 3. BAR GRAPH (Restored) */}
+        <Box sx={{ height: 400, mt: 4, mb: 4 }}>
+          <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Status Distribution</Typography>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={statusData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip 
-                formatter={(value) => `₹${value.toFixed(2)}`}
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '4px'
-                }}
-              />
+              <Tooltip />
               <Legend />
-              <Bar dataKey="purchaseAmount" fill="#666" name="Purchase Amount" />
-              <Bar dataKey="salesAmount" fill="#000" name="Sales Amount" />
-            </ComposedChart>
+              <Bar dataKey="value" fill="#8884d8" name="Count" label={{ position: 'top' }} />
+            </BarChart>
           </ResponsiveContainer>
-        ) : (
-          <Box sx={{ textAlign: 'center', py: 5, color: '#666' }}>
-            <Typography>No data available for the selected date range</Typography>
-          </Box>
-        )}
-      </Paper>
-
-      {/* Product-wise Analysis */}
-      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-           Product-wise Analysis (Monthly)
-        </Typography>
-        
-        <FormControl fullWidth sx={{ mb: 4 }}>
-          <InputLabel>Select Product</InputLabel>
-          <Select
-            value={selectedProduct}
-            onChange={handleProductChange}
-            label="Select Product"
-          >
-            {products.map(product => (
-              <MenuItem key={product._id} value={product._id}>
-                {product.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        {selectedProduct && (
-          <>
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                Summary for {selectedProductName}
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-                    <CardContent>
-                      <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                        Quantity Purchased
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: '#000' }}>
-                        {productSummary?.totalPurchaseQuantity || 0}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-                    <CardContent>
-                      <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                        Quantity Sold
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: '#000' }}>
-                        {productSummary?.totalSalesQuantity || 0}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-                    <CardContent>
-                      <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                        Purchase Value
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: '#000' }}>
-                        ₹{productSummary?.totalPurchaseAmount.toFixed(2) || 0}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-                    <CardContent>
-                      <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                        Sales Value
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: '#000' }}>
-                        ₹{productSummary?.totalSalesAmount.toFixed(2) || 0}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </Box>
-
-            {productData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={productData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis yAxisId="left" label={{ value: 'Quantity', angle: -90, position: 'insideLeft' }} />
-                  <YAxis yAxisId="right" orientation="right" label={{ value: 'Amount', angle: 90, position: 'insideRight' }} />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '4px'
-                    }}
-                  />
-                  <Legend />
-                  <Bar yAxisId="left" dataKey="purchaseQuantity" fill="#666" name="Purchase Qty" />
-                  <Bar yAxisId="left" dataKey="salesQuantity" fill="#000" name="Sales Qty" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Box sx={{ textAlign: 'center', py: 5, color: '#666' }}>
-                <Typography>No data available for this product</Typography>
-              </Box>
-            )}
-          </>
-        )}
-      </Paper>
-
-      {/* Product Status Report (RTO, RPU, Delivered) */}
-      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
-          Product Status Report (RTO, RPU, Delivered)
-        </Typography>
-        
-        <FormControl fullWidth sx={{ mb: 4 }}>
-          <InputLabel>Select Product</InputLabel>
-          <Select
-            value={selectedStatusProduct}
-            onChange={handleStatusProductChange}
-            label="Select Product"
-          >
-            {products.map(product => (
-              <MenuItem key={product._id} value={product._id}>
-                {product.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        {selectedStatusProduct && (
-          <>
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                Status Summary for {products.find(p => p._id === selectedStatusProduct)?.name || 'Product'}
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-                    <CardContent>
-                      <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                        📦 Delivered
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: '#2e7d32' }}>
-                        {statusSummary?.totalDelivered || 0}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-                    <CardContent>
-                      <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                        ↩️ RTO
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: '#d32f2f' }}>
-                        {statusSummary?.totalRTO || 0}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-                    <CardContent>
-                      <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                        🔄 RPU
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: '#ed6c02' }}>
-                        {statusSummary?.totalRPU || 0}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Card sx={{ border: '1px solid #e0e0e0', boxShadow: 'none' }}>
-                    <CardContent>
-                      <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                        📊 Total
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: '#000' }}>
-                        {statusSummary?.total || 0}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </Box>
-
-            {statusData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={statusData} margin={{ top: 40, right: 30, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="status" />
-                  <YAxis />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '4px'
-                    }}
-                    labelFormatter={(label) => `Status: ${label}`}
-                    formatter={(value) => [value, 'Count']}
-                  />
-                  <Legend />
-                  <Bar 
-                    dataKey="count" 
-                    name="Count"
-                    label={{ position: 'top', fontSize: 14, fontWeight: 'bold' }}
-                  >
-                    {statusData.map((entry, index) => {
-                      const colors = { 'Delivered': '#2e7d32', 'RTO': '#d32f2f', 'RPU': '#ed6c02' };
-                      return (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={colors[entry.status] || '#000'} 
-                        />
-                      );
-                    })}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Box sx={{ textAlign: 'center', py: 5, color: '#666' }}>
-                <Typography>No status data available for this product</Typography>
-              </Box>
-            )}
-          </>
-        )}
-      </Paper>
-
-      {/* Purchases Report */}
-     <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-  <Paper 
-    sx={{ 
-      p: 4,
-      display: 'inline-block',
-      background: 'linear-gradient(135deg, #1A1A1A 0%, #2B262A 100%)',
-      color: '#F8F5F0', 
-      border: '2px solid #D4AF37',
-      boxShadow: '0 8px 32px rgba(212, 175, 55, 0.15)',
-      borderRadius: 3,
-      position: 'relative',
-      overflow: 'hidden',
-      '&::before': {
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '4px',
-      }
-    }}
-  >
-    <Typography 
-      variant="h4" 
-      sx={{ 
-        fontWeight: 700, 
-        textAlign: 'center', 
-        mb: 4,
-        color: '#D4AF37',
-        letterSpacing: '0.5px',
-        textTransform: 'uppercase',
-        fontSize: { xs: '1.5rem', md: '2rem' }
-      }}
-    >
-      Financial Summary
-    </Typography>
-    
-    <Grid container spacing={3}>
-      <Grid item xs={12} md={4}>
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <Box 
-            sx={{ 
-              textAlign: 'center',
-              p: 3,
-              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(201, 162, 39, 0.12) 100%)',
-              borderRadius: 2,
-              border: '1px solid rgba(212, 175, 55, 0.2)',
-              transition: 'all 0.3s ease',
-              display: 'inline-block',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 8px 24px rgba(212, 175, 55, 0.25)',
-                border: '1px solid rgba(212, 175, 55, 0.4)',
-              }
-            }}
-          >
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
-                mb: 2, 
-                color: '#F4E3B2',
-                fontWeight: 500,
-                letterSpacing: '1px',
-                textTransform: 'uppercase',
-                fontSize: '0.85rem',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Total Purchases
-            </Typography>
-            <Typography 
-              variant="h3" 
-              sx={{ 
-                fontWeight: 800,
-                color: '#D4AF37',
-                fontSize: { xs: '2rem', md: '2.5rem' },
-                textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              ₹{calculateTotals(filteredPurchases).toFixed(2)}
-            </Typography>
-          </Box>
         </Box>
-      </Grid>
-      
-      <Grid item xs={12} md={4}>
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <Box 
-            sx={{ 
-              textAlign: 'center',
-              p: 3,
-              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(201, 162, 39, 0.12) 100%)',
-              borderRadius: 2,
-              border: '1px solid rgba(212, 175, 55, 0.2)',
-              transition: 'all 0.3s ease',
-              display: 'inline-block',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 8px 24px rgba(212, 175, 55, 0.25)',
-                border: '1px solid rgba(212, 175, 55, 0.4)',
-              }
-            }}
-          >
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
-                mb: 2, 
-                color: '#F4E3B2',
-                fontWeight: 500,
-                letterSpacing: '1px',
-                textTransform: 'uppercase',
-                fontSize: '0.85rem',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Total Sales
-            </Typography>
-            <Typography 
-              variant="h3" 
-              sx={{ 
-                fontWeight: 800,
-                color: '#D4AF37',
-                fontSize: { xs: '2rem', md: '2.5rem' },
-                textShadow: '0 2px 8px rgba(212, 175, 55, 0.3)',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              ₹{calculateTotals(filteredSales).toFixed(2)}
-            </Typography>
-          </Box>
-        </Box>
-      </Grid>
-      
-      <Grid item xs={12} md={4}>
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-          <Box 
-            sx={{ 
-              textAlign: 'center',
-              p: 3,
-              background: calculateProfit() >= 0 
-                ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(201, 162, 39, 0.2) 100%)'
-                : 'linear-gradient(135deg, rgba(255, 82, 82, 0.1) 0%, rgba(255, 107, 107, 0.15) 100%)',
-              borderRadius: 2,
-              border: calculateProfit() >= 0 
-                ? '1px solid rgba(212, 175, 55, 0.3)'
-                : '1px solid rgba(255, 82, 82, 0.3)',
-              transition: 'all 0.3s ease',
-              display: 'inline-block',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: calculateProfit() >= 0
-                  ? '0 8px 24px rgba(212, 175, 55, 0.35)'
-                  : '0 8px 24px rgba(255, 82, 82, 0.25)',
-                border: calculateProfit() >= 0
-                  ? '1px solid rgba(212, 175, 55, 0.5)'
-                  : '1px solid rgba(255, 82, 82, 0.5)',
-              }
-            }}
-          >
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
-                mb: 2, 
-                color: calculateProfit() >= 0 ? '#F4E3B2' : '#ffcdd2',
-                fontWeight: 500,
-                letterSpacing: '1px',
-                textTransform: 'uppercase',
-                fontSize: '0.85rem',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Net Profit
-            </Typography>
-            <Typography 
-              variant="h3" 
-              sx={{ 
-                fontWeight: 800,
-                color: calculateProfit() >= 0 ? '#D4AF37' : '#ff5252',
-                fontSize: { xs: '2rem', md: '2.5rem' },
-                textShadow: calculateProfit() >= 0 
-                  ? '0 2px 8px rgba(212, 175, 55, 0.3)'
-                  : '0 2px 8px rgba(255, 82, 82, 0.3)',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              ₹{calculateProfit().toFixed(2)}
-            </Typography>
-          </Box>
-        </Box>
-      </Grid>
-    </Grid>
-  </Paper>
-</Box>
+
+        {/* 4. BREAKDOWN TABLE */}
+        {showBreakdown && uploadResults.length > 0 && (
+          <TableContainer component={Paper} sx={{ maxHeight: 300, mt: 4 }}>
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>SKU</TableCell>
+                  <TableCell>Combo/Product</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Qty</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {uploadResults.map((row, idx) => {
+                  const sku = (row.sku || row.SKU || '').trim();
+                  const details = comboDetails[sku];
+                  const status = (row.status || row.Status || '').toString();
+
+                  return (
+                    <TableRow key={idx}>
+                      <TableCell>{sku}</TableCell>
+                      <TableCell>
+                        {details ? (
+                          <Box>
+                            <Typography variant="subtitle2">{details.name}</Typography>
+                            <ul style={{ margin: 0, paddingLeft: 15, fontSize: '0.8rem' }}>
+                              {details.products.map((p, i) => (
+                                <li key={i}>{p.productName} ({p.quantity})</li>
+                              ))}
+                            </ul>
+                          </Box>
+                        ) : <span style={{ color: 'red' }}>No Match</span>}
+                      </TableCell>
+                      <TableCell>
+                        <Alert
+                          icon={false}
+                          severity={status.toLowerCase().includes('delivered') ? 'success' : status.toLowerCase().includes('rto') ? 'error' : 'warning'}
+                          sx={{ py: 0, px: 1, '& .MuiAlert-message': { p: 0 } }}
+                        >
+                          {status}
+                        </Alert>
+                      </TableCell>
+                      <TableCell>{row.quantity || row.Quantity}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+      </Paper>
     </Box>
   );
 };

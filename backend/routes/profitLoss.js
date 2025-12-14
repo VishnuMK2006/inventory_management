@@ -32,13 +32,13 @@ router.get('/', async (req, res) => {
         $match: {
           ...(startDate || endDate
             ? {
-                saleDate: {
-                  ...(startDate && { $gte: new Date(startDate) }),
-                  ...(endDate && {
-                    $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
-                  }),
-                },
-              }
+              saleDate: {
+                ...(startDate && { $gte: new Date(startDate) }),
+                ...(endDate && {
+                  $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)),
+                }),
+              },
+            }
             : {}),
         },
       },
@@ -191,7 +191,7 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('❌ Error calculating profit/loss:', error.message);
     console.error('Stack:', error.stack);
-    res.status(500).json({ 
+    res.status(500).json({
       message: error.message,
       details: 'Check backend logs for full error',
       error: error.toString()
@@ -207,48 +207,48 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     }
 
     // Parse Excel file
-      const workbook = xlsx.read(req.file.buffer, { type: 'buffer', cellDates: true });
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      // Ensure we do not get raw Excel serials where possible; defval helps maintain keys with empty strings
-      const dataRaw = xlsx.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer', cellDates: true });
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    // Ensure we do not get raw Excel serials where possible; defval helps maintain keys with empty strings
+    const dataRaw = xlsx.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
 
-      // Normalize date columns (e.g., Order Date, Payment Date) so frontend always receives readable YYYY-MM-DD strings
-      const normalizeDateKeys = (row) => {
-        const normalizedRow = { ...row };
-        const dateKeyRegex = /^\s*(order\s*date|payment\s*date)\s*$/i;
-        Object.keys(normalizedRow).forEach((key) => {
-          if (dateKeyRegex.test(key)) {
-            const val = normalizedRow[key];
-            // If value already a Date object (with cellDates:true), format it
-            if (val instanceof Date && !Number.isNaN(val.valueOf())) {
-              normalizedRow[key] = val.toISOString().split('T')[0];
+    // Normalize date columns (e.g., Order Date, Payment Date) so frontend always receives readable YYYY-MM-DD strings
+    const normalizeDateKeys = (row) => {
+      const normalizedRow = { ...row };
+      const dateKeyRegex = /^\s*(order\s*date|payment\s*date)\s*$/i;
+      Object.keys(normalizedRow).forEach((key) => {
+        if (dateKeyRegex.test(key)) {
+          const val = normalizedRow[key];
+          // If value already a Date object (with cellDates:true), format it
+          if (val instanceof Date && !Number.isNaN(val.valueOf())) {
+            normalizedRow[key] = val.toISOString().split('T')[0];
+            normalizedRow.orderDate = normalizedRow.orderDate || normalizedRow[key];
+            normalizedRow.paymentDate = normalizedRow.paymentDate || normalizedRow[key];
+          } else if (typeof val === 'number' && !Number.isNaN(val)) {
+            // Excel serial number -> JS date
+            try {
+              const dateObj = new Date((val - 25569) * 86400 * 1000);
+              normalizedRow[key] = dateObj.toISOString().split('T')[0];
               normalizedRow.orderDate = normalizedRow.orderDate || normalizedRow[key];
               normalizedRow.paymentDate = normalizedRow.paymentDate || normalizedRow[key];
-            } else if (typeof val === 'number' && !Number.isNaN(val)) {
-              // Excel serial number -> JS date
-              try {
-                const dateObj = new Date((val - 25569) * 86400 * 1000);
-                normalizedRow[key] = dateObj.toISOString().split('T')[0];
-                normalizedRow.orderDate = normalizedRow.orderDate || normalizedRow[key];
-                normalizedRow.paymentDate = normalizedRow.paymentDate || normalizedRow[key];
-              } catch (err) {
-                // leave as-is
-              }
-            } else if (typeof val === 'string' && val.trim() !== '') {
-              // Try to parse string into Date
-              const parsed = new Date(val);
-              if (!Number.isNaN(parsed.valueOf())) {
-                normalizedRow[key] = parsed.toISOString().split('T')[0];
-                normalizedRow.orderDate = normalizedRow.orderDate || normalizedRow[key];
-                normalizedRow.paymentDate = normalizedRow.paymentDate || normalizedRow[key];
-              }
+            } catch (err) {
+              // leave as-is
+            }
+          } else if (typeof val === 'string' && val.trim() !== '') {
+            // Try to parse string into Date
+            const parsed = new Date(val);
+            if (!Number.isNaN(parsed.valueOf())) {
+              normalizedRow[key] = parsed.toISOString().split('T')[0];
+              normalizedRow.orderDate = normalizedRow.orderDate || normalizedRow[key];
+              normalizedRow.paymentDate = normalizedRow.paymentDate || normalizedRow[key];
             }
           }
-        });
-        return normalizedRow;
-      };
+        }
+      });
+      return normalizedRow;
+    };
 
-      const data = dataRaw.map(normalizeDateKeys);
+    const data = dataRaw.map(normalizeDateKeys);
 
     console.log('📄 Parsed upload first row:', data[0]);
     if (!data || data.length === 0) {
@@ -276,37 +276,72 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       reusedDate: String(row['Reused Date'] || row.reusedDate || ''),
       statusOfProduct: String(row['Status of Product'] || row.statusOfProduct || ''),
       remarks: String(row['Remarks'] || row.remarks || ''),
-    }));
+    })).filter(r => {
+      // Filter out header repetition or empty rows
+      const skuLower = r.sku.trim().toLowerCase();
+      const orderIdLower = r.orderId.trim().toLowerCase();
+      const profitLower = r.profit.trim().toLowerCase();
+      const paymentLower = r.payment.trim().toLowerCase();
 
-    // Compute a simple profit summary from uploaded rows (if profit is numeric)
-    let totalProfit = 0;
-    let deliveredProfit = 0;
-    let rpuProfit = 0;
-    let successRecords = 0;
-    rows.forEach((r) => {
-      const profitNum = Number(r.profit || 0);
-      if (!Number.isNaN(profitNum)) {
-        totalProfit += profitNum;
-        if (r.status && r.status.toLowerCase() === 'rpu') {
-          rpuProfit += profitNum;
-        } else {
-          deliveredProfit += profitNum;
-        }
-      }
-      if (r.orderId && r.orderId.trim() !== '') successRecords++;
+      // Check if row seems to be a header row
+      if (
+        skuLower === 'sku' ||
+        orderIdLower === 'order id' || orderIdLower === 'orderid' ||
+        profitLower === 'profit' ||
+        paymentLower === 'payment'
+      ) return false;
+
+      // STRICT REQUIREMENT: Row MUST have a SKU to be considered a product.
+      // This eliminates "Total" rows or empty rows that just have profit data.
+      if (!r.sku || r.sku.trim() === '') return false;
+
+      return true;
     });
+
+    // 1. Extract all SKUs (barcodes) to lookup
+    const skus = new Set(rows.map(r => r.sku).filter(Boolean));
+    const combos = await Combo.find({ barcode: { $in: Array.from(skus) } }).select('barcode products');
+
+    // 2. Create a map of Barcode -> ProductCount
+    // If a combo has 3 products with qty 1 each, count is 3.
+    const skuProductCountMap = {};
+    combos.forEach(c => {
+      const totalItems = c.products.reduce((sum, p) => sum + (p.quantity || 1), 0);
+      skuProductCountMap[c.barcode] = totalItems;
+    });
+
+    const summary = computeDetailedProfitSummary(rows);
+
+    // 3. Compute total product count based on Combo lookup
+    let totalProductCount = 0;
+    rows.forEach(r => {
+      const qty = Number(r.quantity || 1);
+      const itemsInInternalCombo = skuProductCountMap[r.sku] || 0;
+      // If found in Combos, use internal count * row quantity. 
+      // If NOT found, assume it is 1 product * row quantity (fallback).
+      totalProductCount += (itemsInInternalCombo > 0 ? itemsInInternalCombo : 1) * qty;
+    });
+
+    const successRecords = rows.filter(r => r.orderId && r.orderId.trim() !== '').length;
 
     const sheetDoc = new UploadedProfitSheet({
       fileName,
       uploadedData: rows,
       totalRecords: rows.length,
+      totalProductCount, // Store the calculated count
       successRecords,
       errorRecords: rows.length - successRecords,
       profitSummary: {
-        totalProfit: parseFloat(totalProfit.toFixed(2)),
-        deliveredProfit: parseFloat(deliveredProfit.toFixed(2)),
-        rpuProfit: parseFloat(rpuProfit.toFixed(2)),
-        netProfit: parseFloat((deliveredProfit + rpuProfit).toFixed(2)),
+        totalProfit: summary.totalProfit,
+        deliveredProfit: summary.deliveredProfit,
+        rpuProfit: summary.rpuProfit,
+        rtoProfit: summary.rtoProfit,
+        netProfit: summary.netProfit,
+      },
+      statusSummary: {
+        delivered: summary.statusSummary.delivered,
+        rpu: summary.statusSummary.rpu,
+        rto: summary.statusSummary.rto,
       },
       uploadDate: new Date(),
       status: 'uploaded',
@@ -346,5 +381,75 @@ router.get('/uploaded-data', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+
+function computeDetailedProfitSummary(rows) {
+  let totalProfit = 0;
+  let deliveredProfit = 0;
+  let rpuProfit = 0;
+  let rtoProfit = 0;
+
+  const statusSummary = {
+    delivered: { count: 0, profit: 0 },
+    rpu: { count: 0, profit: 0 },
+    rto: { count: 0, profit: 0 },
+  };
+
+  // Helper to parse "₹ 1,200.00" or "$500" or "100"
+  const parseCleanNumber = (val) => {
+    if (typeof val === 'number') return val;
+    if (!val) return 0;
+    const str = String(val).replace(/[^0-9.-]/g, ''); // Remove currency symbols, commas, spaces
+    const num = parseFloat(str);
+    return isNaN(num) ? 0 : num;
+  };
+
+  rows.forEach((r) => {
+    const profitNum = parseCleanNumber(r.profit);
+    const quantity = Number(r.quantity || 1);
+
+    if (!Number.isNaN(profitNum)) {
+      totalProfit += profitNum;
+
+      const statusLower = (r.status || '').toLowerCase().trim();
+
+      if (statusLower === 'rpu' || statusLower === 'returned') {
+        rpuProfit += profitNum;
+        statusSummary.rpu.count += quantity;
+        statusSummary.rpu.profit += profitNum;
+      } else if (statusLower === 'rto' || statusLower === 'return to origin') {
+        rtoProfit += profitNum;
+        statusSummary.rto.count += quantity;
+        statusSummary.rto.profit += profitNum;
+      } else {
+        deliveredProfit += profitNum;
+        statusSummary.delivered.count += quantity;
+        statusSummary.delivered.profit += profitNum;
+      }
+    }
+  });
+
+  return {
+    totalProfit: parseFloat(totalProfit.toFixed(2)),
+    deliveredProfit: parseFloat(deliveredProfit.toFixed(2)),
+    rpuProfit: parseFloat(rpuProfit.toFixed(2)),
+    rtoProfit: parseFloat(rtoProfit.toFixed(2)),
+    netProfit: parseFloat((deliveredProfit + rpuProfit + rtoProfit).toFixed(2)),
+    statusSummary: {
+      delivered: {
+        count: statusSummary.delivered.count,
+        profit: parseFloat(statusSummary.delivered.profit.toFixed(2)),
+      },
+      rpu: {
+        count: statusSummary.rpu.count,
+        profit: parseFloat(statusSummary.rpu.profit.toFixed(2)),
+      },
+      rto: {
+        count: statusSummary.rto.count,
+        profit: parseFloat(statusSummary.rto.profit.toFixed(2)),
+      },
+    },
+  };
+}
 
 module.exports = router;
